@@ -4,6 +4,6 @@ from . import views
 #This is urls.py
 
 urlpatterns = [
-    path('get/', views.get, name='getdet'),
+    path('get/', views.get, name='get'),
 
 ]
