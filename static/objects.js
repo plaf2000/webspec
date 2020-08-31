@@ -313,12 +313,12 @@ function Detection(data,x=false,y=false) {
   }
 
   if(data) {
-    this.label= new Label(data.id,data.label);
-    this.id = data.id;
-    this.tStart = data.tStart;
-    this.tEnd = data.tEnd;
-    this.fStart = data.fStart;
-    this.fEnd = data.fEnd;
+    this.label= new Label(data["id"],data["label"]);
+    this.id = data["id"];
+    this.tStart = data["tstart"];
+    this.tEnd = data["tend"];
+    this.fStart = data["fstart"];
+    this.fEnd = data["fend"];
     this.append();
     this.update();
   }
@@ -426,6 +426,7 @@ function Tinfo() {
 }
 
 function View(offset) {
+
   this.rx=1;
   this.ry=1;
   this.x=0;
@@ -436,10 +437,6 @@ function View(offset) {
 
   this.start= offset;
   this.end= offset+dur;
-
-
-
-
 
   this.zoom = function(dir,ratio,x,y,shiftPressed) {
 

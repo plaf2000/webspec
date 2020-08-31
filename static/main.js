@@ -41,37 +41,40 @@ $(document).ready(function(){
 
 
 
+
+
   window.view = new View(offset);
+
 
   window.cursor = new Cursor();
   window.tinfo = new Tinfo();
 
   var data = [
     {
-      tStart: 1562.6,
-      tEnd: 1568.2,
-      fStart: 800,
-      fEnd: 7200,
-      id: 3,
-      labelId: 0,
+      tstart: 1562.6,
+      tend: 1568.2,
+      fstart: 800,
+      fend: 7200,
+      id: 3+2,
+      label_id: 0,
       label:'Veryveryverylonglabel'
     },
     {
-      tStart: 1559.746,
-      tEnd: 1560.191,
-      fStart: 1300,
-      fEnd: 7200,
-      id: 1,
-      labelId: 1,
+      tstart: 1559.746,
+      tend: 1560.191,
+      fstart: 1300,
+      fend: 7200,
+      id: 1+2,
+      label_id: 1,
       label:'CORCOI'
     },
     {
-      tStart: 1560.6,
-      tEnd: 1561.2,
-      fStart: 1300,
-      fEnd: 7200,
-      id: 2,
-      labelId: 1,
+      tstart: 1560.6,
+      tend: 1561.2,
+      fstart: 1300,
+      fend: 7200,
+      id: 2+2,
+      label_id: 1,
       label:'CORCOI'
     }
   ];
@@ -81,9 +84,9 @@ $(document).ready(function(){
 
   window.detections = [];
 
-  for (var i = 0; i < data.length; i++) {
-    detections[i] = new Detection(data[i]);
-  }
+  // for (var i = 0; i < data.length; i++) {
+  //   detections[i] = new Detection(data[i]);
+  // }
 
 
 
@@ -93,6 +96,11 @@ $(document).ready(function(){
   window.specImgs=[];
   addToCanvas(offset);
   view.moveTo(xPx=0,yPx=0);
+
+  window.memoryStart = view.tx;
+  window.memoryEnd = view.txend;
+
+  loadDetections(view.tx,view.txend);
 
   window.axes = new Axes();
 

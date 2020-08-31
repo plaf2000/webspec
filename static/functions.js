@@ -43,7 +43,7 @@ function zoomCanvas(dir,x,y,shiftPressed) {
   var ratio=Math.pow(zoomRatio,dir);
 
   view.zoom(dir,ratio,x,y,shiftPressed);
-
+  updateMemory();
 
   axes.updateAll();
   tinfo.update();
@@ -58,6 +58,8 @@ function panView(x,y) {
   axes.updatePos();
   tinfo.update();
 
+  updateMemory();
+
 
   drawCanvas();
 }
@@ -66,6 +68,8 @@ function panView(x,y) {
 function moveViewTo(x,y,xT,yF) {
 
   view.moveTo(xPx=x,yPx=y,xT=xT,yF=yF);
+  updateMemory();
+
 
   drawCanvas();
 }
@@ -85,6 +89,36 @@ function setMarker(x,marker) {
 
 
   drawCanvas();
+}
+
+function updateMemory() {
+  if(view.tx<memoryStart) {
+    loadDetections(view.tx,memoryStart);
+    memoryStart = view.tx;
+  }
+  if(view.txend>memoryEnd) {
+    loadDetections(memoryEnd,view.txend);
+    memoryEnd = view.txend;
+  }
+
+}
+
+function loadDetections(tStart,tEnd) {
+  console.log("Loading");
+  $.get(
+        '/det/get',
+        {
+          ts: tStart,
+          te: tEnd
+        }).done(
+          function(detsToAdd) {
+            var lenDet = detections.length;
+            for (var i = 0; i < detsToAdd.length; i++) {
+              detections[i+lenDet] = new Detection(detsToAdd[i]);
+            }
+
+          }
+        );
 }
 
 
@@ -328,26 +362,6 @@ function mouseMove(e) {
 
   }
 
-  // else if(creatingDet) {
-  //   var x = e.clientX-specLeft;
-  //   var y = e.clientY-specTop;
-  //
-  //   if(x<mp.x) {
-  //     scaleLeftDet = true;
-  //   }
-  //   else {
-  //     scaleRightDet = true;
-  //   }
-  //
-  //   if(y<mp.y) {
-  //     scaleTopDet = true;
-  //   }
-  //   else {
-  //     scaleBottomDet = true;
-  //   }
-  //   detections[detections.length-1].resize(x,y,scaleTopDet,scaleBottomDet,scaleLeftDet,scaleRightDet);
-  //
-  // }
   else {
     mm=false;
 
