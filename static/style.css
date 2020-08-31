@@ -232,12 +232,13 @@ Detection
    margin-left: 5px;
    width: 20px;
    height: 20px;
-   background-image: url("/static/trash_icon_white.png");
+   background-image: url("/static/trash_icon_white_shadow.png");
    background-size: cover;
  }
 
  .label div.delete-det:hover  {
-   background-image: url("/static/trash_icon_white_shadow.png");
+   background-image: url("/static/trash_icon_white.png");
+   
    cursor: pointer;
  }
 
