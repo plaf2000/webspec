@@ -20,4 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('webspec/', include('webspecapp.urls')),
     path('det/', include('detections.urls')),
+    path('label/', include('labels.urls')),
 ]
