@@ -225,6 +225,7 @@ function Detection(data,x=false,y=false) {
 
 
   this.resize = function(x,y,t,b,l,r) {
+    this.manual = true;
 
 
     this.xend=this.x+this.width;
@@ -263,6 +264,8 @@ function Detection(data,x=false,y=false) {
   }
 
   this.move = function(dx,dy) {
+    this.manual = true;
+    
 
     var deltaT = this.tEnd - this.tStart;
     var deltaF = this.fEnd - this.fStart;
@@ -307,6 +310,9 @@ function Detection(data,x=false,y=false) {
 
   }
 
+  this.save = function() {
+
+  }
 
   this.delete = function() {
       this.jqueryElement.fadeOut(400, function(){ this.remove(); });
@@ -314,6 +320,8 @@ function Detection(data,x=false,y=false) {
 
   if(data) {
     this.label= new Label(data["id"],data["label"]);
+    this.pinned = data["pinned"];
+    this.maual = data["manual"];
     this.id = data["id"];
     this.tStart = data["tstart"];
     this.tEnd = data["tend"];
@@ -324,6 +332,7 @@ function Detection(data,x=false,y=false) {
   }
 
   else {
+    this.manual = true;
     this.label = new Label('label-id','Insert your label here');
     this.id = String(parseInt(Math.random()*10000000));
     this.x=x;

@@ -92,13 +92,14 @@ function setMarker(x,marker) {
 }
 
 function updateMemory() {
+  var buffer = view.txend-view.tx;
   if(view.tx<memoryStart) {
-    loadDetections(view.tx,memoryStart);
-    memoryStart = view.tx;
+    loadDetections(view.tx-buffer,memoryStart);
+    memoryStart = view.tx-buffer;
   }
   if(view.txend>memoryEnd) {
-    loadDetections(memoryEnd,view.txend);
-    memoryEnd = view.txend;
+    loadDetections(memoryEnd,view.txend+buffer);
+    memoryEnd = view.txend+buffer;
   }
 
 }

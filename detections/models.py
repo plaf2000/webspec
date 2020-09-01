@@ -2,6 +2,7 @@ from django.db import models
 
 class Detection(models.Model):
     pinned = models.BooleanField()
+    manual = models.BooleanField(default=False)
     fstart = models.FloatField()
     fend = models.FloatField()
     tstart = models.FloatField()
