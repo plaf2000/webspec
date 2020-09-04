@@ -1,7 +1,10 @@
 
 $(document).ready(function(){
 
+  window.csrftoken = getCookie('csrftoken');
+
   window.fname='/var/www/html/ZOOM0043.WAV';
+  window.analysisId = 1;
   window.dfn=2048;
   window.wfft=dfn;
   window.zoomRatio=.8;
@@ -112,6 +115,7 @@ $(document).ready(function(){
   window.md=false;
   window.moveDet=false;
   window.mm=false;
+  window.hoverI;
 
   window.scaleTopDet = false;
   window.scaleBottomDet = false;
@@ -196,6 +200,7 @@ $(document).ready(function(){
       }
 
 
+
     }
 
     else if(e.which == 2) {
@@ -208,10 +213,11 @@ $(document).ready(function(){
 
   $("#spec-td").on('mousemove','.detection',function(e) {
 
+    var triggeredI = $(".detection").index($(this));
 
     if(this == e.target) {
 
-      focusedI = $(".detection").index($(this));
+      focusedI = triggeredI;
 
       if(!scaleDet && !moveDet) {
 
@@ -224,6 +230,27 @@ $(document).ready(function(){
 
       }
     }
+
+    if(!scaleDet && !moveDet) {
+
+      hoverI = triggeredI;
+      detections[hoverI].updateCssLabel();
+      detections[hoverI].focus();
+
+    }
+
+
+  });
+
+  $("#spec-td").on('mouseleave','.detection',function(e) {
+
+  if(!scaleDet && !moveDet) {
+    if(hoverI<detections.length) {
+
+      detections[hoverI].unFocus();
+    }
+
+  }
 
   });
 
@@ -254,7 +281,8 @@ $(document).ready(function(){
   });
 
   $("#spec-td").on('mousedown','.detection .delete-det',function() {
-    var i = $(".delete-det").index($(this));
+    var parentDet = $(this).parents(".detection");
+    var i = $(".detection").index(parentDet);
     var detToDel = detections[i];
     if(confirm("Are you sure you want to delete this detection: "+detToDel.label.text+"?")) {
       detToDel.delete();
@@ -283,13 +311,13 @@ $(document).ready(function(){
   });
 
 
-  $("#spec-td").on('focus','.detection .label-it',function() {
+  $("#spec-td").on('focus','.detection .id',function() {
     wl=true;
   });
 
 
-  $("#spec-td").on('focusout','.detection .label-it',function() {
-    var i = $(".label-it").index($(this));
+  $("#spec-td").on('focusout','.detection .id',function() {
+    var i = $(".id").index($(this));
     detections[i].unFocus();
     wl=false;
     wasEditing=true;

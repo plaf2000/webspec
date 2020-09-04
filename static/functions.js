@@ -1,3 +1,20 @@
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
 function getAudio() {
   var fnameURI = encodeURIComponent(fname);
   var url = '/webspec/audio/?f='+fnameURI;
@@ -30,9 +47,16 @@ function drawCanvas() {
   axes.drawOnCanvas();
   cursor.drawOnCanvas();
   tinfo.drawOnCanvas();
+
   for(var i =0; i<detections.length; i++) {
     detections[i].update();
   }
+
+  // if(hoverI)  {
+  //
+  // }
+
+
 
 
 }
@@ -49,6 +73,17 @@ function zoomCanvas(dir,x,y,shiftPressed) {
   tinfo.update();
 
   drawCanvas();
+
+  if(hoverI!='') {
+
+    detections[hoverI].updateCssLabel();
+  }
+
+
+
+
+
+
 }
 
 function panView(x,y) {
@@ -144,7 +179,7 @@ function updateVal(nfftChanged) {
 
 }
 
-function request(offset,duration = dur) {
+function requestSpec(offset,duration = dur) {
 
   window.requestPending=true;
 
@@ -191,7 +226,7 @@ function updateCanvas() {
     var i = is[index];
     var specImg = specImgs[i];
 
-    request(specImg.start).done(
+    requestSpec(specImg.start).done(
       function(data) {
 
         specImgs[i] = new SpecImg(data,specImg.start);
@@ -214,7 +249,7 @@ function addToCanvas(offset,left=false,duration=dur) {
 
 
   ctx.save();
-  request(offset,dur).done(
+  requestSpec(offset,dur).done(
     function(data) {
       $("#loading").show();
 
@@ -377,7 +412,10 @@ function mouseUp(e) {
      if(scaleDet) {
        updateCursorType();
      }
+     detections[detI].save();
+
    }
+
 
 
   md=false;
