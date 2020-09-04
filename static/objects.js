@@ -177,17 +177,10 @@ function Detection(data,x=false,y=false) {
 
     this.updateCss();
 
-  }
+  };
 
-  this.updateCss = function() {
-    this.css = {
-                'left': this.x+'px',
-                'top': this.y+'px',
-                'width': this.width+'px',
-                'height': this.height+'px'
-              };
-    this.jqueryElement.css(this.css);
-    var labelHeight = $('.label').outerHeight();
+  this.updateCssLabel = function() {
+    var labelHeight = this.label.jqueryElement.outerHeight();
 
     if(this.y<labelHeight) {
       if(cvs.height-(this.height+this.y)<labelHeight){
@@ -195,9 +188,31 @@ function Detection(data,x=false,y=false) {
       }
       else{this.label.updatePos('bottom');}
     }
-
     else { this.label.updatePos('top'); }
-  }
+  };
+
+  this.updateCss = function() {
+    if(this.tEnd>=view.tx && this.tStart<=view.txend) {
+
+
+      this.css = {
+        'display': 'block',
+        'left': this.x+'px',
+        'top': this.y+'px',
+        'width': this.width+'px',
+        'height': this.height+'px'
+      };
+
+      this.jqueryElement.css(this.css);
+
+    }
+
+
+    else {
+      this.css={"display": 'none'};
+      this.jqueryElement.css(this.css);
+    }
+  };
 
   this.addClass = function(className) {
     this.jqueryElement.addClass(className);
@@ -261,11 +276,13 @@ function Detection(data,x=false,y=false) {
     if(this.fStart<lf) { this.fStart=lf; }
 
     this.update();
+    this.updateCssLabel();
+
   }
 
   this.move = function(dx,dy) {
     this.manual = true;
-    
+
 
     var deltaT = this.tEnd - this.tStart;
     var deltaF = this.fEnd - this.fStart;
@@ -298,8 +315,9 @@ function Detection(data,x=false,y=false) {
 
 
     this.update();
+    this.updateCssLabel();
 
-  }
+  };
 
   this.append = function() {
     this.html = '<div class="detection" id="'+this.id+'"></div>';
@@ -308,18 +326,98 @@ function Detection(data,x=false,y=false) {
 
     this.label.append(this.jqueryElement);
 
-  }
+  };
+
+  this.setId = function(id) {
+    this.id = id;
+    this.jqueryElement.attr("id",id);
+  };
+
+  this.getData = function() {
+    return {
+      id: this.id,
+      pinned: this.pinned,
+      manual: this.manual,
+      tstart: this.tStart,
+      tend: this.tEnd,
+      fstart: this.fStart,
+      fend: this.fEnd,
+      analysisid: analysisId,
+      labelid: this.label.id()
+    };
+  };
+
+  this.create = function() {
+    this.manual = true;
+    var det = this;
+    $.ajax({
+
+      url: '/det/create/',
+      method: "POST",
+      headers: {'X-CSRFToken': csrftoken},
+      data: det.getData(),
+
+    }).done(
+          function(response) {
+            det.setId(response.id);
+            det.label.setId(response.id);
+            det.save();
+          }
+    ).fail(
+          function (error) {
+            console.log(error);
+          }
+    );
+  };
 
   this.save = function() {
+    if(this.id!="adding") {
+      this.manual = true;
+      var det = this;
 
-  }
+      $.ajax({
+        url: '/det/save/',
+        method: "POST",
+        headers: {'X-CSRFToken': csrftoken},
+        data: det.getData(),
+
+      }).done(
+        function(response) {
+          // console.log(response);
+        }
+      ).fail(
+        function (error) {
+          console.log(error);
+        }
+      );
+
+    }
+  };
+
 
   this.delete = function() {
-      this.jqueryElement.fadeOut(400, function(){ this.remove(); });
-  }
+    var det = this;
+    $.ajax({
+
+      url: '/det/delete/',
+      method: "POST",
+      headers: {'X-CSRFToken': csrftoken},
+      data: { id: det.id },
+
+    }).done(
+          function(response) {
+            det.jqueryElement.fadeOut(400, function(){ this.remove(); });
+
+          }
+    ).fail(
+          function (error) {
+            console.log(error);
+          }
+    );
+  };
 
   if(data) {
-    this.label= new Label(data["id"],data["label"]);
+    this.label = new Label(data["label_id"]);
     this.pinned = data["pinned"];
     this.maual = data["manual"];
     this.id = data["id"];
@@ -332,45 +430,58 @@ function Detection(data,x=false,y=false) {
   }
 
   else {
+    this.label = new Label("adding");
+    this.id="adding";
     this.manual = true;
-    this.label = new Label('label-id','Insert your label here');
-    this.id = String(parseInt(Math.random()*10000000));
+    this.pinned = false;
     this.x=x;
     this.y=y;
     this.width = 0;
     this.height = 0;
-    this.append();
     this.updateTF();
+    this.append();
+    this.create();
   }
-
-
 }
 
-function Label(id, text, position='top') {
+function Label(id,position="top") {
+
   this.position=position;
-  this.id =  id;
-  this.text = text;
-  this.html='<div class="label '+this.position+'"><span class="label-text"><div class="label-it" contenteditable="true" value="'+this.text+'">'+this.text+'</div></span><span><div class="delete-det" id="this.id"></div></span></div>';
+  this.html='<div class="label '+this.position+'"><span class="label-text"><div class="id" contenteditable="true">'+id+'</div></span><span><div class="delete-det"></div></span></div>';
   this.append = function(detection) {
     detection.append(this.html);
     this.jqueryElement = detection.find(".label");
-  }
-  this.updatePos = function(position,translationY=false) {
-    this.jqueryElement.removeClass(this.position);
-    this.jqueryElement.addClass(position);
-    if(translationY) {
-      this.jqueryElement.css({
-        'top' : translationY
-      });
-    }
-    else {
-      this.jqueryElement.css({
-        'top' : 'auto'
-      });
-    }
-    this.position = position;
-  }
+  };
 
+
+  this.updatePos = function(position,translationY=false) {
+    if(typeof this.jqueryElement != "undefined") {
+      this.jqueryElement.removeClass(this.position);
+      this.jqueryElement.addClass(position);
+      if(translationY) {
+        this.jqueryElement.css({
+          'top' : translationY
+        });
+      }
+      else {
+        this.jqueryElement.css({
+          'top' : 'auto'
+        });
+      }
+    }
+
+    this.position = position;
+  };
+
+  this.id = function() {
+    var id = parseInt(this.jqueryElement.find(".id").html());
+    return isNaN(id) ? 0 : id;
+  };
+
+  this.setId = function(id) {
+    this.jqueryElement.find(".id").html(id);
+
+  };
 
 }
 
@@ -440,6 +551,8 @@ function View(offset) {
   this.ry=1;
   this.x=0;
   this.y=0;
+  this.detx=0;
+  this.dety=0;
   this.origOffset=offset;
   this.origFrame=0;
   this.actualI=0;
@@ -457,38 +570,39 @@ function View(offset) {
     newRy = this.ry*ratio;
     newRy = (Math.round(newRy*Math.pow(10,12))/Math.pow(10,12)<=1)? 1 : newRy;
 
-
-
     var absx = this.x+x/this.rx;
     var absy = this.y+y/this.ry;
 
-    if (!shiftPressed){this.ry = newRy};
-    if (newRx<=1){this.ry = 1};
+    var ry=1;
 
+    if (!shiftPressed){
+      ry = ratio;
+      this.ry = newRy;
+     };
+    if (newRx<=1){
+      ry=1;
+      this.ry = 1;
+    };
 
     this.rx = newRx;
-
 
     this.x=0;
     this.y=0;
 
-
     ctx.scale(this.rx,this.ry);
+
 
     var dx=(x-absx*this.rx);
     var dy=(y-absy*this.ry);
 
-
     this.pan(dx,dy);
-
-
-
 
   };
   this.pan = function(dx,dy) {
 
     x=this.x-dx/this.rx;
     y=this.y-dy/this.ry;
+
 
     this.moveTo(xPx=x,yPx=y);
 
@@ -549,6 +663,11 @@ function View(offset) {
 
     ctx.translate(dx,dy);
 
+    this.detx+=dx*this.rx;
+    this.dety+=dy*this.ry;
+
+
+
     this.x=xPx;
     this.y=yPx;
 
@@ -580,9 +699,13 @@ function View(offset) {
       }
     }
 
+
     this.actualI = Math.floor((this.tx+dur/2/view.rx-this.origOffset)/dur) + this.origFrame;
     if(this.actualI<0){this.actualI = 0};
     if(this.actualI>=specImgs.length){this.actualI = specImgs.length-1};
+
+
+
   };
 
 }

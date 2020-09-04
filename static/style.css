@@ -107,7 +107,7 @@ Detection
 
  }
 
- .detection:hover, .detection.focus {
+ .detection.focus {
 
    /* border: 1px solid white; */
    border: 1px solid rgb(181, 49, 14);
@@ -164,7 +164,7 @@ Detection
    -ms-transform: translate(-50%,0);
  }
 
- .detection:hover .label, .detection.focus .label {
+.detection.focus .label {
    display:block;
 
  }
@@ -219,7 +219,7 @@ Detection
    white-space: pre;
  }
 
-  .label-it:focus {
+  .id:focus {
     outline: 0;
     border: 1px solid white;
     border-radius: 5px;
@@ -238,12 +238,12 @@ Detection
 
  .label div.delete-det:hover  {
    background-image: url("/static/trash_icon_white.png");
-   
+
    cursor: pointer;
  }
 
 
- .label .label-it {
+ .label .id {
    display: table-cell;
    background-color: rgba(0,0,0,0);
    padding: 12px 5px;
