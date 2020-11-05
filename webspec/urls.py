@@ -20,4 +20,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('webspec/', include('webspecapp.urls')),
     path('det/', include('detections.urls')),
+<<<<<<< HEAD
+=======
+    path('label/', include('labels.urls')),
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 ]

@@ -1,3 +1,23 @@
+<<<<<<< HEAD
+=======
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 function getAudio() {
   var fnameURI = encodeURIComponent(fname);
   var url = '/webspec/audio/?f='+fnameURI;
@@ -30,10 +50,23 @@ function drawCanvas() {
   axes.drawOnCanvas();
   cursor.drawOnCanvas();
   tinfo.drawOnCanvas();
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
   for(var i =0; i<detections.length; i++) {
     detections[i].update();
   }
 
+<<<<<<< HEAD
+=======
+  // if(hoverI)  {
+  //
+  // }
+
+
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 
 }
 
@@ -43,12 +76,30 @@ function zoomCanvas(dir,x,y,shiftPressed) {
   var ratio=Math.pow(zoomRatio,dir);
 
   view.zoom(dir,ratio,x,y,shiftPressed);
+<<<<<<< HEAD
 
+=======
+  updateMemory();
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 
   axes.updateAll();
   tinfo.update();
 
   drawCanvas();
+<<<<<<< HEAD
+=======
+
+  if(hoverI!='') {
+
+    detections[hoverI].updateCssLabel();
+  }
+
+
+
+
+
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 }
 
 function panView(x,y) {
@@ -58,6 +109,11 @@ function panView(x,y) {
   axes.updatePos();
   tinfo.update();
 
+<<<<<<< HEAD
+=======
+  updateMemory();
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 
   drawCanvas();
 }
@@ -66,6 +122,11 @@ function panView(x,y) {
 function moveViewTo(x,y,xT,yF) {
 
   view.moveTo(xPx=x,yPx=y,xT=xT,yF=yF);
+<<<<<<< HEAD
+=======
+  updateMemory();
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 
   drawCanvas();
 }
@@ -87,6 +148,40 @@ function setMarker(x,marker) {
   drawCanvas();
 }
 
+<<<<<<< HEAD
+=======
+function updateMemory() {
+  var buffer = view.txend-view.tx;
+  if(view.tx<memoryStart) {
+    loadDetections(view.tx-buffer,memoryStart);
+    memoryStart = view.tx-buffer;
+  }
+  if(view.txend>memoryEnd) {
+    loadDetections(memoryEnd,view.txend+buffer);
+    memoryEnd = view.txend+buffer;
+  }
+
+}
+
+function loadDetections(tStart,tEnd) {
+  console.log("Loading");
+  $.get(
+        '/det/get',
+        {
+          ts: tStart,
+          te: tEnd
+        }).done(
+          function(detsToAdd) {
+            var lenDet = detections.length;
+            for (var i = 0; i < detsToAdd.length; i++) {
+              detections[i+lenDet] = new Detection(detsToAdd[i]);
+            }
+
+          }
+        );
+}
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 
 function updateVal(nfftChanged) {
 
@@ -109,7 +204,11 @@ function updateVal(nfftChanged) {
 
 }
 
+<<<<<<< HEAD
 function request(offset,duration = dur) {
+=======
+function requestSpec(offset,duration = dur) {
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 
   window.requestPending=true;
 
@@ -156,7 +255,11 @@ function updateCanvas() {
     var i = is[index];
     var specImg = specImgs[i];
 
+<<<<<<< HEAD
     request(specImg.start).done(
+=======
+    requestSpec(specImg.start).done(
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
       function(data) {
 
         specImgs[i] = new SpecImg(data,specImg.start);
@@ -179,7 +282,11 @@ function addToCanvas(offset,left=false,duration=dur) {
 
 
   ctx.save();
+<<<<<<< HEAD
   request(offset,dur).done(
+=======
+  requestSpec(offset,dur).done(
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
     function(data) {
       $("#loading").show();
 
@@ -328,6 +435,7 @@ function mouseMove(e) {
 
   }
 
+<<<<<<< HEAD
   // else if(creatingDet) {
   //   var x = e.clientX-specLeft;
   //   var y = e.clientY-specTop;
@@ -348,6 +456,8 @@ function mouseMove(e) {
   //   detections[detections.length-1].resize(x,y,scaleTopDet,scaleBottomDet,scaleLeftDet,scaleRightDet);
   //
   // }
+=======
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
   else {
     mm=false;
 
@@ -362,9 +472,18 @@ function mouseUp(e) {
      if(scaleDet) {
        updateCursorType();
      }
+<<<<<<< HEAD
    }
 
 
+=======
+     detections[detI].save();
+
+   }
+
+
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
   md=false;
   moveDet=false;
   scaleDet = false;

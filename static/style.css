@@ -107,7 +107,11 @@ Detection
 
  }
 
+<<<<<<< HEAD
  .detection:hover, .detection.focus {
+=======
+ .detection.focus {
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
 
    /* border: 1px solid white; */
    border: 1px solid rgb(181, 49, 14);
@@ -164,7 +168,11 @@ Detection
    -ms-transform: translate(-50%,0);
  }
 
+<<<<<<< HEAD
  .detection:hover .label, .detection.focus .label {
+=======
+.detection.focus .label {
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
    display:block;
 
  }
@@ -219,7 +227,11 @@ Detection
    white-space: pre;
  }
 
+<<<<<<< HEAD
   .label-it:focus {
+=======
+  .id:focus {
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
     outline: 0;
     border: 1px solid white;
     border-radius: 5px;
@@ -238,12 +250,20 @@ Detection
 
  .label div.delete-det:hover  {
    background-image: url("/static/trash_icon_white.png");
+<<<<<<< HEAD
    
+=======
+
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
    cursor: pointer;
  }
 
 
+<<<<<<< HEAD
  .label .label-it {
+=======
+ .label .id {
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
    display: table-cell;
    background-color: rgba(0,0,0,0);
    padding: 12px 5px;

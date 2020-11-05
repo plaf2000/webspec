@@ -2,6 +2,10 @@ from django.db import models
 
 class Detection(models.Model):
     pinned = models.BooleanField()
+<<<<<<< HEAD
+=======
+    manual = models.BooleanField(default=False)
+>>>>>>> 0f0842fc19203c92eccb15cf41006400f4b1055f
     fstart = models.FloatField()
     fend = models.FloatField()
     tstart = models.FloatField()
