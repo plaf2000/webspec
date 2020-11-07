@@ -1,0 +1,1 @@
+window.fname='/var/www/html/track.wav';
