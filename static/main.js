@@ -2,8 +2,6 @@
 $(document).ready(function(){
 
   window.csrftoken = getCookie('csrftoken');
-
-  window.fname='/var/www/html/ZOOM0043.WAV';
   window.analysisId = 1;
   window.dfn=2048;
   window.wfft=dfn;

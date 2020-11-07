@@ -18,7 +18,7 @@ function getCookie(name) {
 function getAudio() {
   var fnameURI = encodeURIComponent(fname);
   var url = '/webspec/audio/?f='+fnameURI;
-  window.audio = new Audio('http://localhost/ZOOM0043.WAV');
+  window.audio = new Audio('http://localhost/track.wav');
   audio.onloadeddata = function() {
     this.currentTime = offset;
   };
