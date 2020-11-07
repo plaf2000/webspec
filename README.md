@@ -9,6 +9,8 @@ Web interface that allows to listen to tracks and label them. The spectrogram ca
     <li>  You can modify the label name by clicking on it, but it won't get saved</li>
     <li>  Delete the label by clecking the trash icon</li>
 </ul>
+
+
 ![Screenshot](https://github.com/plaf2000/webspec/blob/master/screenshot.jpeg)
 
 The interface is located at `http://127.0.0.1:8000/webspec/test/`.
