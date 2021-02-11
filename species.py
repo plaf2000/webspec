@@ -3,7 +3,7 @@
 import labels
 from labels.models import Species
 
-
+Species.objects.all().delete()
 
 # if __name__=="__main__":
 with open("birdslist.csv","r") as f:
@@ -12,7 +12,14 @@ with open("birdslist.csv","r") as f:
         names = s.split("\t")
         latin = names[0]
         genus_sp = names[0].split(" ")
-        code = (genus_sp[0][0:4]+genus_sp[1][0:4]).upper()
+        code = genus_sp[0][0:3]
+        try:
+            code+=genus_sp[1][0:3]
+            code += genus_sp[2][0:3]
+        except:
+            pass
+
+        code = code.upper()
         newsp = Species(
                 code = code,
                 lat = latin,

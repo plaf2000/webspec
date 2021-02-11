@@ -562,13 +562,18 @@ function View(offset) {
 
   this.zoom = function(dir,ratio,x,y,shiftPressed) {
 
-    ctx.resetTransform();
+    
 
     newRx = this.rx*ratio;
+    if(newRx<.018) return;
     newRx = (Math.round(newRx*Math.pow(10,12))/Math.pow(10,12)==1)? 1 : newRx;
+
+    
 
     newRy = this.ry*ratio;
     newRy = (Math.round(newRy*Math.pow(10,12))/Math.pow(10,12)<=1)? 1 : newRy;
+    
+    ctx.resetTransform();
 
     var absx = this.x+x/this.rx;
     var absy = this.y+y/this.ry;

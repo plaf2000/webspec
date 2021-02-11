@@ -1,10 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from bokeh.plotting import figure, ColumnDataSource
-from bokeh.embed import components
-from bokeh.models import Range1d, CustomJS
-from bokeh.events import DoubleTap
-from bokeh.transform import cumsum
 import numpy as np
 import pandas as pd
 import librosa
@@ -13,52 +8,14 @@ from PIL import Image
 import base64
 from io import BytesIO
 import math
+from pathlib import Path
 
 def callback(event):
     line_x=event.x
 
-def ajax_spec(request):
-    return render(request, 'ajaxspec.html' ,{})
+def spec(request):
+    return render(request, 'spec.html' ,{})
 
-def home(request):
-    t=[0,0,0,0]
-    ulim=8000
-    n_fft=2048
-
-    y, sr = librosa.load('/home/plaf2000/webspec/webspec/webspecapp/audio/folaga.WAV',sr=44100)
-    t[1]=time.time()
-    data = librosa.amplitude_to_db(np.abs(librosa.stft(y)), ref=np.max)
-    t[2]=time.time()
-    i_ulim=int((data.shape[0]*2/sr)*ulim)
-    data=data[:i_ulim]
-    data/=data.min()
-    data=np.abs(data-data.max())
-    time_end=n_fft*data.shape[1]/sr
-    left=0
-    bottom=0
-    right=time_end
-    top=ulim
-    plot = figure(width=data.shape[1],height=data.shape[0],active_scroll='wheel_zoom')
-    plot.xgrid.visible = False
-    plot.ygrid.visible = False
-    plot.sizing_mode = 'scale_width'
-    plot.x_range=Range1d(left, right, bounds=(left, right))
-    plot.y_range=Range1d(bottom, top, bounds=(bottom, top))
-    t[3]=time.time()
-    plot.image(image=[data], x=0, y=0, dw=time_end, dh=ulim, palette="Inferno11", level="image")
-    line_x=time_end/2
-    line=plot.line([line_x,line_x],[0,ulim],line_width=1,line_color="#000000")
-    plot.js_on_event(DoubleTap, CustomJS(args=dict(line=line), code="""
-        console.log(cb_obj);
-        console.log(line.data_source.data.x);
-        line.data_source.data.x=[cb_obj.x,cb_obj.x];
-        console.log(line.data_source.data.x);
-
-
-    """))
-    script, div = components(plot)
-
-    return render(request, 'base.html' , {'script': script, 'div':div})
 
 def create_spec(request):
     offset=float(request.GET['offset'])
@@ -142,9 +99,9 @@ def get_audio(request):
 
     f=open(fname,'rb')
     audio=f.read()
-
+    size=str(Path(fname).stat().st_size)
     response=HttpResponse(audio,content_type="audio/wav")
-
+    response["Accept-Ranges"] = "bytes"
     f.close()
 
     return response

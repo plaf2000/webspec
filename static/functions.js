@@ -17,8 +17,8 @@ function getCookie(name) {
 
 function getAudio() {
   var fnameURI = encodeURIComponent(fname);
-  var url = '/webspec/audio/?f='+fnameURI;
-  window.audio = new Audio('http://localhost/track.wav');
+  var url = '/audio/?f='+fnameURI;
+  window.audio = new Audio(url);
   audio.onloadeddata = function() {
     this.currentTime = offset;
   };
@@ -184,7 +184,7 @@ function requestSpec(offset,duration = dur) {
   window.requestPending=true;
 
   return $.get(
-      '/webspec/spec/',
+      '/spec/',
       {
         fname: fname,
         offset: offset,
