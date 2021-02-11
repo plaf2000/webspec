@@ -120,6 +120,7 @@ $(document).ready(function(){
   window.scaleLeftDet = false;
   window.scaleRightDet = false;
 
+
   window.scaleDet=false;
 
   window.wl=false;

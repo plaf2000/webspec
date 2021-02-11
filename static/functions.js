@@ -432,19 +432,24 @@ function mouseUp(e) {
 }
 
 function updateCursorType() {
-  if(resizeClass !="") {
-    $("*").removeClass(resizeClass);
-  }
+
+  current = resizeClass;
+  
   resizeClass = "resize-";
   if (scaleTopDet) { resizeClass += "n"; }
   else if (scaleBottomDet) { resizeClass += "s"; }
   if (scaleLeftDet) { resizeClass += "w"; }
   else if (scaleRightDet) { resizeClass += "e"; }
 
-  if(resizeClass=="resize-") {
-    resizeClass="";
-  }
-  else {
-    $("*").addClass(resizeClass);
-  }
+  if(resizeClass!=current) {
+    if(current !="") {
+      $("*").removeClass(current);
+    }
+    if(resizeClass=="resize-") {
+      resizeClass="";
+    }
+    else {
+      $("*").addClass(resizeClass);
+    }
+  }  
 }
