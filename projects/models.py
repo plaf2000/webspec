@@ -8,7 +8,7 @@ class Project(models.Model):
     fft_window_view = models.PositiveIntegerField(default=2048)
     fft_window_project = models.PositiveIntegerField(default=2048)
     title = models.CharField(max_length=50)
-    description = models.TextField(max_length=255)
+    description = models.TextField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
     created_user = models.PositiveIntegerField()
     last_edit = models.DateTimeField(auto_now=True)

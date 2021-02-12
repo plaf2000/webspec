@@ -1,0 +1,123 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script>
+      window.fname;
+      window.csrftoken = {% csrf_token %};
+      window.projectId = {% csrf_token %};
+      window.dfn=2048;
+      window.wfft=dfn;
+      window.zoomRatio=.8;
+    </script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+    <script src="{% static 'objects.js' %}"></script>
+    <script src="{% static 'functions.js' %}"></script>
+  </head>
+  <body>
+
+      <table id="navtrack">
+        <tr>
+          <td></td>
+          <td><canvas id="tinfo"></canvas></td>
+        </tr>
+        <tr>
+          <td><canvas id="frequencies"></canvas></td>
+          <td id="spec-td">
+            <canvas id="spec"></canvas>
+
+
+          </td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><canvas id="timeline"></canvas></td>
+        </tr>
+      </table>
+      <section id="body">
+      <form>
+
+        <table>
+          <tr>
+            <td>
+              N fft
+            </td>
+            <td>
+              Fft window
+            </td>
+            <td>
+              Lower frequency limit
+            </td>
+            <td>
+              Upper frequency limit
+            </td>
+            <td>
+              Offset (s)
+            </td>
+            <td>
+              Channels
+            </td>
+            <td>
+              Contrast
+            </td>
+            <td>
+              Sensitivity
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <select name="nfft" id="nfft">
+                <option value="256">256</option>
+                <option value="512">512</option>
+                <option value="1024">1024</option>
+                <option value="2048">2048</option>
+                <option value="4096">4096</option>
+                <option value="8192">8192</option>
+              </select>
+            </td>
+            <td>
+              <select name="wfft" id="wfft">
+                <option value="256">256</option>
+                <option value="512">512</option>
+                <option value="1024">1024</option>
+                <option value="2048">2048</option>
+                <option value="4096">4096</option>
+                <option value="8192">8192</option>
+              </select>
+            </td>
+            <td>
+              <input type="number" name="lf" id="lf" value="200">
+            </td>
+            <td>
+              <input type="number" name="hf" id="hf" value="8000">
+            </td>
+            <td>
+              <input type="number" name="offset" id="offset" value="0">
+            </td>
+            <td>
+              <input type="radio" name="channels" id="cmono" value="mono" checked>Mono
+              <input type="radio" name="channels" id="cl" value="l">Left
+              <input type="radio" name="channels" id="cr" value="r">Right
+            </td>
+            <td>
+              <input type="range" min="1" max="100" value="50" id="con">
+            </td>
+            <td>
+              <input type="range" min="1" max="100" value="50" id="sens">
+            </td>
+          </tr>
+        </table>
+        <img src="{% static 'loading.gif' %}" id="loading">
+
+      </form>
+    </section>
+    <script src="{% static 'fname.js' %}"></script>
+    <script src="{% static 'main.js' %}"></script>
+
+  </body>
+</html>

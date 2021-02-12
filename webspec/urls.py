@@ -21,4 +21,5 @@ urlpatterns = [
     path('', include('webspecapp.urls')),
     path('det/', include('detections.urls')),
     path('label/', include('labels.urls')),
+    path('projects/', include('projects.urls')),
 ]

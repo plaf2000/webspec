@@ -160,7 +160,7 @@ function loadDetections(tStart,tEnd) {
 
 function updateVal(nfftChanged) {
 
-  window.sr = 48000;
+  window.sr = 44100;
   window.wfft=parseInt($("#wfft").val());
   window.nfft=parseInt($("#nfft").val());
   window.lf=parseInt($("#lf").val());

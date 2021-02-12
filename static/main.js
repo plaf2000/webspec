@@ -1,11 +1,7 @@
 
 $(document).ready(function(){
 
-  window.csrftoken = getCookie('csrftoken');
-  window.analysisId = 1;
-  window.dfn=2048;
-  window.wfft=dfn;
-  window.zoomRatio=.8;
+
   window.fontSize=15;
   var detectionStart = 1570;
   var detectionEnd = 1580;
@@ -50,44 +46,7 @@ $(document).ready(function(){
   window.cursor = new Cursor();
   window.tinfo = new Tinfo();
 
-  var data = [
-    {
-      tstart: 1562.6,
-      tend: 1568.2,
-      fstart: 800,
-      fend: 7200,
-      id: 3+2,
-      label_id: 0,
-      label:'Veryveryverylonglabel'
-    },
-    {
-      tstart: 1559.746,
-      tend: 1560.191,
-      fstart: 1300,
-      fend: 7200,
-      id: 1+2,
-      label_id: 1,
-      label:'CORCOI'
-    },
-    {
-      tstart: 1560.6,
-      tend: 1561.2,
-      fstart: 1300,
-      fend: 7200,
-      id: 2+2,
-      label_id: 1,
-      label:'CORCOI'
-    }
-  ];
-
   var wasEditing;
-
-
-  window.detections = [];
-
-  // for (var i = 0; i < data.length; i++) {
-  //   detections[i] = new Detection(data[i]);
-  // }
 
 
 
