@@ -17,9 +17,10 @@ def callback(event):
 
 def spec(request, proj_id, device_id, file_id):
     project = Project.objects.get(id=proj_id)
-    f = File.objects.get(id=file_id)
-    return render(request, 'spec.html',{
-
+    file_obj = File.objects.get(id=file_id)
+    return render(request, 'spec_view.html',{
+        'file' : file_obj,
+        'project' : project
     })
 
 

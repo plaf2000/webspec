@@ -7,10 +7,12 @@
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script>
       window.fname;
-      window.csrftoken = {% csrf_token %};
-      window.projectId = {% csrf_token %};
-      window.dfn=2048;
-      window.wfft=dfn;
+      window.csrftoken  = '{{ csrf_token }}';
+      window.projectId  = {{ project.id }};
+      window.dfn        = {{ project.nfft_view }};
+      window.wfft       = {{ project.fft_window_view}};
+      window.sr         = {{ file.sample_rate }};
+      window.analysisId = {{ project.id }}
       window.zoomRatio=.8;
     </script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -20,7 +22,6 @@
     <script src="{% static 'functions.js' %}"></script>
   </head>
   <body>
-
       <table id="navtrack">
         <tr>
           <td></td>
@@ -30,8 +31,6 @@
           <td><canvas id="frequencies"></canvas></td>
           <td id="spec-td">
             <canvas id="spec"></canvas>
-
-
           </td>
         </tr>
         <tr>
@@ -91,10 +90,10 @@
               </select>
             </td>
             <td>
-              <input type="number" name="lf" id="lf" value="200">
+              <input type="number" name="lf" id="lf" value="{{ project.lf }}">
             </td>
             <td>
-              <input type="number" name="hf" id="hf" value="8000">
+              <input type="number" name="hf" id="hf" value="{{ project.hf }}">
             </td>
             <td>
               <input type="number" name="offset" id="offset" value="0">

@@ -14,6 +14,14 @@ function getCookie(name) {
     return cookieValue;
 }
 
+function resetMemory() {
+  clearCanvas();
+  specImg = [];
+  center = (view.tx+view.txend)/2;
+  view.start = center;
+  view.end = center;
+}
+
 
 function getAudio() {
   var fnameURI = encodeURIComponent(fname);
@@ -52,9 +60,6 @@ function drawCanvas() {
     detections[i].update();
   }
 
-  // if(hoverI)  {
-  //
-  // }
 
 
 
@@ -159,8 +164,7 @@ function loadDetections(tStart,tEnd) {
 
 
 function updateVal(nfftChanged) {
-
-  window.sr = 44100;
+  
   window.wfft=parseInt($("#wfft").val());
   window.nfft=parseInt($("#nfft").val());
   window.lf=parseInt($("#lf").val());
@@ -184,9 +188,8 @@ function requestSpec(offset,duration = dur) {
   window.requestPending=true;
 
   return $.get(
-      '/spec/',
+      'spec/',
       {
-        fname: fname,
         offset: offset,
         lf: lf,
         hf: hf,
@@ -196,7 +199,6 @@ function requestSpec(offset,duration = dur) {
         con: con,
         nfft: nfft,
         wfft: wfft,
-        sr: sr,
         spx: sPx
       });
 }
@@ -205,41 +207,11 @@ function updateCanvas() {
 
 
 
-  ctx.save();
-  view.pan(0,0);
   axes.updateAll();
+  resetMemory();
+  view.pan(0,0);
 
-
-  var is = [];
-
-  for (var i = 0; i < specImgs.length; i++) {
-    is[i] = i;
-  }
-
-  is.sort(function(a, b) {
-    return Math.abs(a - view.actualI) - Math.abs(b - view.actualI);
-  });
-
-  $.each(specImgs,function(index) {
-    $("#loading").show();
-
-    var i = is[index];
-    var specImg = specImgs[i];
-
-    requestSpec(specImg.start).done(
-      function(data) {
-
-        specImgs[i] = new SpecImg(data,specImg.start);
-        requestPending=false;
-        if(index==specImgs.length-1) {
-          $("#loading").hide();
-        }
-      }
-    );
-  });
-
-
-
+  
 
 }
 

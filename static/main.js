@@ -6,6 +6,8 @@ $(document).ready(function(){
   var detectionStart = 1570;
   var detectionEnd = 1580;
 
+  window.detections = [];
+
   $('#nfft option[value="' + dfn + '"]').prop('selected',true);
   $('#wfft option[value="' + wfft + '"]').prop('selected',true);
 
