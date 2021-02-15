@@ -37,8 +37,7 @@ def create_spec(request, proj_id, device_id, file_id):
     nfft=int(request.GET['nfft'])
     wfft=int(request.GET['wfft'])
     sr=file_obj.sample_rate
-    spx=project.nfft_view/sr/4
-    # spx = nfft/sr/4
+    spx = nfft/sr/4
 
     try:
         f_ulim=int(request.GET['hf'])
@@ -54,7 +53,8 @@ def create_spec(request, proj_id, device_id, file_id):
 
     thresholds = ((sens/25-2)+con*3/50,(sens/25-7)-con*3/50)
 
-    margin_factor = 1
+    margin_factor = 21
+    
 
     if offset == 0:
         dur+=spx*margin_factor

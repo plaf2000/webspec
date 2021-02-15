@@ -181,8 +181,8 @@ function updateVal(nfftChanged) {
   window.channel = ($("input[name=channels]").length>0) ? $("input[name=channels]:checked").val() : "mono";
   window.sens=parseInt($("#sens").val());
   window.con=parseInt($("#con").val());
-  window.dur=cvs.width*dfn/sr/4;
   window.sPx = dfn/sr/4;
+  window.dur = cvs.width*sPx;
   window.HzPx = (hf-lf)/cvs.height;
 
 }
@@ -271,6 +271,7 @@ function addToCanvas(offset,left=false,duration=dur) {
 
     }
   ).fail(function() {
+    stopLoading();
     addToCanvas(offset,left,duration);
   });
 
