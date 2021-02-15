@@ -14,12 +14,22 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function resetMemory() {
-  clearCanvas();
-  specImg = [];
+function clearMemory(clear=false) {
+  if(clear) { clearCanvas() };
+  specImgs = [];
   center = (view.tx+view.txend)/2;
-  view.start = center;
-  view.end = center;
+  view.start = view.tx;
+  view.end = view.tx;
+}
+
+function loading() {
+  $("#loading").show();
+  pending.push(true);
+}
+
+function stopLoading() {
+  pending.pop();
+  if(pending.length == 0){ $("#loading").hide() };
 }
 
 
@@ -83,13 +93,10 @@ function zoomCanvas(dir,x,y,shiftPressed) {
 
     detections[hoverI].updateCssLabel();
   }
-
-
-
-
-
-
 }
+
+
+
 
 function panView(x,y) {
   clearCanvas();
@@ -106,11 +113,8 @@ function panView(x,y) {
 
 
 function moveViewTo(x,y,xT,yF) {
-
   view.moveTo(xPx=x,yPx=y,xT=xT,yF=yF);
   updateMemory();
-
-
   drawCanvas();
 }
 
@@ -145,7 +149,7 @@ function updateMemory() {
 }
 
 function loadDetections(tStart,tEnd) {
-  console.log("Loading");
+  loading();
   $.get(
         '/det/get',
         {
@@ -157,7 +161,7 @@ function loadDetections(tStart,tEnd) {
             for (var i = 0; i < detsToAdd.length; i++) {
               detections[i+lenDet] = new Detection(detsToAdd[i]);
             }
-
+            stopLoading();
           }
         );
 }
@@ -174,10 +178,10 @@ function updateVal(nfftChanged) {
     $('#wfft option[value="' + nfft + '"]').prop('selected',true);
     window.wfft=nfft;
   }
-  window.channel=$("input[name=channels]:checked").val();
+  window.channel = ($("input[name=channels]").length>0) ? $("input[name=channels]:checked").val() : "mono";
   window.sens=parseInt($("#sens").val());
   window.con=parseInt($("#con").val());
-  window.dur=cvs.width*dfn/sr/4
+  window.dur=cvs.width*dfn/sr/4;
   window.sPx = dfn/sr/4;
   window.HzPx = (hf-lf)/cvs.height;
 
@@ -185,9 +189,8 @@ function updateVal(nfftChanged) {
 
 function requestSpec(offset,duration = dur) {
 
-  window.requestPending=true;
 
-  return $.get(
+  var request = $.get(
       'spec/',
       {
         offset: offset,
@@ -200,39 +203,76 @@ function requestSpec(offset,duration = dur) {
         nfft: nfft,
         wfft: wfft,
         spx: sPx
+      })
+      .fail(function() {
+        return requestSpec(offset,duration);
       });
+  return request;
 }
 
 function updateCanvas() {
 
-
+  
 
   axes.updateAll();
-  resetMemory();
+  clearMemory(false);
   view.pan(0,0);
 
+  // ctx.save();
+  // view.pan(0,0);
+  // axes.updateAll();
+
+
+  // var is = [];
+
+  // for (var i = 0; i < specImgs.length; i++) {
+  //   is[i] = i;
+  // }
+
+  // is.sort(function(a, b) {
+  //   return Math.abs(a - view.actualI) - Math.abs(b - view.actualI);
+  // });
+
+  // $.each(specImgs,function(index) {
+  //   $("#loading").show();
+
+  //   var i = is[index];
+  //   var specImg = specImgs[i];
+
+  //   requestSpec(specImg.start).done(
+  //     function(data) {
+
+  //       specImgs[i] = new SpecImg(data,specImg.start);
+  //       requestPending=false;
+  //       if(index==specImgs.length-1) {
+  //         $("#loading").hide();
+  //       }
+  //     }
+  //   );
+  // });
   
 
 }
 
 function addToCanvas(offset,left=false,duration=dur) {
 
-  $("#loading").show();
-
+  loading();
 
   ctx.save();
-  requestSpec(offset,dur).done(
+  console.log(offset,duration);
+  requestSpec(offset,duration).done(
     function(data) {
-      $("#loading").show();
 
       var specImg=new SpecImg(data,offset,true,duration);
       (!left) ? specImgs.push(specImg) : specImgs.unshift(specImg);
-      requestPending=false;
 
-      if(left){view.origFrame+=1};
+      if(left){view.origFrame++};
+      stopLoading();
 
     }
-  );
+  ).fail(function() {
+    addToCanvas(offset,left,duration);
+  });
 
 
 }

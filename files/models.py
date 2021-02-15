@@ -6,6 +6,7 @@ class File(models.Model):
     tend = models.DateTimeField() 
     length = models.FloatField()
     sample_rate = models.PositiveIntegerField()
+    stereo = models.BooleanField(default=False)
     device_id = models.PositiveIntegerField()
     
 

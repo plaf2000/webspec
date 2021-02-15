@@ -33,12 +33,13 @@ $(document).ready(function(){
   fq.height=parseInt(window.innerHeight*3/4);
   window.ctxFq=fq.getContext("2d");
 
-  getAudio();
 
+  getAudio();
 
   updateVal();
 
 
+  window.pending = [];
 
 
 
@@ -113,7 +114,6 @@ $(document).ready(function(){
 
   $("#spec").mousedown(function(e) {
 
-
     if(e.which != 3) {
 
       if (e.which == 1 && e.shiftKey) {
@@ -125,18 +125,13 @@ $(document).ready(function(){
       }
 
       else {
-
         md=true;
-
       }
 
       mp.x=e.clientX;
       mp.y=e.clientY;
 
-
-
     }
-
 
   });
 
@@ -149,18 +144,10 @@ $(document).ready(function(){
 
     detI =$(".detection").index($(this));
 
-    if(e.which == 1) {
-      if (e.target == this) {
-        scaleDet = (scaleTopDet || scaleBottomDet || scaleLeftDet || scaleRightDet) && (this==e.target);
-        moveDet = (!scaleDet);
-
-        detections[detI].focus();
-
-
-      }
-
-
-
+    if(e.which == 1 && e.target == this) {
+      scaleDet = (scaleTopDet || scaleBottomDet || scaleLeftDet || scaleRightDet) && (this==e.target);
+      moveDet = (!scaleDet);
+      detections[detI].focus();
     }
 
     else if(e.which == 2) {
@@ -185,9 +172,6 @@ $(document).ready(function(){
         scaleBottomDet = (detections[focusedI].height-e.offsetY<border);
         scaleLeftDet = (e.offsetX<border);
         scaleRightDet = (detections[focusedI].width-e.offsetX<border);
-
-
-
       }
     }
 
@@ -198,34 +182,23 @@ $(document).ready(function(){
       detections[hoverI].focus();
 
     }
-
-
   });
 
+
   $("#spec-td").on('mouseleave','.detection',function(e) {
-
-  if(!scaleDet && !moveDet) {
-    if(hoverI<detections.length) {
-
-      detections[hoverI].unFocus();
+    if(!scaleDet && !moveDet) {
+      if(hoverI<detections.length) {
+        detections[hoverI].unFocus();
+      }
     }
-
-  }
-
   });
 
 
   $("#spec-td").on('keydown','.label-text',function(e) {
-
-
     if(e.keyCode == 13) {
-
       e.target.blur();
     }
-
   });
-
-
 
   $(document).mousemove(function(e) {
     mouseMove(e);
@@ -240,6 +213,7 @@ $(document).ready(function(){
     updateCanvas();
   });
 
+
   $("#spec-td").on('mousedown','.detection .delete-det',function() {
     var parentDet = $(this).parents(".detection");
     var i = $(".detection").index(parentDet);
@@ -252,6 +226,7 @@ $(document).ready(function(){
       detToDel.unFocus();
     }
   });
+
 
   $("#spec-td").on('click','.detection',function(e) {
     if(this == e.target) {
@@ -266,8 +241,6 @@ $(document).ready(function(){
       }
       mm=false;
     }
-
-
   });
 
 

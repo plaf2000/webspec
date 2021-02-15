@@ -9,9 +9,6 @@ function SpecImg(base64data,offset,adding=false,duration=dur) {
   this.img.onload = function() {
     parent.width=this.width;
     parent.height=this.height;
-    if(adding) {
-      $("#loading").hide();
-    }
     drawCanvas();
   };
 
@@ -656,7 +653,6 @@ function View(offset) {
     if(xT<0) {
       xT = 0;
       xPx=stoPx(0);
-
     }
 
 
@@ -688,7 +684,7 @@ function View(offset) {
 
 
     while(this.tx<this.start && this.start>0) {
-      this.start= (this.start<dur) ? 0 : this.start-dur;
+      this.start = (this.start<dur) ? 0 : this.start-dur;
       addToCanvas(this.start,true);
     }
 
