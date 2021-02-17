@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>List of all projects</title>
+    </head>
+    <body>
+        <a href="create/">Create e new project</a>
+        {% for project in projects %}
+            
+                <h2 style="margin-top: 50px;">{{project.title}}</h2>
+                <h3>Created the {{project.created|date:'Y-m-d \a\t H:i:s' }} by {{project.created_user}}, last edit the {{project.last_edit|date:'Y-m-d \a\t H:i:s' }} by {{project.last_edit_user}} </h3>
+                <p>{{project.description|linebreaks}}</p>
+                <a href="{{project.id}}">Open project</a> - <a href="edit/{{project.id}}/">Edit project</a>
+                
+        {% endfor %}
+    </body>
+</html>

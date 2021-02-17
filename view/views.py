@@ -69,12 +69,9 @@ def create_spec(request, proj_id, device_id, file_id):
     y, _ = librosa.load(fname,sr=sr,duration=dur,offset=offset,mono=mono)
     val = (librosa.get_duration(y, sr)-dur)*sr
     to_append = False
-    # print(y.shape)   
     if -1<val<0:
-        # print(val)
         to_append = True
         y_append, _ = librosa.load(fname,sr=sr,duration=1/sr,offset=offset+dur,mono=mono)
-        # print(y_append.shape)
             
     elif 0<val<1:
         if mono:
@@ -82,8 +79,7 @@ def create_spec(request, proj_id, device_id, file_id):
         else:
             y = y[i_ch,:-1]
     
-    # print(y.shape) 
-    print((librosa.get_duration(y, sr)-dur)*sr)
+    
     
 
 
@@ -96,7 +92,7 @@ def create_spec(request, proj_id, device_id, file_id):
         else :
             y=np.append(y,np.asfortranarray(y_append[i_ch,0]))
     
-
+    print((librosa.get_duration(y, sr)-dur)*sr)
 
 
     data = np.log10(np.abs(librosa.stft(y,n_fft=nfft,win_length=wfft))**2)-thresholds[0]
