@@ -36,9 +36,10 @@ def create_spec(request, proj_id, device_id, file_id):
     fname=File.objects.get(id=file_id).path
     nfft=int(request.GET['nfft'])
     wfft=int(request.GET['wfft'])
+    last=bool(int(request.GET['last']))
     sr=file_obj.sample_rate
-    spx = nfft/sr/4
-
+    spx = wfft/sr/4
+    mono = ch=="mono"
     try:
         f_ulim=int(request.GET['hf'])
     except:
@@ -48,15 +49,16 @@ def create_spec(request, proj_id, device_id, file_id):
     except:
         f_llim=None
 
+    first = offset==0
 
     i_ch = 0 if ch=="l" else 1 if ch=="r" else None
 
     thresholds = ((sens/25-2)+con*3/50,(sens/25-7)-con*3/50)
 
-    margin_factor = 21
     
+    margin_factor = 2
 
-    if offset == 0:
+    if first:
         dur+=spx*margin_factor
     else:
         offset-=spx*margin_factor
@@ -64,28 +66,55 @@ def create_spec(request, proj_id, device_id, file_id):
 
 
 
-    y, sr = librosa.load(fname,sr=sr,duration=dur,offset=offset,mono=(ch=="mono"))
+    y, _ = librosa.load(fname,sr=sr,duration=dur,offset=offset,mono=mono)
+    val = (librosa.get_duration(y, sr)-dur)*sr
+    to_append = False
+    # print(y.shape)   
+    if -1<val<0:
+        # print(val)
+        to_append = True
+        y_append, _ = librosa.load(fname,sr=sr,duration=1/sr,offset=offset+dur,mono=mono)
+        # print(y_append.shape)
+            
+    elif 0<val<1:
+        if mono:
+            y = y[:-1]
+        else:
+            y = y[i_ch,:-1]
+    
+    # print(y.shape) 
+    print((librosa.get_duration(y, sr)-dur)*sr)
+    
 
 
-    if len(y.shape)>1:
+    if not mono:
         y=np.asfortranarray(y[i_ch])
-
-    last=(dur*sr != y.shape[0])
+    
+    if to_append:
+        if mono:
+            y=np.append(y,y_append[0])
+        else :
+            y=np.append(y,np.asfortranarray(y_append[i_ch,0]))
+    
 
 
 
     data = np.log10(np.abs(librosa.stft(y,n_fft=nfft,win_length=wfft))**2)-thresholds[0]
     # data = librosa.amplitude_to_db(np.abs(librosa.stft(y,n_fft=nfft,win_length=wfft)),ref=sens*200)
 
+
+    # print(data.shape)
     i_ulim=int((data.shape[0]*2/sr)*f_ulim) if f_ulim is not None else None
     i_llim=int((data.shape[0]*2/sr)*f_llim) if f_llim is not None else None
+
 
     data = data[i_llim:i_ulim]
     if not last:
         data=data[:,:-margin_factor]
-    if offset>0:
+    if not first:
         data=data[:,margin_factor:]
 
+    # print(data.shape)
 
     # data[data>0]=0
     data[data>0]=0

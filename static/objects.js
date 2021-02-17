@@ -2,6 +2,7 @@ function SpecImg(base64data,offset,adding=false,duration=dur) {
   this.base64=base64data;
   this.start=offset;
   this.end=offset+duration;
+  this.duration = duration;
   this.img=new Image;
   this.img.src = 'data:image/png;base64,'+base64data;
 
@@ -13,7 +14,7 @@ function SpecImg(base64data,offset,adding=false,duration=dur) {
   };
 
   this.drawOnCanvas = function() {
-    ctx.drawImage(this.img, 0, 0, this.width, this.height, stoPx(this.start), 0, duration/sPx, window.cvs.height);
+    ctx.drawImage(this.img, 0, 0, this.width, this.height, stoPx(this.start), 0, this.duration/sPx, window.cvs.height);
   };
 }
 
@@ -684,8 +685,17 @@ function View(offset) {
 
 
     while(this.tx<this.start && this.start>0) {
-      this.start = (this.start<dur) ? 0 : this.start-dur;
-      addToCanvas(this.start,true);
+      // this.start =  ? 0 : this.start-dur;
+      // addToCanvas(this.start,true);
+      if(this.start>dur) {
+        this.start-=dur;
+        addToCanvas(this.start,true);
+      }
+      else {
+        addToCanvas(0,true);
+        // addToCanvas(0,true,this.start);
+        this.start=0;
+      }
     }
 
 

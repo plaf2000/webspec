@@ -22,6 +22,18 @@ function clearMemory(clear=false) {
   view.end = view.tx;
 }
 
+function alternativeClearMemory(clear=false) {
+  if(clear) { clearCanvas() };
+  specImgs = [];
+
+  k=Math.ceil(view.tx/dur);
+  view.start = k*dur;
+  view.end = k*dur;
+}
+
+
+
+
 function loading() {
   $("#loading").show();
   pending.push(true);
@@ -188,7 +200,7 @@ function updateVal(nfftChanged) {
 }
 
 function requestSpec(offset,duration = dur) {
-
+  last = (offset+duration>audio.duration) ? 1 : 0;
 
   var request = $.get(
       'spec/',
@@ -202,11 +214,10 @@ function requestSpec(offset,duration = dur) {
         con: con,
         nfft: nfft,
         wfft: wfft,
-        spx: sPx
-      })
-      .fail(function() {
-        return requestSpec(offset,duration);
-      });
+        spx: sPx,
+        last: last
+      }
+  );
   return request;
 }
 
@@ -215,7 +226,8 @@ function updateCanvas() {
   
 
   axes.updateAll();
-  clearMemory(false);
+  // clearMemory(false);
+  alternativeClearMemory(false);
   view.pan(0,0);
 
   // ctx.save();
