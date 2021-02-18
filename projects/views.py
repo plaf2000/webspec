@@ -10,7 +10,6 @@ from django.http import HttpResponseRedirect
 
 def list_projects(request):
     return render(request, 'list_projects.html',{
-        'createdusers' : User.objects,
         'projects' : Project.objects.all()
     })
 

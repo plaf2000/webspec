@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>All devices - {{ project.title}}</title>
+    </head>
+    <style>
+        thead {
+            font-weight: bold;
+        }
+        td {
+            padding: 5px 10px;
+        }
+        iframe {
+            border: 1px solid grey;
+            height: 200px;
+            width: 200px;
+        }
+    </style>
+    <body>
+        {% include "project_detail.html" %}
+        <h2>All devices</h2>
+        <table>
+            <thead>
+                <tr>
+                    <td>Place</td>
+                    <td>Device name/id</td>
+                    <td>Recorder</td>
+                    <td>Started recording</td>
+                    <td>Ended recording</td>
+                    <td></td>
+                </tr>
+            </thead>
+            {% for dev in devices %}
+                <tr >
+                    <td><iframe src="/places/map/{{ dev.place.id }}/18"></iframe></td>
+                    <td>{{ dev.device.name }}</td>
+                    <td>{{ dev.device.recorder.name }} ({{ dev.device.recorder.brand }})</td>
+                    <td>{{ dev.first_file.tstart|date:'Y-m-d \a\t H:i:s' }}</td>
+                    <td>{{ dev.last_file.tend|date:'Y-m-d \a\t H:i:s' }}</td>
+                    <td><a href="{{dev.id}}/">See all recordings</a></td>
+                </tr>
+            {% endfor %}
+        </table>
+    </body>
+</html>
