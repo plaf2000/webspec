@@ -40,6 +40,7 @@ $(document).ready(function(){
 
 
   window.pending = [];
+  
 
 
 
@@ -57,7 +58,8 @@ $(document).ready(function(){
 
 
   window.specImgs=[];
-  addToCanvas(offset);
+  window.nSpecs = 0;
+  addToCanvas(offset,0);
   view.moveTo(xPx=0,yPx=0);
 
   window.memoryStart = view.tx;

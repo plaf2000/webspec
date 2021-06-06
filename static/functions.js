@@ -14,17 +14,13 @@ function getCookie(name) {
     return cookieValue;
 }
 
+
+
 function clearMemory(clear=false) {
   if(clear) { clearCanvas() };
   specImgs = [];
-  center = (view.tx+view.txend)/2;
-  view.start = view.tx;
-  view.end = view.tx;
-}
-
-function alternativeClearMemory(clear=false) {
-  if(clear) { clearCanvas() };
-  specImgs = [];
+  window.nSpecs=0;
+  // $.get('clear/');
 
   k=Math.ceil(view.tx/dur);
   view.start = k*dur;
@@ -70,6 +66,7 @@ function clearCanvas() {
 function drawCanvas() {
 
   clearCanvas()
+
   for(var i =0; i<specImgs.length; i++) {
     specImgs[i].drawOnCanvas();
   }
@@ -100,6 +97,11 @@ function zoomCanvas(dir,x,y,shiftPressed) {
   tinfo.update();
 
   drawCanvas();
+
+  if(!audio.paused) {
+    audio.pause();
+    audio.play();
+  }
 
   if(hoverI!='') {
 
@@ -193,14 +195,16 @@ function updateVal(nfftChanged) {
   window.channel = ($("input[name=channels]").length>0) ? $("input[name=channels]:checked").val() : "mono";
   window.sens=parseInt($("#sens").val());
   window.con=parseInt($("#con").val());
-  window.sPx = dfn/sr/4;
-  window.dur = cvs.width*sPx;
+  // window.sPx = dfn/sr/4;
+  window.dur = 15;
+  window.sPx= dur/cvs.width;
   window.HzPx = (hf-lf)/cvs.height;
 
 }
 
-function requestSpec(offset,duration = dur) {
+function requestSpec(offset,i,duration = dur) {
   last = (offset+duration>audio.duration) ? 1 : 0;
+  factor=1;
 
   var request = $.get(
       'spec/',
@@ -215,7 +219,9 @@ function requestSpec(offset,duration = dur) {
         nfft: nfft,
         wfft: wfft,
         spx: sPx,
-        last: last
+        last: last,
+        i: i,
+        factor : factor
       }
   );
   return request;
@@ -226,53 +232,20 @@ function updateCanvas() {
   
 
   axes.updateAll();
-  // clearMemory(false);
-  alternativeClearMemory(false);
+  clearMemory(false);
   view.pan(0,0);
-
-  // ctx.save();
-  // view.pan(0,0);
-  // axes.updateAll();
-
-
-  // var is = [];
-
-  // for (var i = 0; i < specImgs.length; i++) {
-  //   is[i] = i;
-  // }
-
-  // is.sort(function(a, b) {
-  //   return Math.abs(a - view.actualI) - Math.abs(b - view.actualI);
-  // });
-
-  // $.each(specImgs,function(index) {
-  //   $("#loading").show();
-
-  //   var i = is[index];
-  //   var specImg = specImgs[i];
-
-  //   requestSpec(specImg.start).done(
-  //     function(data) {
-
-  //       specImgs[i] = new SpecImg(data,specImg.start);
-  //       requestPending=false;
-  //       if(index==specImgs.length-1) {
-  //         $("#loading").hide();
-  //       }
-  //     }
-  //   );
-  // });
   
 
 }
 
-function addToCanvas(offset,left=false,duration=dur) {
+function addToCanvas(offset,i,left=false,duration=dur) {
 
   loading();
 
   ctx.save();
+  console.log(i);
   console.log(offset,duration);
-  requestSpec(offset,duration).done(
+  requestSpec(offset,i,duration).done(
     function(data) {
 
       var specImg=new SpecImg(data,offset,true,duration);
@@ -284,7 +257,7 @@ function addToCanvas(offset,left=false,duration=dur) {
     }
   ).fail(function() {
     stopLoading();
-    addToCanvas(offset,left,duration);
+    addToCanvas(offset,i,left,duration);
   });
 
 

@@ -1,10 +1,11 @@
 function SpecImg(base64data,offset,adding=false,duration=dur) {
-  this.base64=base64data;
+  this.base64=window.btoa(base64data);
   this.start=offset;
   this.end=offset+duration;
   this.duration = duration;
   this.img=new Image;
-  this.img.src = 'data:image/png;base64,'+base64data;
+  this.img.src = 'data:image/png;base64,'+this.base64;
+  this.img.style="-webkit-filter: blur(500px);  filter: blur(500px);";
 
   var parent=this;
   this.img.onload = function() {
@@ -563,7 +564,7 @@ function View(offset) {
     
 
     newRx = this.rx*ratio;
-    if(newRx<.018) return;
+    // if(newRx<.018) return;
     newRx = (Math.round(newRx*Math.pow(10,12))/Math.pow(10,12)==1)? 1 : newRx;
 
     
@@ -683,31 +684,34 @@ function View(offset) {
     this.txend=pxtoS(this.xend);
     this.fyend=pxtoHz(this.yend);
 
+    
 
     while(this.tx<this.start && this.start>0) {
       // this.start =  ? 0 : this.start-dur;
       // addToCanvas(this.start,true);
       if(this.start>dur) {
         this.start-=dur;
-        addToCanvas(this.start,true);
+        addToCanvas(this.start,nSpecs,true);
       }
       else {
-        addToCanvas(0,true);
+        addToCanvas(0,nSpecs,true);
         // addToCanvas(0,true,this.start);
         this.start=0;
       }
+      nSpecs++;
     }
 
 
     while(this.txend>this.end && this.end<audio.duration) {
       if(this.end+dur<audio.duration) {
-        addToCanvas(this.end,false);
+        addToCanvas(this.end,nSpecs,false);
         this.end+=dur;
       }
       else {
-        addToCanvas(this.end,false,audio.duration-this.end);
+        addToCanvas(this.end,nSpecs,false,audio.duration-this.end);
         this.end=audio.duration;
       }
+      nSpecs++;
     }
 
 
