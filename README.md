@@ -12,3 +12,9 @@ The interface is located at `http://127.0.0.1:8000/webspec/test/`.
 *  Modify the detections by clicking the borders and moving the mouse
 *  You can modify the label name by clicking on it, but it won't get saved
 *  Delete the label by clicking the trash icon
+
+## Installation
+
+First, create a virtual environment in the desired folder: 
+```python3 -m venv /path/to/new/virtual/environment
+```
