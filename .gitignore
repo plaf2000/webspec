@@ -5,3 +5,5 @@ key.txt
 __pycache__/
 .env
 db.sqlite3
+birdslist.csv
+birdslist/
