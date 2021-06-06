@@ -16,5 +16,7 @@ The interface is located at `http://127.0.0.1:8000/webspec/test/`.
 ## Installation
 
 First, create a virtual environment in the desired folder: 
-```python3 -m venv /path/to/new/virtual/environment
+```shell
+python3 -m venv /path/to/new/virtual/environment
 ```
+
