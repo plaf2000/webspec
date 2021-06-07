@@ -15,8 +15,50 @@ The interface is located at `http://127.0.0.1:8000/webspec/test/`.
 
 ## Installation
 
-First, create a virtual environment in the desired folder: 
+First, you have to create a virtual environment. Move into the desired folder and start the virtual environment: 
 ```shell
-python3 -m venv /path/to/new/virtual/environment
+python3 -m venv .
 ```
 
+Then activate the virtual environment:
+
+```shell
+source bin/activate
+```
+
+Now you can clone the project with either
+
+```shell
+git clone https://github.com/plaf2000/webspec.git
+```
+
+or
+
+```shell
+git clone git@github.com:plaf2000/webspec.git
+```
+
+or by downloading the zip file.
+
+Now move into the repository folder and install the dependencies:
+
+```shell
+cd webspec
+pip3 install -r requirements.txt
+```
+
+Now you have to update the models and create a super user
+
+```shell
+python3 manage.py makemigrations
+python3 manage.py migrate
+python3 manage.py createsuperuser
+```
+
+and finally run the server via Django
+
+```
+python3 manage.py runserver
+```
+
+Now the project is running at `http://localhost:8000/`!
