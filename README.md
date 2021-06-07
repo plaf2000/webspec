@@ -47,6 +47,12 @@ cd webspec
 pip3 install -r requirements.txt
 ```
 
+Then you have to set the `SECRET_KEY` for Django. The script `generatekey.py` already does that
+
+```
+python3 generatekey.py
+```
+
 Now you have to update the models and create a super user
 
 ```shell
@@ -62,3 +68,4 @@ python3 manage.py runserver
 ```
 
 Now the project is running at `http://localhost:8000/`!
+
