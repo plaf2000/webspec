@@ -15,7 +15,7 @@ The interface is located at `http://127.0.0.1:8000/webspec/test/`.
 
 ## Installation
 
-First, you have to create a virtual environment. Move into the desired folder and start the virtual environment: 
+First, you have to create a virtual environment. Move into the desired folder and create the virtual environment: 
 ```shell
 python3 -m venv .
 ```
@@ -23,7 +23,10 @@ python3 -m venv .
 Then activate the virtual environment:
 
 ```shell
+# Linux, macOS:
 source bin/activate
+# Windows:
+Scripts\activate
 ```
 
 Now you can clone the project with either
@@ -40,32 +43,12 @@ git clone git@github.com:plaf2000/webspec.git
 
 or by downloading the zip file.
 
-Now move into the repository folder and install the dependencies:
+Now move into the repository folder and run the installer:
 
 ```shell
-cd webspec
-pip3 install -r requirements.txt
-```
-
-Then you have to set the `SECRET_KEY` for Django. The script `generatekey.py` already does that
-
-```
-python3 generatekey.py
-```
-
-Now you have to update the models and create a super user
-
-```shell
-python3 manage.py makemigrations
-python3 manage.py migrate
-python3 manage.py createsuperuser
-```
-
-and finally run the server via Django
-
-```
-python3 manage.py runserver
+cd webspec && sh installer.sh
 ```
 
 Now the project is running at `http://localhost:8000/`!
 
+To interrupt the server press `CTRL+c`. If you want to restart the server, make sure the virtual environment is activated (`deactivate` in order to deactivate it) and you're into the repository folder (`/path/to/your/venv/webspec`), then run the server by typing `python3 manage.py runserver`.
