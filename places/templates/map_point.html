@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Map for {{place.name}}</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""/>
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+        <style>
+            #map {
+                height:100vh;
+                width:100vw;
+                margin: 0;
+            }
+            body {
+                margin:0;
+                padding:0;
+            }
+        </style>
+    </head>
+    <body>
+        <section id="map"></section>
+        <script>
+            var center = new L.LatLng({{ place.lat }}, {{ place.lon }});
+            
+            // var openstreet = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoicGxhZjIwMDAiLCJhIjoiY2tsOXdveTBtMHE5MzJ1bGI0dmtwZmc5MCJ9.H7_MJntssuU8OPvdKV3ZTA', {
+            //     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery &copy; <a href="https://www.mapbox.com/">Mapbox</a>',
+            //     maxZoom: 18,
+            //     id: 'mapbox/streets-v11',
+            //     tileSize: 512,
+            //     zoomOffset: -1,
+            //     accessToken: 'pk.eyJ1IjoicGxhZjIwMDAiLCJhIjoiY2tsOXdveTBtMHE5MzJ1bGI0dmtwZmc5MCJ9.H7_MJntssuU8OPvdKV3ZTA'
+            // })
+            // var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+            //     attribution: 'Map Data &copy;2021 Images &copy;2021 , CNES / Airbus, Landsat / Copernicus, Maxar Technologies',
+            //     maxZoom: 18,
+            //     subdomains:['mt0','mt1','mt2','mt3']
+            // });
+            var OpenStreetMapCH = L.tileLayer('https://tile.osm.ch/switzerland/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            });
+            var map = L.map('map',{
+                center: [{{ place.lat }}, {{ place.lon }}],
+                zoom: {{ zoom }},
+                layers: OpenStreetMapCH
+                // layers: [googleSat,openstreet,OpenStreetMapCH],
+            });
+            // var baseMaps = {
+            //     "Open Street Map": openstreet,
+            //     "Google Satellite": googleSat,
+            //     "Open Street Map CH": OpenStreetMapCH
+            // };
+            // L.control.layers(baseMaps).addTo(map);
+            var marker = L.marker([{{ place.lat }}, {{ place.lon }}]).addTo(map);
+            marker.bindPopup("{{ place.name }}").openPopup();
+            // map.setMaxBounds(L.latLngBounds(center, center));
+        </script>
+    </body>
+</html>
