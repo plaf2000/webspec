@@ -1,4 +1,6 @@
-class xAx extends Ax {
+import {Ax} from './Ax'
+import {Axes} from './Axes'
+export class xAx extends Ax {
     unit = "s";
   
     rConv = sPx;

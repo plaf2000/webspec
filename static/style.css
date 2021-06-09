@@ -26,6 +26,8 @@
   position: relative;
   top:0;
   left:0;
+  width: calc(100vw);
+  height: 85vh;
   display: inline-block;
   margin: 0;
   padding: 0;
@@ -45,7 +47,7 @@
   /* border-top: 1px solid red; */
 }
 #tinfo {
-  display: block;
+  display: none;
   margin: 0;
   padding:0;
   /* border-top: 1px solid red; */

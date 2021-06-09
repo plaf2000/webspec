@@ -1,4 +1,4 @@
-abstract class Ax {
+export abstract class Ax {
     abstract unit: string;
     first: number = 0;
     delta: number = 0;
@@ -19,7 +19,7 @@ abstract class Ax {
       this.deltas = parent.deltas;
       this.updateDelta();
     }
-    
+
     updateDelta(): void {
         let i: number = 0;
         let j: number = -2;

@@ -18,28 +18,32 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
-    <script type="module" src="{% static 'objects.js' %}"></script>
-    <!-- <script src="{% static 'functions.js' %}"></script> -->
+    <script src="{% static 'objects.js' %}"></script>
+    <script src="{% static 'functions.js' %}"></script>
   </head>
   <body>
-      <table id="navtrack">
-        <tr>
+        <!-- <tr>
           <td></td>
           <td><canvas id="tinfo"></canvas></td>
         </tr>
         <tr>
           <td><canvas id="frequencies"></canvas></td>
           <td id="spec-td">
-            <img src="{% static 'loading_3.gif' %}" id="loading">
-            <canvas id="spec"></canvas>
+            
           </td>
         </tr>
         <tr>
           <td></td>
           <td><canvas id="timeline"></canvas></td>
-        </tr>
-      </table>
+        </tr> -->
+        <canvas id="frequencies"></canvas>
+        <canvas id="tinfo"></canvas>
+        <canvas id="timeline"></canvas>
+        <img src="{% static 'loading_3.gif' %}" id="loading">
+        <canvas id="spec"></canvas>
+        
       <section id="body">
+        
       <form>
 
         <table>
@@ -101,13 +105,15 @@
             <td>
               <input type="number" name="offset" id="offset" value="0">
             </td>
+            {% if file.stereo %}   
             <td>
-              {% if file.stereo %}            
+                       
                 <input type="radio" name="channels" name="channels" id="cmono" value="mono" checked>Mono
                 <input type="radio" name="channels" name="channels" id="cl" value="l">Left
                 <input type="radio" name="channels" name="channels" id="cr" value="r">Right
-              {% endif %}
+              
             </td>
+            {% endif %}
             
             <td>
               <input type="range" min="1" max="100" value="50" id="con">

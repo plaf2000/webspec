@@ -1,5 +1,3 @@
-# import sys
-# sys.path.append('/home/plaf2000/webspec/webspec')
 import labels
 from labels.models import Species
 

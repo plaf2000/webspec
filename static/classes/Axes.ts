@@ -1,4 +1,4 @@
-class Axes {
+export class Axes {
     deltas: number[] = [1, 2, 5];
   
     x: xAx = new xAx(this);

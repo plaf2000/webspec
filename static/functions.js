@@ -1,31 +1,34 @@
 function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      // Does this cookie string begin with the name we want?
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
-  }
-  return cookieValue;
+    return cookieValue;
 }
 
-function clearMemory(clear = false) {
-  if (clear) {
-    clearCanvas();
-  }
+
+
+function clearMemory(clear=false) {
+  if(clear) { clearCanvas() };
   specImgs = [];
-  window.nSpecs = 0;
+  window.nSpecs=0;
   // $.get('clear/');
 
-  k = Math.ceil(view.tx / dur);
-  view.start = k * dur;
-  view.end = k * dur;
+  k=Math.ceil(view.tx/dur);
+  view.start = k*dur;
+  view.end = k*dur;
 }
+
+
+
 
 function loading() {
   $("#loading").show();
@@ -34,35 +37,37 @@ function loading() {
 
 function stopLoading() {
   pending.pop();
-  if (pending.length == 0) {
-    $("#loading").hide();
-  }
+  if(pending.length == 0){ $("#loading").hide() };
 }
+
 
 function getAudio() {
   var fnameURI = encodeURIComponent(fname);
-  var url = "/audio/?f=" + fnameURI;
+  var url = '/audio/?f='+fnameURI;
   window.audio = new Audio(url);
-  audio.onloadeddata = function () {
+  audio.onloadeddata = function() {
     this.currentTime = offset;
   };
-  audio.onplay = function () {
+  audio.onplay = function() {
     cursor.move();
   };
-  audio.onpause = function () {
+  audio.onpause = function() {
     cursor.stop();
-  };
+  }
 }
 
 function clearCanvas() {
-  ctx.clearRect(view.x, view.y, cvs.width / view.rx, cvs.height / view.ry);
-  ctxTinfo.clearRect(0, 0, tinfocvs.width, tinfocvs.height);
+
+  ctx.clearRect(fqwidth+view.x, tinfocvsheight+view.y, cvswidth/view.rx, cvsheight/view.ry);
+  ctx.clearRect(0, 0, tinfocvswidth, tinfocvsheight);
+
 }
 
 function drawCanvas() {
+
   clearCanvas();
 
-  for (var i = 0; i < specImgs.length; i++) {
+  for(var i =0; i<specImgs.length; i++) {
     specImgs[i].drawOnCanvas();
   }
 
@@ -70,17 +75,19 @@ function drawCanvas() {
   cursor.drawOnCanvas();
   tinfo.drawOnCanvas();
 
-  for (var i = 0; i < detections.length; i++) {
+  for(var i =0; i<detections.length; i++) {
     detections[i].update();
   }
 }
 
-function zoomCanvas(dir, x, y, shiftPressed) {
+
+
+function zoomCanvas(dir,x,y,shiftPressed) {
   clearCanvas();
 
-  var ratio = Math.pow(zoomRatio, dir);
+  var ratio=Math.pow(zoomRatio,dir);
 
-  view.zoom(dir, ratio, x, y, shiftPressed);
+  view.zoom(dir,ratio,x,y,shiftPressed);
   updateMemory();
 
   axes.updateAll();
@@ -88,30 +95,36 @@ function zoomCanvas(dir, x, y, shiftPressed) {
 
   drawCanvas();
 
-  if (!audio.paused) {
+  if(!audio.paused) {
     audio.pause();
     audio.play();
   }
 
-  if (hoverI != "") {
+  if(hoverI!='') {
+
     detections[hoverI].updateCssLabel();
   }
 }
 
-function panView(x, y) {
+
+
+
+function panView(x,y) {
   clearCanvas();
 
-  view.pan(x, y);
+  view.pan(x,y);
   axes.updatePos();
   tinfo.update();
 
   updateMemory();
 
+
   drawCanvas();
 }
 
-function moveViewTo(x, y, xT, yF) {
-  view.moveTo((xPx = x), (yPx = y), (xT = xT), (yF = yF));
+
+function moveViewTo(x,y,xT,yF) {
+  view.moveTo(xPx=x,yPx=y,xT=xT,yF=yF);
   updateMemory();
   drawCanvas();
 }
@@ -121,250 +134,287 @@ function setCursor(x) {
   audio.currentTime = cursor.tx;
   tinfo.update();
 
+
   drawCanvas();
 }
 
-function setMarker(x, marker) {
+function setMarker(x,marker) {
   marker.set(x);
   tinfo.update();
+
 
   drawCanvas();
 }
 
 function updateMemory() {
-  var buffer = view.txend - view.tx;
-  if (view.tx < memoryStart) {
-    loadDetections(view.tx - buffer, memoryStart);
-    memoryStart = view.tx - buffer;
+  var buffer = view.txend-view.tx;
+  if(view.tx<memoryStart) {
+    loadDetections(view.tx-buffer,memoryStart);
+    memoryStart = view.tx-buffer;
   }
-  if (view.txend > memoryEnd) {
-    loadDetections(memoryEnd, view.txend + buffer);
-    memoryEnd = view.txend + buffer;
+  if(view.txend>memoryEnd) {
+    loadDetections(memoryEnd,view.txend+buffer);
+    memoryEnd = view.txend+buffer;
   }
+
 }
 
-function loadDetections(tStart, tEnd) {
+function loadDetections(tStart,tEnd) {
   loading();
-  $.get("/det/get", {
-    ts: tStart,
-    te: tEnd,
-  }).done(function (detsToAdd) {
-    var lenDet = detections.length;
-    for (var i = 0; i < detsToAdd.length; i++) {
-      detections[i + lenDet] = new Detection(detsToAdd[i]);
-    }
-    stopLoading();
-  });
+  $.get(
+        '/det/get',
+        {
+          ts: tStart,
+          te: tEnd
+        }).done(
+          function(detsToAdd) {
+            var lenDet = detections.length;
+            for (var i = 0; i < detsToAdd.length; i++) {
+              detections[i+lenDet] = new Detection(detsToAdd[i]);
+            }
+            stopLoading();
+          }
+        );
 }
+
 
 function updateVal(nfftChanged) {
-  window.wfft = parseInt($("#wfft").val());
-  window.nfft = parseInt($("#nfft").val());
-  window.lf = parseInt($("#lf").val());
-  window.hf = parseInt($("#hf").val());
-  window.offset = parseInt($("#offset").val());
-  if (nfftChanged || wfft > nfft) {
-    $('#wfft option[value="' + nfft + '"]').prop("selected", true);
-    window.wfft = nfft;
+  
+  window.wfft=parseInt($("#wfft").val());
+  window.nfft=parseInt($("#nfft").val());
+  window.lf=parseInt($("#lf").val());
+  window.hf=parseInt($("#hf").val());
+  window.offset=parseInt($("#offset").val());
+  if(nfftChanged || wfft>nfft) {
+    $('#wfft option[value="' + nfft + '"]').prop('selected',true);
+    window.wfft=nfft;
   }
-  window.channel =
-    $("input[name=channels]").length > 0
-      ? $("input[name=channels]:checked").val()
-      : "mono";
-  window.sens = parseInt($("#sens").val());
-  window.con = parseInt($("#con").val());
+  window.channel = ($("input[name=channels]").length>0) ? $("input[name=channels]:checked").val() : "mono";
+  window.sens=parseInt($("#sens").val());
+  window.con=parseInt($("#con").val());
   // window.sPx = dfn/sr/4;
   window.dur = 15;
-  window.sPx = dur / cvs.width;
-  window.HzPx = (hf - lf) / cvs.height;
+  window.sPx= dur/cvswidth;
+  window.HzPx = (hf-lf)/cvsheight;
+
 }
 
-function requestSpec(offset, i, duration = dur) {
-  last = offset + duration > audio.duration ? 1 : 0;
-  factor = 1;
+function requestSpec(offset,i,duration = dur) {
+  last = (offset+duration>audio.duration) ? 1 : 0;
+  factor=1;
 
-  var request = $.get("spec/", {
-    offset: offset,
-    lf: lf,
-    hf: hf,
-    dur: duration,
-    ch: channel,
-    sens: sens,
-    con: con,
-    nfft: nfft,
-    wfft: wfft,
-    spx: sPx,
-    last: last,
-    i: i,
-    factor: factor,
-  });
+  var request = $.get(
+      'spec/',
+      {
+        offset: offset,
+        lf: lf,
+        hf: hf,
+        dur: duration,
+        ch: channel,
+        sens: sens,
+        con: con,
+        nfft: nfft,
+        wfft: wfft,
+        spx: sPx,
+        last: last,
+        i: i,
+        factor : factor
+      }
+  );
   return request;
 }
 
 function updateCanvas() {
+
+  
+
   axes.updateAll();
   clearMemory(false);
-  view.pan(0, 0);
+  view.pan(0,0);
+  
+
 }
 
-function addToCanvas(offset, i, left = false, duration = dur) {
+function addToCanvas(offset,i,left=false,duration=dur) {
+
   loading();
 
   ctx.save();
   console.log(i);
-  console.log(offset, duration);
-  requestSpec(offset, i, duration)
-    .done(function (data) {
-      var specImg = new SpecImg(data, offset, true, duration);
-      !left ? specImgs.push(specImg) : specImgs.unshift(specImg);
+  console.log(offset,duration);
+  requestSpec(offset,i,duration).done(
+    function(data) {
 
-      if (left) {
-        view.origFrame++;
-      }
+      var specImg=new SpecImg(data,offset,true,duration);
+      (!left) ? specImgs.push(specImg) : specImgs.unshift(specImg);
+
+      if(left){view.origFrame++};
       stopLoading();
-    })
-    .fail(function () {
-      stopLoading();
-      addToCanvas(offset, i, left, duration);
-    });
+
+    }
+  ).fail(function() {
+    stopLoading();
+    addToCanvas(offset,i,left,duration);
+  });
+
+
 }
 
+
 function stoPx(x) {
-  return (x - view.origOffset) / sPx;
+  return ((x-view.origOffset)/sPx)+fqwidth;
 }
 
 function pxtoS(x) {
-  return x * sPx + view.origOffset;
+  return (x-fqwidth)*sPx+view.origOffset;
 }
 
 function HztoPx(y) {
-  return (hf - y) / HzPx;
+  return (hf-y)/HzPx+tinfocvsheight;
 }
 
 function pxtoHz(y) {
-  return hf - y * HzPx;
+  return hf-(y-tinfocvsheight)*HzPx;
 }
 
-function timeToStr(time, value, cs = false) {
-  var s = parseInt(value);
-  var ms = value - s;
+function timeToStr(time,value,cs=false) {
+  var s=parseInt(value);
+  var ms=(value-s);
   time.setSeconds(s);
-  var sms = String(Math.round((time.getSeconds() + ms) * 1000) / 1000);
-  if (cs) {
-    if (sms.indexOf(".") == -1) {
-      sms += ".";
+  var sms=String(Math.round((time.getSeconds()+ms)*1000)/1000);
+  if(cs) {
+    if(sms.indexOf(".")==-1) {
+      sms+=".";
     }
-    while (sms.split(".")[1].length < 3) {
-      sms += "0";
+    while(sms.split(".")[1].length<3) {
+      sms+="0";
     }
   }
 
   var timeStr = "";
-  var timeArray = [time.getHours(), time.getMinutes(), sms];
+  var timeArray = [time.getHours(),time.getMinutes(),sms]
   for (var j = 0; j < timeArray.length; j++) {
     var unit = String(timeArray[j]);
-    var unitLength = j == 2 ? unit.split(".")[0].length : unit.length;
-    if (timeArray[j] == 0) {
-      if (timeStr != "") {
-        timeStr += "00";
-        if (j < 2) {
-          timeStr += ":";
+    var unitLength = (j==2) ? unit.split(".")[0].length : unit.length;
+    if(timeArray[j]==0) {
+      if(timeStr!="") {
+        timeStr+="00";
+        if(j<2) {
+          timeStr+=":";
         }
-      } else if (j == 2) {
-        timeStr += 0;
       }
-    } else {
-      if (unitLength < 2 && timeStr != "") {
-        timeStr += "0" + unit;
-      } else {
-        timeStr += unit;
+      else if (j==2) {
+        timeStr+=0;
       }
-      if (j < 2) {
-        timeStr += ":";
+    }
+    else {
+      if(unitLength<2&&timeStr!="") {
+        timeStr+="0"+unit;
       }
+      else {
+        timeStr+=unit;
+      }
+      if(j<2) {
+        timeStr+=":";
+      }
+
     }
   }
   return timeStr;
 }
 
 function mouseMove(e) {
-  mm = true;
 
-  if (!$(e.target).hasClass("detection") && !scaleDet) {
+  mm=true;
+
+  if(!$(e.target).hasClass('detection') && !scaleDet) {
+
     scaleTopDet = false;
     scaleBottomDet = false;
     scaleLeftDet = false;
     scaleRightDet = false;
   }
 
-  if (md) {
-    panView(e.clientX - mp.x, e.clientY - mp.y);
-    mp.x = e.clientX;
-    mp.y = e.clientY;
-  } else if (moveDet) {
+
+  if(md) {
+    panView(e.clientX-mp.x,e.clientY-mp.y);
+    mp.x=e.clientX;
+    mp.y=e.clientY;
+
+  }
+  else if (moveDet) {
     var x = e.clientX;
     var y = e.clientY;
 
-    detections[detI].move(x - mp.x, y - mp.y);
+    detections[detI].move(x-mp.x,y-mp.y);
 
-    mp.x = x;
-    mp.y = y;
-  } else if (scaleDet) {
-    if (creatingDet) {
-      if (x < mp.x) {
+    mp.x=x;
+    mp.y=y;
+
+  }
+
+  else if (scaleDet) {
+    if(creatingDet) {
+      if(x<mp.x) {
         scaleLeftDet = true;
-      } else {
+      }
+      else {
         scaleRightDet = true;
       }
 
-      if (y < mp.y) {
+      if(y<mp.y) {
         scaleTopDet = true;
-      } else {
+      }
+      else {
         scaleBottomDet = true;
       }
-      creatingDet = false;
-    } else {
-      if (detections[detI].width == 0) {
+    creatingDet = false;
+
+    }
+    else {
+      if(detections[detI].width==0) {
         scaleLeftDet = !scaleLeftDet;
         scaleRightDet = !scaleRightDet;
-        detections[detI].width = 0;
+        detections[detI].width=0;
       }
 
-      if (detections[detI].height == 0) {
+      if(detections[detI].height==0) {
         scaleTopDet = !scaleTopDet;
         scaleBottomDet = !scaleBottomDet;
-        detections[detI].height = 0;
+        detections[detI].height=0;
       }
     }
 
-    var x = e.clientX - specLeft;
-    var y = e.clientY - specTop;
-    detections[detI].resize(
-      x,
-      y,
-      scaleTopDet,
-      scaleBottomDet,
-      scaleLeftDet,
-      scaleRightDet
-    );
-  } else {
-    mm = false;
+    var x = e.clientX-specLeft;
+    var y = e.clientY-specTop;
+    detections[detI].resize(x,y,scaleTopDet,scaleBottomDet,scaleLeftDet,scaleRightDet);
+
+
+
+  }
+
+  else {
+    mm=false;
+
   }
 
   updateCursorType();
 }
 
 function mouseUp(e) {
-  if (scaleDet || moveDet) {
-    detections[detI].unFocus();
-    if (scaleDet) {
-      updateCursorType();
-    }
-    detections[detI].save();
-  }
+  if(scaleDet || moveDet) {
+     detections[detI].unFocus();
+     if(scaleDet) {
+       updateCursorType();
+     }
+     detections[detI].save();
 
-  md = false;
-  moveDet = false;
+   }
+
+
+
+  md=false;
+  moveDet=false;
   scaleDet = false;
 
   scaleTopDet = false;
@@ -373,31 +423,28 @@ function mouseUp(e) {
   scaleRightDet = false;
 
   creatingDet = false;
+
 }
 
 function updateCursorType() {
+
   current = resizeClass;
-
+  
   resizeClass = "resize-";
-  if (scaleTopDet) {
-    resizeClass += "n";
-  } else if (scaleBottomDet) {
-    resizeClass += "s";
-  }
-  if (scaleLeftDet) {
-    resizeClass += "w";
-  } else if (scaleRightDet) {
-    resizeClass += "e";
-  }
+  if (scaleTopDet) { resizeClass += "n"; }
+  else if (scaleBottomDet) { resizeClass += "s"; }
+  if (scaleLeftDet) { resizeClass += "w"; }
+  else if (scaleRightDet) { resizeClass += "e"; }
 
-  if (resizeClass != current) {
-    if (current != "") {
+  if(resizeClass!=current) {
+    if(current !="") {
       $("*").removeClass(current);
     }
-    if (resizeClass == "resize-") {
-      resizeClass = "";
-    } else {
+    if(resizeClass=="resize-") {
+      resizeClass="";
+    }
+    else {
       $("*").addClass(resizeClass);
     }
-  }
+  }  
 }

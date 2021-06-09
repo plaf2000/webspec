@@ -15,12 +15,12 @@ function SpecImg(base64data,offset,adding=false,duration=dur) {
   };
 
   this.drawOnCanvas = function() {
-    ctx.drawImage(this.img, 0, 0, this.width, this.height, stoPx(this.start), 0, this.duration/sPx, window.cvs.height);
+    ctx.drawImage(this.img, stoPx(this.start), HztoPx(hf), this.duration/sPx, window.cvsheight);
   };
 }
 
 function Cursor() {
-  this.x = 0;
+  this.x = stoPx(0);
   this.tx=view.origOffset;
   this.width = 12;
   this.scaledWidth = function() {
@@ -50,25 +50,24 @@ function Cursor() {
 
 
 
-
     var grdr = ctx.createLinearGradient(this.x, 0, this.x+scw/2, 0);
     grdr.addColorStop(0, "black");
     grdr.addColorStop(1, "rgba(170,170,170,0)");
     ctx.fillStyle = grdr;
-    ctx.fillRect(this.x, view.y+triangleTip, scw/2, cvs.height);
+    ctx.fillRect(this.x, view.yCoord()+triangleTip, scw/2, cvsheight-2*triangleTip);
 
     var grdl = ctx.createLinearGradient(this.x, 0, this.x-scw/2, 0);
     grdl.addColorStop(0, "black");
     grdl.addColorStop(1, "rgba(170,170,170,0)");
     ctx.fillStyle = grdl;
-    ctx.fillRect(this.x-scw/2, view.y+triangleTip, scw/2, cvs.height);
+    ctx.fillRect(this.x-scw/2, view.yCoord()+triangleTip, scw/2, cvsheight-2*triangleTip);
 
     ctx.beginPath();
     ctx.lineWidth = scw/6;
     ctx.strokeStyle = "#fff";
-    ctx.moveTo(this.x, 0);
+    ctx.moveTo(this.x, HztoPx(hf));
 
-    ctx.lineTo(this.x, cvs.height);
+    ctx.lineTo(this.x, HztoPx(hf)+cvsheight);
     ctx.stroke();
 
 
@@ -87,60 +86,60 @@ function Cursor() {
 
 
 
-    var grdlu = ctx.createLinearGradient(this.x, view.y, this.x-p, view.y+t);
+    var grdlu = ctx.createLinearGradient(this.x, view.yCoord(), this.x-p, view.yCoord()+t);
     grdlu.addColorStop(stepOne, "black");
     grdlu.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdlu;
-    ctx.fillRect(view.x, view.y, this.x-view.x, triangleTip);
+    ctx.fillRect(view.x, view.yCoord(), this.x-view.x, triangleTip);
 
-    var grdru = ctx.createLinearGradient(this.x, view.y, this.x+p, view.y+t);
+    var grdru = ctx.createLinearGradient(this.x, view.yCoord(), this.x+p, view.yCoord()+t);
     grdru.addColorStop(stepOne, "black");
     grdru.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdru;
-    ctx.fillRect(this.x, view.y, view.xend-this.x, triangleTip);
+    ctx.fillRect(this.x, view.yCoord(), view.xend-this.x, triangleTip);
 
-    var grdld = ctx.createLinearGradient(this.x, view.yend, this.x-p, view.yend-t);
+    var grdld = ctx.createLinearGradient(this.x, view.yendCoord(), this.x-p, view.yendCoord()-t);
     grdld.addColorStop(stepOne, "black");
     grdld.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdld;
-    ctx.fillRect(view.x, view.yend, this.x-view.x, -triangleTip);
+    ctx.fillRect(view.x, view.yendCoord(), this.x-view.x, -triangleTip);
 
-    var grdrd = ctx.createLinearGradient(this.x, view.yend, this.x+p, view.yend-t);
+    var grdrd = ctx.createLinearGradient(this.x, view.yendCoord(), this.x+p, view.yendCoord()-t);
     grdrd.addColorStop(stepOne, "black");
     grdrd.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdrd;
-    ctx.fillRect(this.x, view.yend, view.xend-this.x, -triangleTip);
+    ctx.fillRect(this.x, view.yendCoord(), view.xend-this.x, -triangleTip);
 
-    ctx.moveTo(this.x,view.y);
+    ctx.moveTo(this.x,view.yCoord());
 
-
-    ctx.beginPath();
-    ctx.fillStyle = "#fff";
-    ctx.lineTo(this.x-scw/2, view.y);
-    ctx.lineTo(this.x, view.y+triangleTip);
-    ctx.lineTo(this.x+scw/2, view.y);
-    ctx.lineTo(this.x, view.y);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.moveTo(this.x,view.yend);
 
     ctx.beginPath();
     ctx.fillStyle = "#fff";
-    ctx.lineTo(this.x-scw/2, view.yend);
-    ctx.lineTo(this.x, view.yend-triangleTip);
-    ctx.lineTo(this.x+scw/2, view.yend);
-    ctx.lineTo(this.x, view.yend);
+    ctx.lineTo(this.x-scw/2, view.yCoord());
+    ctx.lineTo(this.x, view.yCoord()+triangleTip);
+    ctx.lineTo(this.x+scw/2, view.yCoord());
+    ctx.lineTo(this.x, view.yCoord());
     ctx.closePath();
     ctx.fill();
 
-    ctxTinfo.font = fontSize+"px Roboto";
-    ctxTinfo.textBaseline = "top";
-    ctxTinfo.textAlign = "center";
-    // ctxTinfo.lineWidth = 2;
+    ctx.moveTo(this.x,view.yendCoord());
 
-    ctxTinfo.fillStyle = "white";
-    ctxTinfo.strokeStyle = "black";
+    ctx.beginPath();
+    ctx.fillStyle = "#fff";
+    ctx.lineTo(this.x-scw/2, view.yendCoord());
+    ctx.lineTo(this.x, view.yendCoord()-triangleTip);
+    ctx.lineTo(this.x+scw/2, view.yendCoord());
+    ctx.lineTo(this.x, view.yendCoord());
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.font = fontSize+"px Roboto";
+    ctx.textBaseline = "top";
+    ctx.textAlign = "center";
+    // ctx.lineWidth = 2;
+
+    ctx.fillStyle = "white";
+    ctx.strokeStyle = "black";
 
 
 
@@ -182,7 +181,7 @@ function Detection(data,x=false,y=false) {
     var labelHeight = this.label.jqueryElement.outerHeight();
 
     if(this.y<labelHeight) {
-      if(cvs.height-(this.height+this.y)<labelHeight){
+      if(cvsheight-(this.height+this.y)<labelHeight){
         this.label.updatePos('top-inside',-this.y);
       }
       else{this.label.updatePos('bottom');}
@@ -498,43 +497,43 @@ function Tinfo() {
     var margin = 10;
     var l =20;
 
-    ctxTinfo.fillStyle="white";
-    ctxTinfo.strokeStyle="black";
+    ctx.fillStyle="white";
+    ctx.strokeStyle="black";
 
     if(this.cursor.x<0) {
 
 
 
-      ctxTinfo.beginPath();
-      ctxTinfo.moveTo(margin, tinfocvs.height/2);
-      ctxTinfo.lineTo(margin+l*Math.sqrt(3)/2, tinfocvs.height/2-l/2);
-      ctxTinfo.lineTo(margin+l*Math.sqrt(3)/2, tinfocvs.height/2+l/2);
-      ctxTinfo.lineTo(margin, tinfocvs.height/2);
+      ctx.beginPath();
+      ctx.moveTo(margin, tinfocvsheight/2);
+      ctx.lineTo(margin+l*Math.sqrt(3)/2, tinfocvsheight/2-l/2);
+      ctx.lineTo(margin+l*Math.sqrt(3)/2, tinfocvsheight/2+l/2);
+      ctx.lineTo(margin, tinfocvsheight/2);
 
-      ctxTinfo.stroke();
+      ctx.stroke();
 
 
 
     }
 
-    else if (this.cursor.x>tinfocvs.width) {
+    else if (this.cursor.x>tinfocvswidth) {
 
 
-      ctxTinfo.beginPath();
+      ctx.beginPath();
 
-      ctxTinfo.moveTo(tinfocvs.width-margin, tinfocvs.height/2);
-      ctxTinfo.lineTo(tinfocvs.width-(margin+l*Math.sqrt(3)/2), tinfocvs.height/2-l/2);
-      ctxTinfo.lineTo(tinfocvs.width-(margin+l*Math.sqrt(3)/2), tinfocvs.height/2+l/2);
-      ctxTinfo.lineTo(tinfocvs.width-margin, tinfocvs.height/2);
+      ctx.moveTo(tinfocvswidth-margin, tinfocvsheight/2);
+      ctx.lineTo(tinfocvswidth-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2-l/2);
+      ctx.lineTo(tinfocvswidth-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2+l/2);
+      ctx.lineTo(tinfocvswidth-margin, tinfocvsheight/2);
 
-      ctxTinfo.stroke();
+      ctx.stroke();
 
     }
 
     else {
-      ctxTinfo.font = fontSize+"px Roboto";
-      ctxTinfo.textBaseline = "top";
-      ctxTinfo.strokeText(this.cursor.timeStr, this.cursor.x, tinfocvs.height-fontSize);
+      ctx.font = fontSize+"px Roboto";
+      ctx.textBaseline = "top";
+      ctx.strokeText(this.cursor.timeStr, this.cursor.x, tinfocvsheight-fontSize);
 
     }
 
@@ -611,6 +610,7 @@ function View(offset) {
     this.moveTo(xPx=x,yPx=y);
 
   };
+
   this.moveTo = function(xPx,yPx,xT,yF) {
 
     if(xPx===undefined && xT===undefined) {
@@ -618,8 +618,8 @@ function View(offset) {
       xT = this.tx;
     }
     else {
-      xPx = (xPx===undefined) ? HztoPx(xT) : xPx;
-      xT = (xT===undefined) ? pxtoS(xPx) : xT;
+      xPx = (xPx===undefined) ? this.HztoPx(xT) : xPx;
+      xT = (xT===undefined) ? this.pxtoS(xPx) : xT;
     }
 
 
@@ -628,11 +628,11 @@ function View(offset) {
       yF = this.yf;
     }
     else {
-      yPx = (yPx===undefined) ? HztoPx(yF) : yPx;
-      yF = (yF===undefined) ? pxtoHz(yPx) : yF;
+      yPx = (yPx===undefined) ? this.HztoPx(yF) : yPx;
+      yF = (yF===undefined) ? this.pxtoHz(yPx) : yF;
     }
 
-
+    console.log("px",xPx,yPx)
 
 
     if(yPx<0) {
@@ -640,29 +640,31 @@ function View(offset) {
       yF = hf;
     }
 
-    else if(yPx+cvs.height/this.ry>cvs.height) {
-      yPx = cvs.height*(1-1/this.ry);
+    else if(yPx+cvsheight/this.ry>cvsheight) {
+      yPx = cvsheight*(1-1/this.ry);
       yF = hf-(hf-lf)*(1-1/this.ry);
     }
 
+    
 
-
-    if(xT+cvs.width*sPx/this.rx>audio.duration) {
-      xT = audio.duration-cvs.width*sPx/this.rx;
-      xPx=stoPx(xT);
+    if(xT+dur/this.rx>audio.duration) {
+      xT = audio.duration-dur/this.rx;
+      xPx=this.stoPx(xT);
     }
 
     if(xT<0) {
       xT = 0;
-      xPx=stoPx(0);
+      xPx=this.stoPx(0);
     }
 
-
+    console.log("px1",this.x,this.y)
 
 
 
     var dx=(this.x-xPx);
     var dy=(this.y-yPx);
+
+    
 
     ctx.translate(dx,dy);
 
@@ -674,15 +676,15 @@ function View(offset) {
     this.x=xPx;
     this.y=yPx;
 
-    this.xend=this.x+cvs.width/this.rx;
-    this.yend=this.y+cvs.height/this.ry;
+    this.xend=this.x+cvswidth/this.rx;
+    this.yend=this.y+cvsheight/this.ry;
 
 
     this.tx=xT;
     this.fy=yF;
 
-    this.txend=pxtoS(this.xend);
-    this.fyend=pxtoHz(this.yend);
+    this.txend=this.pxtoS(this.xend);
+    this.fyend=this.pxtoHz(this.yend);
 
     
 
@@ -723,6 +725,37 @@ function View(offset) {
 
   };
 
+  this.stoPx = function(x) {
+    return ((x-view.origOffset)/sPx);
+  }
+  
+  this.pxtoS = function(x) {
+    return (x)*sPx+view.origOffset;
+  }
+  
+  this.HztoPx = function(y) {
+    return (hf-y)/HzPx;
+  }
+  
+  this.pxtoHz = function(y) {
+    return hf-(y)*HzPx;
+  }
+
+  this.yCoord = function() {
+    return this.y+tinfocvsheight;
+  }
+
+  this.xCoord = function() {
+    return this.x+fqwidth;
+  }
+
+  this.yendCoord = function() {
+    return this.yend+tinfocvsheight;
+  }
+
+  this.xendCoord = function() {
+    return this.xend+fqwidth;
+  }
 }
 
 function Axes() {
@@ -761,7 +794,7 @@ function xAx(parent) {
   this.updateDelta = function() {
       var i = 0;
       var j =-2;
-      while(Math.pow(10,j)*this.deltas[i]/sPx*view.rx<cvs.width/6) {
+      while(Math.pow(10,j)*this.deltas[i]/sPx*view.rx<cvswidth/6) {
         i++;
         if(i==this.deltas.length) {
           i=0;
@@ -872,7 +905,7 @@ function yAx(parent) {
   this.updateDelta = function() {
       var i = 0;
       var j =-1;
-      while(Math.pow(10,j)*this.deltas[i]/HzPx*view.ry<cvs.height/4) {
+      while(Math.pow(10,j)*this.deltas[i]/HzPx*view.ry<cvsheight/4) {
         i++;
         if(i==this.deltas.length) {
           i=0;

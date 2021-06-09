@@ -1,31 +1,32 @@
 
+export const fontSize: number = 15;
+export let detections: Detection[] = [];
+export const csrftoken: string = (window as any).csrftoken;
+export const projectId: number = (window as any).projectId;
+export let dfn: number = (window as any).fname;
+export let wfft: number = (window as any).wfft;
+export let sr: number = (window as any).sr;   
+export let analysisId: number = (window as any).analysisId;  
+
+export let tinfocvs: any = undefined;
+export let ctxTinfo: any = undefined;
+
+
 $(function(){
-
-
-  window.fontSize=15;
-  var detectionStart = 1570;
-  var detectionEnd = 1580;
-
-  window.detections = [];
 
   $('#nfft option[value="' + dfn + '"]').prop('selected',true);
   $('#wfft option[value="' + wfft + '"]').prop('selected',true);
 
-  window.tinfocvs=document.getElementById("tinfo");
+  tinfocvs = document.getElementById("tinfo");
   tinfocvs.width=parseInt(window.innerWidth*95/100-2);
   tinfocvs.height=parseInt(window.innerHeight/20);
-  window.ctxTinfo=tinfo.getContext("2d");
+  ctxTinfo=tinfocvs.getContext("2d");
 
   window.cvs=document.getElementById("spec");
-  cvs.width=parseInt(cvs.offsetWidth);
-  cvs.height=parseInt(cvs.offsetHeight);
+  cvs.width=parseInt(window.innerWidth*95/100-2);
+  cvs.height=parseInt(window.innerHeight*3/4);
   window.ctx=cvs.getContext("2d");
 
-  window.cvswidth = parseInt(window.innerWidth*95/100-2);
-  window.cvsheight=parseInt(window.innerHeight*3/4);
-
-  window.tinfocvswidth = parseInt(window.innerWidth*95/100-2);
-  window.tinfocvsheight=parseInt(window.innerHeight/20);
 
 
   window.timeline=document.getElementById("timeline");
@@ -33,16 +34,10 @@ $(function(){
   timeline.height=parseInt(window.innerHeight/20);
   window.ctxTimeline=timeline.getContext("2d");
 
-  window.timelinewidth=parseInt(window.innerWidth*95/100-2);
-  window.timelineheight=parseInt(window.innerHeight/20);
-
   window.fq=document.getElementById("frequencies");
   fq.width=parseInt(window.innerWidth*5/100);
   fq.height=parseInt(window.innerHeight*3/4);
   window.ctxFq=fq.getContext("2d");
-
-  window.fqwidth=parseInt(window.innerWidth*5/100);
-  window.fqheight=parseInt(window.innerHeight*3/4);
 
 
   getAudio();
@@ -125,7 +120,7 @@ $(function(){
 
   }
 
-  $("#spec").mousedown(function(e) {
+  $("#spec").on('mousedown', function(e) {
 
     if(e.which != 3) {
 

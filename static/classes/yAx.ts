@@ -1,3 +1,6 @@
+import {Ax} from './Ax'
+import {Axes} from './Axes'
+
 class yAx extends Ax {
     unit = "Hz";
   
