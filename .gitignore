@@ -1,3 +1,9 @@
 key.txt
-requirements.txt
-**__pycache__/
+*.log
+*.pot
+*.pyc
+__pycache__/
+.env
+db.sqlite3
+birdslist/
+tsconfig.json
