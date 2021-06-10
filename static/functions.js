@@ -56,10 +56,12 @@ function getAudio() {
   }
 }
 
-function clearSpec() {
+function clearAll() {
   // console.log("clearing");
-
-  ctx.clearRect(view.xCoord(),view.yCoord(),view.xendCoord()-view.xCoord(),view.yendCoord()-view.yCoord());
+  ctx.save();
+  ctx.resetTransform();
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  ctx.restore();
 
 }
 
@@ -72,21 +74,30 @@ function drawSpecBorder() {
   ctx.beginPath();
   ctx.lineWidth = "1";
   ctx.strokeStyle = "black";
-  ctx.rect(view.xCoord(),view.yCoord(),view.xendCoord()-view.xCoord(),view.yendCoord()-view.yCoord());
+  ctx.rect(fqwidth,tinfocvsheight,cvswidth,cvsheight);
   ctx.stroke();
 }
 
 function drawCanvas() {
 
-  clearSpec();
+  clearAll();
+  ctx.save();
+  
 
   for(var i =0; i<specImgs.length; i++) {
     specImgs[i].drawOnCanvas();
   }
 
-  cursor.drawOnCanvas();
+
+  for(var i =0; i<detections.length; i++) {
+    detections[i].update();
+  }
 
   
+
+  ctx.resetTransform();
+
+  cursor.drawOnCanvas();
 
   clearInfos();
   drawSpecBorder();
@@ -94,9 +105,8 @@ function drawCanvas() {
   axes.drawOnCanvas();
   tinfo.drawOnCanvas();
 
-  for(var i =0; i<detections.length; i++) {
-    detections[i].update();
-  }
+  ctx.restore();
+
 }
 
 
@@ -129,7 +139,7 @@ function zoomCanvas(dir,x,y,shiftPressed) {
 
 
 function panView(x,y) {
-  clearSpec();
+  // clearAll();
 
   view.pan(x,y);
   axes.updatePos();
@@ -281,19 +291,19 @@ function addToCanvas(offset,i,left=false,duration=dur) {
 
 
 function stoPx(x) {
-  return ((x-view.origOffset)/sPx)+fqwidth;
+  return ((x-view.origOffset)/sPx)+fqwidth/view.rx;
 }
 
 function pxtoS(x) {
-  return (x-fqwidth)*sPx+view.origOffset;
+  return (x-fqwidth/view.rx)*sPx+view.origOffset;
 }
 
 function HztoPx(y) {
-  return (hf-y)/HzPx+tinfocvsheight;
+  return (hf-y)/HzPx+tinfocvsheight/view.ry;
 }
 
 function pxtoHz(y) {
-  return hf-(y-tinfocvsheight)*HzPx;
+  return hf-(y-tinfocvsheight/view.ry)*HzPx;
 }
 
 function timeToStr(time,value,cs=false) {

@@ -20,61 +20,71 @@ function SpecImg(base64data,offset,adding=false,duration=dur) {
 }
 
 function Cursor() {
-  this.x = stoPx(0);
-  this.tx=view.origOffset;
+  this.xstart=fqwidth;
+  this.xend=fqwidth+cvswidth;
+  this.ystart=tinfocvsheight;
+  this.yend=tinfocvsheight+cvsheight;
   this.width = 12;
-  this.scaledWidth = function() {
-    return this.width/view.rx;
+
+  this.updatePos = function() {
+    this.x = (this.tx-view.tx)/sPx*view.rx+this.xstart;
+  }
+
+  this.updateTime = function() {
+    this.tx = (this.x-this.xstart)/view.rx*sPx+view.tx;
   }
 
   this.set = function(x) {
-    this.x=(x<fqwidth) ? view.xCoord() : view.x+x/view.rx;
-    this.tx=pxtoS(this.x);
+    this.x=(x<this.xstart) ? this.xstart : x;
+    this.updateTime();
   };
 
   this.setT = function(tx) {
     this.tx=(tx<0) ? 0 : tx;
-    this.x=stoPx(tx);
+    this.updatePos();
   };
+
+  this.setT(offset);
+
 
   
 
 
   this.drawOnCanvas = function() {
 
-    var scw = this.scaledWidth();
+    this.updatePos();
 
 
 
-    var triangleTip =(this.width/2*Math.sqrt(3))/view.ry;
+
+    var triangleTip =(this.width/2*Math.sqrt(3));
 
 
-
-    var grdr = ctx.createLinearGradient(this.x, 0, this.x+scw/2, 0);
+    var grdr = ctx.createLinearGradient(this.x, 0, this.x+this.width/2, 0);
     grdr.addColorStop(0, "black");
     grdr.addColorStop(1, "rgba(170,170,170,0)");
     ctx.fillStyle = grdr;
-    ctx.fillRect(this.x, view.yCoord()+triangleTip, scw/2, cvsheight-2*triangleTip);
+    ctx.fillRect(this.x, this.ystart+triangleTip, this.width/2, cvsheight-2*triangleTip);
 
-    var grdl = ctx.createLinearGradient(this.x, 0, this.x-scw/2, 0);
+    var grdl = ctx.createLinearGradient(this.x, 0, this.x-this.width/2, 0);
     grdl.addColorStop(0, "black");
     grdl.addColorStop(1, "rgba(170,170,170,0)");
     ctx.fillStyle = grdl;
-    ctx.fillRect(this.x-scw/2, view.yCoord()+triangleTip, scw/2, cvsheight-2*triangleTip);
+    ctx.fillRect(this.x-this.width/2, this.ystart+triangleTip, this.width/2, cvsheight-2*triangleTip);
 
     ctx.beginPath();
-    ctx.lineWidth = scw/6;
+    ctx.lineWidth = this.width/6;
     ctx.strokeStyle = "#fff";
-    ctx.moveTo(this.x, HztoPx(hf));
+    ctx.moveTo(this.x, this.ystart);
 
-    ctx.lineTo(this.x, HztoPx(hf)+cvsheight);
+    ctx.lineTo(this.x, this.yend);
     ctx.stroke();
 
 
 
-    var l = 2 * this.width * 2*Math.cos(Math.atan(view.rx/view.ry))/Math.sqrt((Math.pow(view.rx,2) + Math.pow(view.ry,2)));
+    var l = 2 * this.width;
 
-    var alpha = Math.atan(view.rx/view.ry * Math.tan(Math.PI/3));
+    var alpha = Math.PI/3;
 
 
     var t = l*Math.cos(alpha);
@@ -86,50 +96,50 @@ function Cursor() {
 
 
 
-    var grdlu = ctx.createLinearGradient(this.x, view.yCoord(), this.x-p, view.yCoord()+t);
+    var grdlu = ctx.createLinearGradient(this.x, this.ystart, this.x-p, this.ystart+t);
     grdlu.addColorStop(stepOne, "black");
     grdlu.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdlu;
-    ctx.fillRect(view.x, view.yCoord(), this.x-view.x, triangleTip);
+    ctx.fillRect(this.xstart, this.ystart, this.x-this.xstart, triangleTip);
 
-    var grdru = ctx.createLinearGradient(this.x, view.yCoord(), this.x+p, view.yCoord()+t);
+    var grdru = ctx.createLinearGradient(this.x, this.ystart, this.x+p, this.ystart+t);
     grdru.addColorStop(stepOne, "black");
     grdru.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdru;
-    ctx.fillRect(this.x, view.yCoord(), view.xendCoord()-this.x, triangleTip);
+    ctx.fillRect(this.x, this.ystart, this.xend-this.x, triangleTip);
 
-    var grdld = ctx.createLinearGradient(this.x, view.yendCoord(), this.x-p, view.yendCoord()-t);
+    var grdld = ctx.createLinearGradient(this.x, this.yend, this.x-p, this.yend-t);
     grdld.addColorStop(stepOne, "black");
     grdld.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdld;
-    ctx.fillRect(view.x, view.yendCoord(), this.x-view.x, -triangleTip);
+    ctx.fillRect(this.xstart, this.yend, this.x-this.xstart, -triangleTip);
 
-    var grdrd = ctx.createLinearGradient(this.x, view.yendCoord(), this.x+p, view.yendCoord()-t);
+    var grdrd = ctx.createLinearGradient(this.x, this.yend, this.x+p, this.yend-t);
     grdrd.addColorStop(stepOne, "black");
     grdrd.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdrd;
-    ctx.fillRect(this.x, view.yendCoord(), view.xendCoord()-this.x, -triangleTip);
+    ctx.fillRect(this.x, this.yend, this.xend-this.x, -triangleTip);
 
-    ctx.moveTo(this.x,view.yCoord());
+    ctx.moveTo(this.x,this.ystart);
 
 
     ctx.beginPath();
     ctx.fillStyle = "#fff";
-    ctx.lineTo(this.x-scw/2, view.yCoord());
-    ctx.lineTo(this.x, view.yCoord()+triangleTip);
-    ctx.lineTo(this.x+scw/2, view.yCoord());
-    ctx.lineTo(this.x, view.yCoord());
+    ctx.lineTo(this.x-this.width/2, this.ystart);
+    ctx.lineTo(this.x, this.ystart+triangleTip);
+    ctx.lineTo(this.x+this.width/2, this.ystart);
+    ctx.lineTo(this.x, this.ystart);
     ctx.closePath();
     ctx.fill();
 
-    ctx.moveTo(this.x,view.yendCoord());
+    ctx.moveTo(this.x,this.yend);
 
     ctx.beginPath();
     ctx.fillStyle = "#fff";
-    ctx.lineTo(this.x-scw/2, view.yendCoord());
-    ctx.lineTo(this.x, view.yendCoord()-triangleTip);
-    ctx.lineTo(this.x+scw/2, view.yendCoord());
-    ctx.lineTo(this.x, view.yendCoord());
+    ctx.lineTo(this.x-this.width/2, this.yend);
+    ctx.lineTo(this.x, this.yend-triangleTip);
+    ctx.lineTo(this.x+this.width/2, this.yend);
+    ctx.lineTo(this.x, this.yend);
     ctx.closePath();
     ctx.fill();
 
@@ -485,15 +495,13 @@ function Label(id,position="top") {
 }
 
 function Tinfo() {
-  this.cursor = {};
   this.update = function() {
     var time = new Date(0,0,0,0,0,0,0);
     this.timeStr = timeToStr(time,cursor.tx,true);
-
   };
 
   this.clear = function() {
-    ctx.clearRect(view.xCoord(),view.y,tinfocvswidth,tinfocvsheight);
+    ctx.clearRect(0,0,tinfocvswidth+fqwidth,tinfocvsheight);
   }
 
   this.drawOnCanvas = function() {
@@ -504,15 +512,18 @@ function Tinfo() {
     ctx.fillStyle="white";
     ctx.strokeStyle="black";
 
-    if(cursor.x<view.xCoord()) {
+    this.xstart = fqwidth;
+    this.xend = fqwidth+tinfocvswidth;
+
+    if(cursor.x<this.xstart) {
 
 
 
       ctx.beginPath();
-      ctx.moveTo(view.xCoord(), tinfocvsheight/2);
-      ctx.lineTo(view.xCoord()+l*Math.sqrt(3)/2, tinfocvsheight/2-l/2);
-      ctx.lineTo(view.xCoord()+l*Math.sqrt(3)/2, tinfocvsheight/2+l/2);
-      ctx.lineTo(view.xCoord(), tinfocvsheight/2);
+      ctx.moveTo(this.xstart, tinfocvsheight/2);
+      ctx.lineTo(this.xstart+l*Math.sqrt(3)/2, tinfocvsheight/2-l/2);
+      ctx.lineTo(this.xstart+l*Math.sqrt(3)/2, tinfocvsheight/2+l/2);
+      ctx.lineTo(this.xstart, tinfocvsheight/2);
 
       ctx.stroke();
 
@@ -520,15 +531,15 @@ function Tinfo() {
 
     }
 
-    else if (cursor.x>view.xendCoord()) {
+    else if (cursor.x>this.xend) {
 
 
       ctx.beginPath();
 
-      ctx.moveTo(view.xendCoord()-margin, tinfocvsheight/2);
-      ctx.lineTo(view.xendCoord()-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2-l/2);
-      ctx.lineTo(view.xendCoord()-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2+l/2);
-      ctx.lineTo(view.xendCoord()-margin, tinfocvsheight/2);
+      ctx.moveTo(this.xend-margin, tinfocvsheight/2);
+      ctx.lineTo(this.xend-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2-l/2);
+      ctx.lineTo(this.xend-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2+l/2);
+      ctx.lineTo(this.xend-margin, tinfocvsheight/2);
 
       ctx.stroke();
 
@@ -557,6 +568,7 @@ function View(offset) {
   this.y=0;
   this.detx=0;
   this.dety=0;
+  this.tx=offset;
   this.origOffset=offset;
   this.origFrame=0;
   this.actualI=0;
@@ -746,22 +758,6 @@ function View(offset) {
   this.pxtoHz = function(y) {
     return hf-(y)*HzPx;
   }
-
-  this.yCoord = function() {
-    return this.y+tinfocvsheight/this.ry;
-  }
-
-  this.xCoord = function() {
-    return this.x+fqwidth/this.rx;
-  }
-
-  this.yendCoord = function() {
-    return this.yend+tinfocvsheight/this.ry;
-  }
-
-  this.xendCoord = function() {
-    return this.xend+fqwidth/this.rx;
-  }
 }
 
 function Axes() {
@@ -801,6 +797,10 @@ function xAx(parent) {
 
   this.unit= "s";
 
+  this.y = tinfocvsheight+fqheight;
+  this.xstart = fqwidth;
+  this.xend =   fqwidth+cvswidth;
+
   
 
   this.deltas = parent.deltas;
@@ -835,26 +835,18 @@ function xAx(parent) {
     this.updatePos();
   }
 
-  this.updateAxPos = function() { 
-    this.y = view.yendCoord();
-    this.xstart = view.xCoord();
-    this.xend =   view.xendCoord();
-  }
 
   this.clear = function() {
-    ctx.clearRect(view.xCoord(),view.yendCoord(), timelinewidth, timelineheight);
+    ctx.clearRect(0,this.y, timelinewidth+fqwidth+10, timelineheight+10);
   }
 
   this.drawOnCanvas = function() {
-
-    this.updateAxPos();
     
     ctx.beginPath();
 
 
     for (var i = 0; this.first+i*this.delta <= view.txend && this.first+i*this.delta <= audio.duration; i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
-      // var pos = stoPx(value-view.tx);
       var pos = (value-view.tx)/sPx*view.rx+this.xstart;
       var time = new Date(0,0,0,0,0,0,0);
 
@@ -919,6 +911,10 @@ function yAx(parent) {
 
   this.unit= "Hz";
 
+  this.ystart = tinfocvsheight;
+  this.yend =  tinfocvsheight+fqheight;
+  this.x = fqwidth;
+
   
 
   this.deltas = parent.deltas;
@@ -953,30 +949,37 @@ function yAx(parent) {
     this.updatePos();
   }
 
-  this.updateAxPos = function() { 
-    this.ystart = view.yCoord();
-    this.yend =  view.yendCoord();
-    this.x = view.xCoord();
-  }
+
 
   this.clear = function() {
-    ctx.clearRect(view.x, 0, fqwidth, fqheight+tinfocvsheight+timelineheight);
+    ctx.clearRect(0, 0, fqwidth, fqheight+tinfocvsheight+timelineheight);
+  }
+
+  this.inside = function(val) {
+    return val<=view.fy && val>=view.fyend;
   }
 
 
   this.drawOnCanvas = function() {
 
-    this.updateAxPos();
     ctx.beginPath();
 
     for (var i = 0; this.first+i*this.delta <= view.fy; i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
       var pos = (view.fy-value)/HzPx*view.ry+this.ystart;
 
-      ctx.strokeStyle = "black";
-      ctx.moveTo(this.x, pos);
-      ctx.lineTo(this.x-10, pos);
+      
+      if(this.inside(value)) {
+        ctx.strokeStyle = "black";
+        ctx.moveTo(this.x, pos);
+        ctx.lineTo(this.x-10, pos);
 
+        ctx.font =fontSize+"px Roboto";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+
+        ctx.strokeText(value, this.x-15, pos);
+      }
 
       var sub=1/4
 
@@ -984,7 +987,7 @@ function yAx(parent) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;
         var halfPos = (view.fy-halfValue)/HzPx*view.ry+this.ystart;
-        if(halfValue<=view.fy) {
+        if(this.inside(halfValue)) {
           ctx.moveTo(this.x, halfPos);
           var len = 6;
           if(frac==.5) {
@@ -993,18 +996,11 @@ function yAx(parent) {
   
           ctx.lineTo(this.x-len, halfPos);
         }
-        else {
-          break;
-        }
 
 
       }
 
-      ctx.font =fontSize+"px Roboto";
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-
-      ctx.strokeText(value, this.x-15, pos);
+      
 
 
     }

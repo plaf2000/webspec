@@ -18,21 +18,21 @@ $(function(){
   cvs.height=parseInt(cvs.offsetHeight);
   window.ctx=cvs.getContext("2d");
 
-  window.cvswidth = parseInt(window.innerWidth*95/100-2);
+  window.cvswidth = parseInt(window.innerWidth*96/100-2);
   window.cvsheight=parseInt(window.innerHeight*3/4);
 
-  window.tinfocvswidth = parseInt(window.innerWidth*95/100-2);
+  window.tinfocvswidth = parseInt(window.innerWidth*96/100-2);
   window.tinfocvsheight=parseInt(window.innerHeight/20);
 
 
 
 
-  window.timelinewidth=parseInt(window.innerWidth*95/100-2);
+  window.timelinewidth=parseInt(window.innerWidth*96/100-2);
   window.timelineheight=parseInt(window.innerHeight/20);
 
 
 
-  window.fqwidth=parseInt(window.innerWidth*5/100);
+  window.fqwidth=parseInt(window.innerWidth*4/100);
   window.fqheight=parseInt(window.innerHeight*3/4);
 
 
@@ -100,8 +100,8 @@ $(function(){
   window.focusedI;
   window.detI;
 
-  window.specLeft = $("#spec").offset().left;
-  window.specTop = $("#spec").offset().top;
+  window.specLeft = fqwidth;
+  window.specTop = tinfocvsheight;
 
   window.movingLeft=false;
   window.movingRight=false;
