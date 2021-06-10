@@ -11,10 +11,7 @@ $(function(){
   $('#nfft option[value="' + dfn + '"]').prop('selected',true);
   $('#wfft option[value="' + wfft + '"]').prop('selected',true);
 
-  window.tinfocvs=document.getElementById("tinfo");
-  tinfocvs.width=parseInt(window.innerWidth*95/100-2);
-  tinfocvs.height=parseInt(window.innerHeight/20);
-  window.ctxTinfo=tinfo.getContext("2d");
+
 
   window.cvs=document.getElementById("spec");
   cvs.width=parseInt(cvs.offsetWidth);
@@ -28,18 +25,12 @@ $(function(){
   window.tinfocvsheight=parseInt(window.innerHeight/20);
 
 
-  window.timeline=document.getElementById("timeline");
-  timeline.width=parseInt(window.innerWidth*95/100-2);
-  timeline.height=parseInt(window.innerHeight/20);
-  window.ctxTimeline=timeline.getContext("2d");
+
 
   window.timelinewidth=parseInt(window.innerWidth*95/100-2);
   window.timelineheight=parseInt(window.innerHeight/20);
 
-  window.fq=document.getElementById("frequencies");
-  fq.width=parseInt(window.innerWidth*5/100);
-  fq.height=parseInt(window.innerHeight*3/4);
-  window.ctxFq=fq.getContext("2d");
+
 
   window.fqwidth=parseInt(window.innerWidth*5/100);
   window.fqheight=parseInt(window.innerHeight*3/4);
@@ -112,14 +103,17 @@ $(function(){
   window.specLeft = $("#spec").offset().left;
   window.specTop = $("#spec").offset().top;
 
+  window.movingLeft=false;
+  window.movingRight=false;
+
 
   if(isFirefox) {
-    $("#spec-td").on('DOMMouseScroll',function(e){
+    $("#spec").on('DOMMouseScroll',function(e){
       zoomCanvas(e.originalEvent.detail,e.clientX-specLeft,e.clientY-specTop,e.shiftKey);
     });
   }
   else {
-    $("#spec-td").on('mousewheel',function(e){
+    $("#spec").on('mousewheel',function(e){
       zoomCanvas(-(e.originalEvent.wheelDelta/120),e.clientX-specLeft,e.clientY-specTop,e.shiftKey);
     });
 
@@ -297,10 +291,19 @@ $(function(){
   $(document).keydown(function(e) {
     if(!wl) {
       if(e.keyCode == 39) {
-        panView(-20,0);
+        if(!movingRight) {
+          movingRight=true;
+          panView(-20,0);
+          movingRight=false;
+        }
       }
       else if(e.keyCode == 37) {
-        panView(20,0);
+
+        if(!movingRight) {
+          movingRight=true;
+          panView(20,0);
+          movingRight=false;
+        }
       }
     }
   })

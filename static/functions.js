@@ -56,23 +56,42 @@ function getAudio() {
   }
 }
 
-function clearCanvas() {
+function clearSpec() {
+  // console.log("clearing");
 
-  ctx.clearRect(fqwidth+view.x, tinfocvsheight+view.y, cvswidth/view.rx, cvsheight/view.ry);
-  ctx.clearRect(0, 0, tinfocvswidth, tinfocvsheight);
+  ctx.clearRect(view.xCoord(),view.yCoord(),view.xendCoord()-view.xCoord(),view.yendCoord()-view.yCoord());
 
+}
+
+function clearInfos() {
+  axes.clear();
+  tinfo.clear();
+}
+
+function drawSpecBorder() {
+  ctx.beginPath();
+  ctx.lineWidth = "1";
+  ctx.strokeStyle = "black";
+  ctx.rect(view.xCoord(),view.yCoord(),view.xendCoord()-view.xCoord(),view.yendCoord()-view.yCoord());
+  ctx.stroke();
 }
 
 function drawCanvas() {
 
-  clearCanvas();
+  clearSpec();
 
   for(var i =0; i<specImgs.length; i++) {
     specImgs[i].drawOnCanvas();
   }
 
-  axes.drawOnCanvas();
   cursor.drawOnCanvas();
+
+  
+
+  clearInfos();
+  drawSpecBorder();
+
+  axes.drawOnCanvas();
   tinfo.drawOnCanvas();
 
   for(var i =0; i<detections.length; i++) {
@@ -83,7 +102,7 @@ function drawCanvas() {
 
 
 function zoomCanvas(dir,x,y,shiftPressed) {
-  clearCanvas();
+  // clearCanvas();
 
   var ratio=Math.pow(zoomRatio,dir);
 
@@ -110,7 +129,7 @@ function zoomCanvas(dir,x,y,shiftPressed) {
 
 
 function panView(x,y) {
-  clearCanvas();
+  clearSpec();
 
   view.pan(x,y);
   axes.updatePos();
@@ -240,8 +259,8 @@ function addToCanvas(offset,i,left=false,duration=dur) {
   loading();
 
   ctx.save();
-  console.log(i);
-  console.log(offset,duration);
+  // console.log(i);
+  // console.log(offset,duration);
   requestSpec(offset,i,duration).done(
     function(data) {
 

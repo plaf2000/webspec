@@ -28,18 +28,18 @@ function Cursor() {
   }
 
   this.set = function(x) {
-    this.x=view.x+x/view.rx;
+    this.x=(x<fqwidth) ? view.xCoord() : view.x+x/view.rx;
     this.tx=pxtoS(this.x);
   };
 
   this.setT = function(tx) {
-    this.tx=tx;
+    this.tx=(tx<0) ? 0 : tx;
     this.x=stoPx(tx);
   };
 
-  this.relx = function() {
-    return (this.x-view.x)*view.rx;
-  }
+  
+
+
   this.drawOnCanvas = function() {
 
     var scw = this.scaledWidth();
@@ -96,7 +96,7 @@ function Cursor() {
     grdru.addColorStop(stepOne, "black");
     grdru.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdru;
-    ctx.fillRect(this.x, view.yCoord(), view.xend-this.x, triangleTip);
+    ctx.fillRect(this.x, view.yCoord(), view.xendCoord()-this.x, triangleTip);
 
     var grdld = ctx.createLinearGradient(this.x, view.yendCoord(), this.x-p, view.yendCoord()-t);
     grdld.addColorStop(stepOne, "black");
@@ -108,7 +108,7 @@ function Cursor() {
     grdrd.addColorStop(stepOne, "black");
     grdrd.addColorStop(stepTwo, "rgba(170,170,170,0)");
     ctx.fillStyle = grdrd;
-    ctx.fillRect(this.x, view.yendCoord(), view.xend-this.x, -triangleTip);
+    ctx.fillRect(this.x, view.yendCoord(), view.xendCoord()-this.x, -triangleTip);
 
     ctx.moveTo(this.x,view.yCoord());
 
@@ -156,6 +156,7 @@ function Cursor() {
       drawCanvas();
     }, timedelta);
   };
+
   this.stop = function() {
     clearInterval(this.playInterval);
   }
@@ -486,11 +487,14 @@ function Label(id,position="top") {
 function Tinfo() {
   this.cursor = {};
   this.update = function() {
-    this.cursor.x=cursor.relx();
     var time = new Date(0,0,0,0,0,0,0);
-    this.cursor.timeStr = timeToStr(time,cursor.tx,true);
+    this.timeStr = timeToStr(time,cursor.tx,true);
 
   };
+
+  this.clear = function() {
+    ctx.clearRect(view.xCoord(),view.y,tinfocvswidth,tinfocvsheight);
+  }
 
   this.drawOnCanvas = function() {
 
@@ -500,15 +504,15 @@ function Tinfo() {
     ctx.fillStyle="white";
     ctx.strokeStyle="black";
 
-    if(this.cursor.x<0) {
+    if(cursor.x<view.xCoord()) {
 
 
 
       ctx.beginPath();
-      ctx.moveTo(margin, tinfocvsheight/2);
-      ctx.lineTo(margin+l*Math.sqrt(3)/2, tinfocvsheight/2-l/2);
-      ctx.lineTo(margin+l*Math.sqrt(3)/2, tinfocvsheight/2+l/2);
-      ctx.lineTo(margin, tinfocvsheight/2);
+      ctx.moveTo(view.xCoord(), tinfocvsheight/2);
+      ctx.lineTo(view.xCoord()+l*Math.sqrt(3)/2, tinfocvsheight/2-l/2);
+      ctx.lineTo(view.xCoord()+l*Math.sqrt(3)/2, tinfocvsheight/2+l/2);
+      ctx.lineTo(view.xCoord(), tinfocvsheight/2);
 
       ctx.stroke();
 
@@ -516,24 +520,26 @@ function Tinfo() {
 
     }
 
-    else if (this.cursor.x>tinfocvswidth) {
+    else if (cursor.x>view.xendCoord()) {
 
 
       ctx.beginPath();
 
-      ctx.moveTo(tinfocvswidth-margin, tinfocvsheight/2);
-      ctx.lineTo(tinfocvswidth-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2-l/2);
-      ctx.lineTo(tinfocvswidth-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2+l/2);
-      ctx.lineTo(tinfocvswidth-margin, tinfocvsheight/2);
+      ctx.moveTo(view.xendCoord()-margin, tinfocvsheight/2);
+      ctx.lineTo(view.xendCoord()-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2-l/2);
+      ctx.lineTo(view.xendCoord()-(margin+l*Math.sqrt(3)/2), tinfocvsheight/2+l/2);
+      ctx.lineTo(view.xendCoord()-margin, tinfocvsheight/2);
 
       ctx.stroke();
 
     }
 
     else {
+      ctx.lineWidth = 1;
       ctx.font = fontSize+"px Roboto";
       ctx.textBaseline = "top";
-      ctx.strokeText(this.cursor.timeStr, this.cursor.x, tinfocvsheight-fontSize);
+      ctx.textAlign = "center";
+      ctx.strokeText(this.timeStr, cursor.x, tinfocvsheight-fontSize);
 
     }
 
@@ -632,7 +638,7 @@ function View(offset) {
       yF = (yF===undefined) ? this.pxtoHz(yPx) : yF;
     }
 
-    console.log("px",xPx,yPx)
+    
 
 
     if(yPx<0) {
@@ -657,7 +663,7 @@ function View(offset) {
       xPx=this.stoPx(0);
     }
 
-    console.log("px1",this.x,this.y)
+    
 
 
 
@@ -742,19 +748,19 @@ function View(offset) {
   }
 
   this.yCoord = function() {
-    return this.y+tinfocvsheight;
+    return this.y+tinfocvsheight/this.ry;
   }
 
   this.xCoord = function() {
-    return this.x+fqwidth;
+    return this.x+fqwidth/this.rx;
   }
 
   this.yendCoord = function() {
-    return this.yend+tinfocvsheight;
+    return this.yend+tinfocvsheight/this.ry;
   }
 
   this.xendCoord = function() {
-    return this.xend+fqwidth;
+    return this.xend+fqwidth/this.rx;
   }
 }
 
@@ -778,6 +784,11 @@ function Axes() {
 
   };
 
+  this.clear = function() {
+    this.x.clear();
+    this.y.clear();
+  }
+
   this.drawOnCanvas = function() {
     this.x.drawOnCanvas();
     this.y.drawOnCanvas();
@@ -789,6 +800,8 @@ function Axes() {
 function xAx(parent) {
 
   this.unit= "s";
+
+  
 
   this.deltas = parent.deltas;
   this.updateDelta = function() {
@@ -822,76 +835,81 @@ function xAx(parent) {
     this.updatePos();
   }
 
+  this.updateAxPos = function() { 
+    this.y = view.yendCoord();
+    this.xstart = view.xCoord();
+    this.xend =   view.xendCoord();
+  }
+
+  this.clear = function() {
+    ctx.clearRect(view.xCoord(),view.yendCoord(), timelinewidth, timelineheight);
+  }
 
   this.drawOnCanvas = function() {
-    ctxTimeline.clearRect(0, 0, timeline.width, timeline.height)
-    ctxTimeline.beginPath();
+
+    this.updateAxPos();
+    
+    ctx.beginPath();
+
 
     for (var i = 0; this.first+i*this.delta <= view.txend && this.first+i*this.delta <= audio.duration; i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
-      var pos = (value-view.tx)/sPx*view.rx;
+      // var pos = stoPx(value-view.tx);
+      var pos = (value-view.tx)/sPx*view.rx+this.xstart;
       var time = new Date(0,0,0,0,0,0,0);
 
       var timeStr = timeToStr(time,value);
 
 
 
-      ctxTimeline.strokeStyle = "black";
-      ctxTimeline.moveTo(pos, 0);
-      ctxTimeline.lineTo(pos, 10);
+      ctx.strokeStyle = "black";
 
-      var sub=1/4
+      if(value>=view.tx) {
+        ctx.moveTo(pos, this.y);
+        ctx.lineTo(pos, this.y+10);
+
+        ctx.font =fontSize+"px Roboto";
+        ctx.textAlign = "center";
+
+        ctx.lineWidth = "1";
+        ctx.textBaseline='middle';
+        ctx.strokeText(timeStr, pos, this.y+30);
+      }
+      
+
+      var sub=1/4;
 
       for (var k = 1; k*sub < 1; k++) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;
         if(halfValue<=audio.duration) {
-          var halfPos = (halfValue-view.tx)/sPx*view.rx;
+          var halfPos = (halfValue-view.tx)/sPx*view.rx+this.xstart;
 
-          ctxTimeline.strokeStyle = "black";
-          ctxTimeline.moveTo(halfPos, 0);
+          ctx.strokeStyle = "black";
+          ctx.moveTo(halfPos, this.y);
           var len = 6;
           if(frac==.5) {
             len=8;
           }
 
-          ctxTimeline.lineTo(halfPos, len);
+          
+
+          if(halfValue>=view.tx) {
+            ctx.lineTo(halfPos, this.y+len);
+          }
 
         }
 
 
       }
 
-
-
-
-
-      ctxTimeline.font =fontSize+"px Roboto";
-
-
-
-
-      if(view.txend-value<=this.delta/6) {
-        ctxTimeline.textAlign = "right";
-      }
-      else if(value-view.tx<=this.delta/6) {
-        ctxTimeline.textAlign = "left";
-      }
-      else {
-        ctxTimeline.textAlign = "center";
-      }
-
-      ctxTimeline.strokeText(timeStr, pos, 30);
-
-
-      ctxTimeline.lineWidth = 1;
-
-
+      
     }
-    ctxTimeline.moveTo(0,0);
-    ctxTimeline.lineTo(timeline.width,0);
 
-    ctxTimeline.stroke();
+    ctx.moveTo(this.xstart,this.y);
+    ctx.lineTo(this.xend,this.y);
+
+    ctx.stroke();
 
   };
 }
@@ -900,6 +918,8 @@ function xAx(parent) {
 function yAx(parent) {
 
   this.unit= "Hz";
+
+  
 
   this.deltas = parent.deltas;
   this.updateDelta = function() {
@@ -933,19 +953,29 @@ function yAx(parent) {
     this.updatePos();
   }
 
+  this.updateAxPos = function() { 
+    this.ystart = view.yCoord();
+    this.yend =  view.yendCoord();
+    this.x = view.xCoord();
+  }
+
+  this.clear = function() {
+    ctx.clearRect(view.x, 0, fqwidth, fqheight+tinfocvsheight+timelineheight);
+  }
+
 
   this.drawOnCanvas = function() {
-    ctxFq.clearRect(0, 0, fq.width, fq.height)
-    ctxFq.beginPath();
 
+    this.updateAxPos();
+    ctx.beginPath();
 
     for (var i = 0; this.first+i*this.delta <= view.fy; i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
-      var pos = (view.fy-value)/HzPx*view.ry;
+      var pos = (view.fy-value)/HzPx*view.ry+this.ystart;
 
-      ctxFq.strokeStyle = "black";
-      ctxFq.moveTo(fq.width, pos);
-      ctxFq.lineTo(fq.width-10, pos);
+      ctx.strokeStyle = "black";
+      ctx.moveTo(this.x, pos);
+      ctx.lineTo(this.x-10, pos);
 
 
       var sub=1/4
@@ -953,36 +983,32 @@ function yAx(parent) {
       for (var k = 1; k*sub < 1; k++) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;
-        var halfPos = (view.fy-halfValue)/HzPx*view.ry;
-
-        ctxFq.moveTo(fq.width, halfPos);
-        var len = 6;
-        if(frac==.5) {
-          len=8;
+        var halfPos = (view.fy-halfValue)/HzPx*view.ry+this.ystart;
+        if(halfValue<=view.fy) {
+          ctx.moveTo(this.x, halfPos);
+          var len = 6;
+          if(frac==.5) {
+            len=8;
+          }
+  
+          ctx.lineTo(this.x-len, halfPos);
+        }
+        else {
+          break;
         }
 
-        ctxFq.lineTo(fq.width-len, halfPos);
-
 
       }
 
-      ctxFq.font =fontSize+"px Roboto";
-      ctxFq.textAlign = "right";
-      if(value-view.fyend<=this.delta/6) {
-        ctxFq.textBaseline = "bottom";
-      }
-      else if(view.fy-value<=this.delta/6) {
-        ctxFq.textBaseline = "top";
-      }
-      else {
-        ctxFq.textBaseline = "middle";
-      }
+      ctx.font =fontSize+"px Roboto";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
 
-      ctxFq.strokeText(value, fq.width-15, pos);
+      ctx.strokeText(value, this.x-15, pos);
 
 
     }
-    ctxFq.stroke();
+    ctx.stroke();
 
   };
 }
