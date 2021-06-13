@@ -124,9 +124,11 @@ $(function(){
     mp.y=e.offsetY;
 
     if(e.button==0) {
-      if(detections.checkResize(mp.x,mp.y)) {
+      detections.checkResize(mp.x,mp.y);
+      if(detections.resizeDir>0) {
+        console.log("asdf");
         md=false;
-        detections.resize();
+        detections.setResize();
       }
       else {
         // Start panning
@@ -144,53 +146,17 @@ $(function(){
 
 
 
-  $("#spec-td").on('mousemove','.detection',function(e) {
-
-    var triggeredI = $(".detection").index($(this));
-
-    if(this == e.target) {
-
-      focusedI = triggeredI;
-
-      if(!scaleDet && !moveDet) {
-
-        scaleTopDet = (e.offsetY<border);
-        scaleBottomDet = (detections[focusedI].height-e.offsetY<border);
-        scaleLeftDet = (e.offsetX<border);
-        scaleRightDet = (detections[focusedI].width-e.offsetX<border);
-      }
-    }
-
-    if(!scaleDet && !moveDet) {
-
-      // hoverI = triggeredI;
-      // detections[hoverI].updateCssLabel();
-      // detections[hoverI].focus();
-
-    }
-  });
 
 
-  $("#spec-td").on('mouseleave','.detection',function(e) {
-    if(!scaleDet && !moveDet) {
-      // if(hoverI<detections.length) {
-      //   detections[hoverI].unFocus();
-      // }
-    }
-  });
 
 
-  $("#spec-td").on('keydown','.label-text',function(e) {
-    if(e.keyCode == 13) {
-      e.target.blur();
-    }
-  });
+  
 
-  $(document).mousemove(function(e) {
+  $("#spec").on('mousemove', e => {
     mouseMove(e);
   })
 
-  $(document).mouseup(function(e) {
+  $("#spec").on('mouseup', e => {
     mouseUp(e);
   });
 
@@ -200,61 +166,7 @@ $(function(){
   });
 
 
-  $("#spec-td").on('mousedown','.detection .delete-det',function() {
-    var parentDet = $(this).parents(".detection");
-    var i = $(".detection").index(parentDet);
-    var detToDel = detections[i];
-    if(confirm("Are you sure you want to delete this detection: "+detToDel.label.text+"?")) {
-      detToDel.delete();
-      detections.splice(i,1);
-    }
-    else {
-      detToDel.unFocus();
-    }
-  });
 
-
-  $("#spec-td").on('click','.detection',function(e) {
-    if(this == e.target) {
-
-      if(!mm && !wasEditing) {
-        var i = $(".detection").index($(this));
-        var x = detections[i].x + e.offsetX;
-        setCursor(x);
-      }
-      else {
-        wasEditing = false;
-      }
-      mm=false;
-    }
-  });
-
-
-  $("#spec-td").on('focus','.detection .id',function() {
-    wl=true;
-  });
-
-
-  $("#spec-td").on('focusout','.detection .id',function() {
-    var i = $(".id").index($(this));
-    detections[i].unFocus();
-    wl=false;
-    wasEditing=true;
-  });
-
-  $("#spec").click(function(e) {
-    if(!mm) {
-      setCursor(e.offsetX);
-    }
-    mm=false;
-
-  });
-
-  $(document).click(function(e) {
-    if(!$(e.target).hasClass('detection')){
-      wasEditing=false;
-    }
-  })
 
   $(document).keyup(function(e){
      if(e.keyCode == 32 && !wl){

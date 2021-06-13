@@ -176,22 +176,27 @@ function Cursor() {
 class CanvasDrawableStationary {
   constructor(xstart,xend,ystart,yend) {
     this.view = view;
+
+    this.xstart = xstart;
+    this.xend = xend;
+    this.ystart = ystart;
+    this.yend = yend;
   }
 
   stoPx(t) {
-    return (t-view.tx)/sPx*this.view.rx+this.xstart;
+    return (t-this.view.tx)/sPx*this.view.rx+this.xstart;
   }
 
   pxtoS(x) {
-    return (x-xstart)/this.view.rx*sPx+this.view.tx;
+    return (x-this.xstart)/this.view.rx*sPx+this.view.tx;
   }
 
-  HztoPx(val) {
-    return (val-view.tx)/sPx*view.rx+this.xstart;
+  HztoPx(f) {
+    return (this.view.fy-f)/HzPx*this.view.ry+this.ystart;
   }
 
-  pxtoHz(val) {
-    return (val-view.tx)/sPx*view.rx+this.xstart;
+  pxtoHz(y) {
+    return this.view.fy-(y-this.ystart)/this.view.ry*HzPx;
   }
   
 
@@ -499,8 +504,6 @@ class Detections {
 
     this.resizing=false;
 
-    console.log()
-
     this.loadDets();
   }
 
@@ -597,12 +600,22 @@ class Detections {
           return "nw-resize";
           break;
       }
-      return this.resizeDir>0;
     }
   }
 
   setResize() {
+    this.detHover.resizeDir = this.resizeDir;
+    this.resizing = true;
     this.detHover.setResize();
+  }
+
+  stopResize(x,y) {
+    this.resizing = false;
+    if(this.detHover!=undefined) this.detHover.stopResize(x);
+  }
+
+  resize(x,y) {
+    this.detHover.resize(x,y);
   }
   
 
@@ -701,14 +714,15 @@ class Detections {
    
 }
 
-class Detection {
+class Detection extends CanvasDrawableStationary {
   constructor(data,x=false,y=false) {
-    this.xstart=fqwidth;
-    this.ystart=tinfocvsheight;
-    this.x=x;
-    this.y=y;
-    this.w,this.h,this.oldx,this.oldy,this.oldw,this.oldh;
+    super(fqwidth,fqwidth+cvswidth, tinfocvsheight, tinfocvsheight+cvsheight);
+    this.xs=x;
+    this.ys=y;
+    this.xe,this.ye,this.oldxs,this.oldys,this.oldxe,this.oldye;
+    this.w,this.h;
     this.isHover = false;
+    this.resizeDir=0;
     this.frame=6;
     if(data) {
       this.label = new Label(data["label_id"]);
@@ -720,7 +734,7 @@ class Detection {
       this.dur = this.tstart-this.tend;
       this.fstart = data["fstart"];
       this.fend = data["fend"];
-      this.fRange = this.fend - this.fstart;
+      this.frange = this.fend - this.fstart;
       // this.append();
       // this.update();
     }
@@ -741,39 +755,103 @@ class Detection {
   }
 
   update() {
-    this.x=(this.tstart-view.tx)/sPx*view.rx+this.xstart;
-    this.y=(view.fy-this.fend)/HzPx*view.ry+this.ystart;
-    this.w=(this.tend-this.tstart)/sPx*view.rx;
-    this.h=(this.fend-this.fstart)/HzPx*view.ry;
+    this.xs = this.stoPx(this.tstart);
+    this.ys = this.HztoPx(this.fend);
+    this.xe = this.stoPx(this.tend);
+    this.ye = this.HztoPx(this.fstart);
+    this.updateWH();
   }
 
+  updateWH() {
+    this.w=this.xe-this.xs;
+    this.h=this.ye-this.ys;
+  }
+
+  updateTF() {
+    this.tstart = this.pxtoS(this.xs);
+    this.tend = this.pxtoS(this.xe);
+    this.dur = this.tstart-this.tend;
+    this.fstart = this.pxtoHz(this.ye);
+    this.fend = this.pxtoHz(this.ys);
+    this.frange = this.fend - this.fstart;
+  }
 
 
   hover(x,y) {
     this.update();
-    return (x>=this.x && x<=this.x+this.w && y>=this.y && y<=this.y+this.h);
+    return (x>=this.xs && x<=this.xe && y>=this.ys && y<=this.ye);
   }
 
   setResize() {
-    this.oldx=this.x, this.oldy=this.y;
-    this.oldw=this.w, this.oldh=this.h;
+    // this.oldxs=this.xs, this.oldys=this.ys;
+    // this.oldxe=this.xe, this.oldye=this.ye;
     this.isResizing = true;
   }
 
+  stopResize() {
+    if(this.xe<this.xs) {
+      let x = this.xe
+      this.xe = this.xs;
+      this.xs = x;
+    }
+
+    if(this.ye<this.ys) {
+      let y = this.ye
+      this.ye = this.ys;
+      this.ys = y;
+    }
+
+
+    this.updateWH();
+    this.updateTF();
+    this.save();
+    this.isResizing = false;
+    this.resizeDir = 0;
+  }
+
+  
+
   resize(x,y) {
-    this.x=(this.tstart-view.tx)/sPx*view.rx+this.xstart;
-    this.y=(view.fy-this.fend)/HzPx*view.ry+this.ystart;
-    this.w=(this.tend-this.tstart)/sPx*view.rx;
-    this.h=(this.fend-this.fstart)/HzPx*view.ry;
+    if(this.resizeDir>0 && this.isResizing) {
+      if(this.resizeDir<=2 || this.resizeDir==8) {
+        this.ys = this.coordInYBound(y);
+        
+      }
+      else if(this.resizeDir>=2 && this.resizeDir<=6) {
+        this.ye = this.coordInYBound(y);
+      }
+
+      if(this.resizeDir>=2 && this.resizeDir<=4) {
+        this.xe = this.coordInXBound(x);
+      }
+      else if(this.resizeDir>=6 && this.resizeDir<=8) {
+        this.xs= this.coordInXBound(x);
+      }
+
+    }
+
+    this.updateTF();
+  }
+
+  coordInYBound(y) {
+    return this.coordInBound(y,this.ystart,this.yend);
+  }
+
+  coordInXBound(x) {
+    return this.coordInBound(x,this.xstart,this.xend);
+  }
+
+  coordInBound(coord,bounds,bounde) {
+    return (bounds<coord) ? (bounde>coord) ? coord : bounde : bounds;
   }
   
   checkResize(x,y) {
     this.update();
-    if(this.isHover || this.isResizing) {
-      let t = y<=this.y+this.frame;
-      let r = x>=this.x+this.w-this.frame;
-      let b = y>=this.y+this.h-this.frame;
-      let l = x<=this.x+this.frame;
+    if(this.isHover && !this.isResizing) {
+      let t = y<=this.ys+this.frame;
+      let r = x>=this.xe-this.frame;
+      let b = y>=this.ye-this.frame;
+      let l = x<=this.xs+this.frame;
       if(t) {
         if(r) return 2;
         else if(l) return 8;
@@ -794,29 +872,61 @@ class Detection {
   }
 
   drawOnCanvas() {
-   
+    
+    this.update();
 
     if(this.isHover) {
-      this.update();
       ctx.beginPath();
       ctx.lineWidth = "3";
       ctx.strokeStyle = "green"; 
-      ctx.rect(this.x, this.y, this.w, this.h);
+      ctx.rect(this.xs, this.ys, this.w, this.h);
       ctx.stroke();
       ctx.globalAlpha = 0.2;
       ctx.fillStyle = 'green';
-      ctx.fillRect(this.x, this.y, this.w, this.h);
+      ctx.fillRect(this.xs, this.ys, this.w, this.h);
       ctx.globalAlpha = 1;
     }
 
     else {
-      this.update();
       ctx.beginPath();
       ctx.lineWidth = "3";
       ctx.strokeStyle = "red"; 
-      ctx.rect(this.x, this.y, this.w, this.h);
+      ctx.rect(this.xs, this.ys, this.w, this.h);
       ctx.stroke();
     }
+  }
+
+  getData() {
+    return {
+      id: this.id,
+      pinned: this.pinned,
+      manual: this.manual,
+      tstart: this.tstart,
+      tend: this.tend,
+      fstart: this.fstart,
+      fend: this.fend,
+      analysisid: analysisId,
+      labelid: 0
+    };
+  };
+
+
+  save() {
+      $.ajax({
+        url: '/det/save/',
+        method: "POST",
+        headers: {'X-CSRFToken': csrftoken},
+        data: this.getData(),
+
+      }).done(
+        function(response) {
+          // console.log(response);
+        }
+      ).fail(
+        function (error) {
+          // console.log(error);
+        }
+      );
   }
 }
 
@@ -1275,18 +1385,21 @@ class xAx extends CanvasDrawableStationary {
 }
 
 
-function yAx(parent) {
+class yAx extends CanvasDrawableStationary {
 
-  this.unit= "Hz";
 
-  this.ystart = tinfocvsheight;
-  this.yend =  tinfocvsheight+fqheight;
-  this.x = fqwidth;
+  constructor(parent) {
+    let x = fqwidth;
+    super(x,x,tinfocvsheight,tinfocvsheight+fqheight);
+    this.unit= "Hz";
+    this.x = x;
+    this.deltas = parent.deltas;
+  }
+
+
 
   
-
-  this.deltas = parent.deltas;
-  this.updateDelta = function() {
+  updateDelta() {
       var i = 0;
       var j =-1;
       while(Math.pow(10,j)*this.deltas[i]/HzPx*view.ry<cvsheight/4) {
@@ -1305,38 +1418,36 @@ function yAx(parent) {
         i--;
       }
       this.delta = Math.pow(10,j)*this.deltas[i];
-  };
+  }
 
-  this.updatePos = function() {
+  updatePos() {
       this.first = Math.ceil(view.fyend/this.delta-1)*this.delta;
       if (this.first<0) this.first=0;
-  };
+  }
 
-  this.updateAll = function() {
+  updateAll() {
     this.updateDelta();
     this.updatePos();
   }
 
 
 
-  this.clear = function() {
+  clear() {
     ctx.clearRect(0, 0, fqwidth, fqheight+tinfocvsheight+timelineheight);
   }
 
-  this.inside = function(val) {
+  inside(val) {
     return val<=view.fy && val>=view.fyend;
   }
 
 
-  this.drawOnCanvas = function() {
+  drawOnCanvas() {
 
     ctx.beginPath();
 
     for (var i = 0; this.first+i*this.delta <= view.fy; i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
-      var pos = (view.fy-value)/HzPx*view.ry+this.ystart;
-
-      
+      var pos = this.HztoPx(value);
       if(this.inside(value)) {
         ctx.strokeStyle = "black";
         ctx.moveTo(this.x, pos);
@@ -1354,7 +1465,7 @@ function yAx(parent) {
       for (var k = 1; k*sub < 1; k++) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;
-        var halfPos = (view.fy-halfValue)/HzPx*view.ry+this.ystart;
+        var halfPos = this.HztoPx(halfValue);
         if(this.inside(halfValue)) {
           ctx.moveTo(this.x, halfPos);
           var len = 6;
@@ -1374,5 +1485,5 @@ function yAx(parent) {
     }
     ctx.stroke();
 
-  };
+  }
 }

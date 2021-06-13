@@ -322,14 +322,17 @@ function mouseMove(e) {
 
   mm=true;
 
-  if(!$(e.target).hasClass('detection') && !scaleDet) {
-
-    scaleTopDet = false;
-    scaleBottomDet = false;
-    scaleLeftDet = false;
-    scaleRightDet = false;
+  if(detections.resizing) {
+    detections.resize(e.offsetX,e.offsetY);
   }
-
+  else {
+    if(detections.hover(e.offsetX, e.offsetY)) {
+      updateCursorType(detections.checkResize(e.offsetX, e.offsetY));
+    }
+    else {
+      updateCursorType("auto");
+    }
+  }
 
   if(md) {
     panView(e.clientX-mp.x,e.clientY-mp.y);
@@ -337,83 +340,26 @@ function mouseMove(e) {
     mp.y=e.clientY;
 
   }
-  else if (moveDet) {
-    var x = e.clientX;
-    var y = e.clientY;
-
-    detections[detI].move(x-mp.x,y-mp.y);
-
-    mp.x=x;
-    mp.y=y;
-
-  }
-
-  else if (scaleDet) {
-    if(creatingDet) {
-      if(x<mp.x) {
-        scaleLeftDet = true;
-      }
-      else {
-        scaleRightDet = true;
-      }
-
-      if(y<mp.y) {
-        scaleTopDet = true;
-      }
-      else {
-        scaleBottomDet = true;
-      }
-    creatingDet = false;
-
-    }
-    else {
-      if(detections[detI].width==0) {
-        scaleLeftDet = !scaleLeftDet;
-        scaleRightDet = !scaleRightDet;
-        detections[detI].width=0;
-      }
-
-      if(detections[detI].height==0) {
-        scaleTopDet = !scaleTopDet;
-        scaleBottomDet = !scaleBottomDet;
-        detections[detI].height=0;
-      }
-    }
-
-    var x = e.clientX-specLeft;
-    var y = e.clientY-specTop;
-    detections[detI].resize(x,y,scaleTopDet,scaleBottomDet,scaleLeftDet,scaleRightDet);
-  }
 
   else {
     mm=false;
 
   }
 
-  
-  
-  if(detections.hover(e.offsetX, e.offsetY)) {
-    updateCursorType(detections.checkResize(e.offsetX, e.offsetY));
-  }
-  else {
-    updateCursorType("auto");
-  }
   drawCanvas();
   
 }
 
 function mouseUp(e) {
-  if(scaleDet || moveDet) {
-     detections[detI].unFocus();
-     if(scaleDet) {
-       updateCursorType();
-     }
-     detections[detI].save();
-
+  if(detections.resizing) {
+     detections.stopResize();
    }
+  else if(!mm) {
+    setCursor(e.offsetX);
+  }
 
 
-
+  mm=false;
   md=false;
   moveDet=false;
   scaleDet = false;
