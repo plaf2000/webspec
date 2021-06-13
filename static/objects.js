@@ -173,283 +173,650 @@ function Cursor() {
 }
 
 
+class CanvasDrawableStationary {
+  constructor(xstart,xend,ystart,yend) {
+    this.view = view;
+  }
 
-function Detection(data,x=false,y=false) {
+  stoPx(t) {
+    return (t-view.tx)/sPx*this.view.rx+this.xstart;
+  }
 
-  this.update = function() {
-    this.x = (stoPx(this.tStart)-view.x)*view.rx;
-    this.y = (HztoPx(this.fEnd)-view.y)*view.ry;
+  pxtoS(x) {
+    return (x-xstart)/this.view.rx*sPx+this.view.tx;
+  }
 
-    this.width = (stoPx(this.tEnd)-view.x)*view.rx-this.x;
-    this.height = (HztoPx(this.fStart)-view.y)*view.ry-this.y;
+  HztoPx(val) {
+    return (val-view.tx)/sPx*view.rx+this.xstart;
+  }
+
+  pxtoHz(val) {
+    return (val-view.tx)/sPx*view.rx+this.xstart;
+  }
+  
+
+}
+// function Detection(data,x=false,y=false) {
+
+//   this.update = function() {
+//     this.x = (stoPx(this.tStart)-view.x)*view.rx;
+//     this.y = (HztoPx(this.fEnd)-view.y)*view.ry;
+
+//     this.width = (stoPx(this.tend)-view.x)*view.rx-this.x;
+//     this.height = (HztoPx(this.fStart)-view.y)*view.ry-this.y;
 
 
-    this.updateCss();
+//     this.updateCss();
 
-  };
+//   };
 
-  this.updateCssLabel = function() {
-    var labelHeight = this.label.jqueryElement.outerHeight();
+//   this.updateCssLabel = function() {
+//     var labelHeight = this.label.jqueryElement.outerHeight();
 
-    if(this.y<labelHeight) {
-      if(cvsheight-(this.height+this.y)<labelHeight){
-        this.label.updatePos('top-inside',-this.y);
+//     if(this.y<labelHeight) {
+//       if(cvsheight-(this.height+this.y)<labelHeight){
+//         this.label.updatePos('top-inside',-this.y);
+//       }
+//       else{this.label.updatePos('bottom');}
+//     }
+//     else { this.label.updatePos('top'); }
+//   };
+
+//   this.updateCss = function() {
+//     if(this.tEnd>=view.tx && this.tStart<=view.txend) {
+
+
+//       this.css = {
+//         'display': 'block',
+//         'left': this.x+'px',
+//         'top': this.y+'px',
+//         'width': this.width+'px',
+//         'height': this.height+'px'
+//       };
+
+//       this.jqueryElement.css(this.css);
+
+//     }
+
+
+//     else {
+//       this.css={"display": 'none'};
+//       this.jqueryElement.css(this.css);
+//     }
+//   };
+
+//   this.addClass = function(className) {
+//     this.jqueryElement.addClass(className);
+//   }
+
+//   this.removeClass = function(className) {
+//     this.jqueryElement.removeClass(className);
+//   }
+//   this.focus = function() {
+//     this.addClass("focus");
+//   }
+//   this.unFocus = function() {
+//     this.removeClass("focus");
+
+//   }
+
+
+//   this.updateTF = function() {
+//     this.tStart = pxtoS(this.x/view.rx+view.x);
+//     this.fEnd = pxtoHz(this.y/view.ry+view.y);
+
+//     this.tEnd = pxtoS((this.width+this.x)/view.rx+view.x);
+//     this.fStart = pxtoHz((this.height+this.y)/view.ry+view.y);
+//   }
+
+
+//   this.resize = function(x,y,t,b,l,r) {
+//     this.manual = true;
+
+
+//     this.xend=this.x+this.width;
+//     this.yend=this.y+this.height;
+
+//     if(l) { this.x = x; }
+//     else if(r) { this.xend = x; }
+//     this.width = this.xend-this.x;
+
+//     if(this.width < 0) {
+//       this.width =0;
+//       if(l) {this.x = this.xend;}
+//     }
+
+//     if(t) { this.y = y; }
+//     else if(b) { this.yend = y; }
+//     this.height = this.yend-this.y;
+
+//     if(this.height < 0) {
+//       this.height =0;
+//       if(t) {this.y = this.yend;}
+//     }
+
+//     this.xend=this.x+this.width;
+//     this.yend=this.y+this.height;
+
+
+//     this.updateTF();
+
+//     if(this.tStart<0) { this.tStart=0; }
+//     if(this.tEnd>audio.duration) { this.tEnd=audio.duration; }
+//     if(this.fEnd>hf) { this.fEnd=hf; }
+//     if(this.fStart<lf) { this.fStart=lf; }
+
+//     this.update();
+//     this.updateCssLabel();
+
+//   }
+
+//   this.move = function(dx,dy) {
+//     this.manual = true;
+
+
+//     var deltaT = this.tEnd - this.tStart;
+//     var deltaF = this.fEnd - this.fStart;
+
+//     this.x+=dx;
+//     this.y+=dy;
+
+//     this.updateTF();
+
+
+//     if(this.tStart<0) {
+//       this.tStart=0;
+//       this.tEnd=deltaT;
+//     }
+
+//     if(this.tEnd>audio.duration) {
+//       this.tEnd=audio.duration;
+//       this.tStart=this.tEnd-deltaT;
+//     }
+
+//     if(this.fEnd>hf) {
+//       this.fEnd=hf;
+//       this.fStart=this.fEnd-deltaF;
+//     }
+
+//     if(this.fStart<lf) {
+//       this.fStart=lf;
+//       this.fEnd=this.fStart+deltaF;
+//     }
+
+
+//     this.update();
+//     this.updateCssLabel();
+
+//   };
+
+//   this.append = function() {
+//     this.html = '<div class="detection" id="'+this.id+'"></div>';
+//     $("#spec-td").append(this.html);
+//     this.jqueryElement = $(".detection#"+this.id);
+
+//     this.label.append(this.jqueryElement);
+
+//   };
+
+//   this.setId = function(id) {
+//     this.id = id;
+//     this.jqueryElement.attr("id",id);
+//   };
+
+//   this.getData = function() {
+//     return {
+//       id: this.id,
+//       pinned: this.pinned,
+//       manual: this.manual,
+//       tstart: this.tStart,
+//       tend: this.tEnd,
+//       fstart: this.fStart,
+//       fend: this.fEnd,
+//       analysisid: analysisId,
+//       labelid: this.label.id()
+//     };
+//   };
+
+//   this.create = function() {
+//     this.manual = true;
+//     var det = this;
+//     $.ajax({
+
+//       url: '/det/create/',
+//       method: "POST",
+//       headers: {'X-CSRFToken': csrftoken},
+//       data: det.getData(),
+
+//     }).done(
+//           function(response) {
+//             det.setId(response.id);
+//             det.label.setId(response.id);
+//             det.save();
+//           }
+//     ).fail(
+//           function (error) {
+//             console.log(error);
+//           }
+//     );
+//   };
+
+//   this.save = function() {
+//     if(this.id!="adding") {
+//       this.manual = true;
+//       var det = this;
+
+//       $.ajax({
+//         url: '/det/save/',
+//         method: "POST",
+//         headers: {'X-CSRFToken': csrftoken},
+//         data: det.getData(),
+
+//       }).done(
+//         function(response) {
+//           // console.log(response);
+//         }
+//       ).fail(
+//         function (error) {
+//           console.log(error);
+//         }
+//       );
+
+//     }
+//   };
+
+
+//   this.delete = function() {
+//     var det = this;
+//     $.ajax({
+
+//       url: '/det/delete/',
+//       method: "POST",
+//       headers: {'X-CSRFToken': csrftoken},
+//       data: { id: det.id },
+
+//     }).done(
+//           function(response) {
+//             det.jqueryElement.fadeOut(400, function(){ this.remove(); });
+
+//           }
+//     ).fail(
+//           function (error) {
+//             console.log(error);
+//           }
+//     );
+//   };
+
+//   if(data) {
+//     this.label = new Label(data["label_id"]);
+//     this.pinned = data["pinned"];
+//     this.maual = data["manual"];
+//     this.id = data["id"];
+//     this.tStart = data["tstart"];
+//     this.tEnd = data["tend"];
+//     this.fStart = data["fstart"];
+//     this.fEnd = data["fend"];
+//     this.append();
+//     this.update();
+//   }
+
+//   else {
+//     this.label = new Label("adding");
+//     this.id="adding";
+//     this.manual = true;
+//     this.pinned = false;
+//     this.x=x;
+//     this.y=y;
+//     this.width = 0;
+//     this.height = 0;
+//     this.updateTF();
+//     this.append();
+//     this.create();
+//   }
+// }
+
+class Detections {
+  
+  constructor() {
+    this.visStart;
+    this.visEnd;
+
+    this.memStart;
+    this.memEnd;
+
+    this.firstVis;
+    this.firstMem;
+
+    this.lastVis;
+    this.lastMem;
+
+    this.detsStart=[];
+    this.detsEnd=[];
+
+    this.detHover;
+
+    this.visDets = new Set(); 
+
+    this.resizing=false;
+
+    console.log()
+
+    this.loadDets();
+  }
+
+
+  loadDets(start=0, end=3600) {
+    
+      $.get(
+            '/det/getvis',
+            {
+              ts: start,
+              te: end,
+              ord: 0
+            }).done(
+              (newDets) => {
+                for(let i=0; i<newDets.length; i++) {
+                  let det = new Detection(newDets[i]);
+                  this.visDets.add(det);
+                  this.detsStart.push(det);
+                }
+                this.detsEnd = [...this.detsStart];
+                this.detsEnd.sort((a,b) => a.tend-b.tend);
+
+                this.firstVis=0;
+                this.lastVis=newDets.length-1;
+
+                this.visStart=start;
+                this.visEnd=end;
+              }
+            );    
+
+  }
+
+  drawOnCanvas() {
+    this.refreshVis();
+    for(let det of this.visDets) {
+      if(det!=this.detHover) det.drawOnCanvas();
+    }
+    
+  }
+
+  drawOnFocusOnCanvas() {
+    if(this.detHover!=undefined) this.detHover.drawOnCanvas();
+  }
+
+  hover(x,y) {
+    let detHover;
+    for(let det of this.visDets) {
+      if(det.hover(x,y)) {
+        if(det==this.detHover) {
+          detHover = det;
+          break;
+        }
+        detHover = det;
       }
-      else{this.label.updatePos('bottom');}
     }
-    else { this.label.updatePos('top'); }
-  };
-
-  this.updateCss = function() {
-    if(this.tEnd>=view.tx && this.tStart<=view.txend) {
-
-
-      this.css = {
-        'display': 'block',
-        'left': this.x+'px',
-        'top': this.y+'px',
-        'width': this.width+'px',
-        'height': this.height+'px'
-      };
-
-      this.jqueryElement.css(this.css);
-
+    if(this.detHover!=undefined) this.detHover.isHover=false;
+    this.detHover = detHover;
+    if(detHover!=undefined) {
+      this.detHover.isHover = true;
+      return true;
     }
-
-
-    else {
-      this.css={"display": 'none'};
-      this.jqueryElement.css(this.css);
-    }
-  };
-
-  this.addClass = function(className) {
-    this.jqueryElement.addClass(className);
+    return false;
   }
 
-  this.removeClass = function(className) {
-    this.jqueryElement.removeClass(className);
-  }
-  this.focus = function() {
-    this.addClass("focus");
-  }
-  this.unFocus = function() {
-    this.removeClass("focus");
-
-  }
-
-
-  this.updateTF = function() {
-    this.tStart = pxtoS(this.x/view.rx+view.x);
-    this.fEnd = pxtoHz(this.y/view.ry+view.y);
-
-    this.tEnd = pxtoS((this.width+this.x)/view.rx+view.x);
-    this.fStart = pxtoHz((this.height+this.y)/view.ry+view.y);
-  }
-
-
-  this.resize = function(x,y,t,b,l,r) {
-    this.manual = true;
-
-
-    this.xend=this.x+this.width;
-    this.yend=this.y+this.height;
-
-    if(l) { this.x = x; }
-    else if(r) { this.xend = x; }
-    this.width = this.xend-this.x;
-
-    if(this.width < 0) {
-      this.width =0;
-      if(l) {this.x = this.xend;}
+  checkResize(x,y) {
+    if(this.hover(x,y) && !this.resizing) {
+      this.resizeDir=this.detHover.checkResize(x,y);
+      switch(this.resizeDir) {
+        case 0:
+          return "auto";
+          break;
+        case 1:
+          return "n-resize";
+          break;
+        case 2:
+          return "ne-resize";
+          break;
+        case 3:
+          return "e-resize";
+          break;
+        case 4:
+          return "se-resize";
+          break;
+        case 5:
+          return "s-resize";
+          break;
+        case 6:
+          return "sw-resize";
+          break;
+        case 7:
+          return "w-resize";
+          break;
+        case 8:
+          return "nw-resize";
+          break;
+      }
+      return this.resizeDir>0;
     }
-
-    if(t) { this.y = y; }
-    else if(b) { this.yend = y; }
-    this.height = this.yend-this.y;
-
-    if(this.height < 0) {
-      this.height =0;
-      if(t) {this.y = this.yend;}
-    }
-
-    this.xend=this.x+this.width;
-    this.yend=this.y+this.height;
-
-
-    this.updateTF();
-
-    if(this.tStart<0) { this.tStart=0; }
-    if(this.tEnd>audio.duration) { this.tEnd=audio.duration; }
-    if(this.fEnd>hf) { this.fEnd=hf; }
-    if(this.fStart<lf) { this.fStart=lf; }
-
-    this.update();
-    this.updateCssLabel();
-
   }
 
-  this.move = function(dx,dy) {
-    this.manual = true;
-
-
-    var deltaT = this.tEnd - this.tStart;
-    var deltaF = this.fEnd - this.fStart;
-
-    this.x+=dx;
-    this.y+=dy;
-
-    this.updateTF();
-
-
-    if(this.tStart<0) {
-      this.tStart=0;
-      this.tEnd=deltaT;
-    }
-
-    if(this.tEnd>audio.duration) {
-      this.tEnd=audio.duration;
-      this.tStart=this.tEnd-deltaT;
-    }
-
-    if(this.fEnd>hf) {
-      this.fEnd=hf;
-      this.fStart=this.fEnd-deltaF;
-    }
-
-    if(this.fStart<lf) {
-      this.fStart=lf;
-      this.fEnd=this.fStart+deltaF;
-    }
-
-
-    this.update();
-    this.updateCssLabel();
-
-  };
-
-  this.append = function() {
-    this.html = '<div class="detection" id="'+this.id+'"></div>';
-    $("#spec-td").append(this.html);
-    this.jqueryElement = $(".detection#"+this.id);
-
-    this.label.append(this.jqueryElement);
-
-  };
-
-  this.setId = function(id) {
-    this.id = id;
-    this.jqueryElement.attr("id",id);
-  };
-
-  this.getData = function() {
-    return {
-      id: this.id,
-      pinned: this.pinned,
-      manual: this.manual,
-      tstart: this.tStart,
-      tend: this.tEnd,
-      fstart: this.fStart,
-      fend: this.fEnd,
-      analysisid: analysisId,
-      labelid: this.label.id()
-    };
-  };
-
-  this.create = function() {
-    this.manual = true;
-    var det = this;
-    $.ajax({
-
-      url: '/det/create/',
-      method: "POST",
-      headers: {'X-CSRFToken': csrftoken},
-      data: det.getData(),
-
-    }).done(
-          function(response) {
-            det.setId(response.id);
-            det.label.setId(response.id);
-            det.save();
-          }
-    ).fail(
-          function (error) {
-            console.log(error);
-          }
-    );
-  };
-
-  this.save = function() {
-    if(this.id!="adding") {
-      this.manual = true;
-      var det = this;
-
-      $.ajax({
-        url: '/det/save/',
-        method: "POST",
-        headers: {'X-CSRFToken': csrftoken},
-        data: det.getData(),
-
-      }).done(
-        function(response) {
-          // console.log(response);
-        }
-      ).fail(
-        function (error) {
-          console.log(error);
-        }
-      );
-
-    }
-  };
-
-
-  this.delete = function() {
-    var det = this;
-    $.ajax({
-
-      url: '/det/delete/',
-      method: "POST",
-      headers: {'X-CSRFToken': csrftoken},
-      data: { id: det.id },
-
-    }).done(
-          function(response) {
-            det.jqueryElement.fadeOut(400, function(){ this.remove(); });
-
-          }
-    ).fail(
-          function (error) {
-            console.log(error);
-          }
-    );
-  };
-
-  if(data) {
-    this.label = new Label(data["label_id"]);
-    this.pinned = data["pinned"];
-    this.maual = data["manual"];
-    this.id = data["id"];
-    this.tStart = data["tstart"];
-    this.tEnd = data["tend"];
-    this.fStart = data["fstart"];
-    this.fEnd = data["fend"];
-    this.append();
-    this.update();
+  setResize() {
+    this.detHover.setResize();
   }
+  
 
-  else {
-    this.label = new Label("adding");
-    this.id="adding";
-    this.manual = true;
-    this.pinned = false;
+  refreshVis(start = view.tx, end = view.txend) {
+    if(start<this.visStart) {
+      while(this.firstVis>0 && this.detsEnd[this.firstVis-1].tend>start) {
+        this.firstVis--;
+        this.visDets.add(this.detsEnd[this.firstVis]);
+      } 
+    }
+
+    else if(start>this.visStart) {
+
+      while(this.firstVis<this.detsEnd.length && this.detsEnd[this.firstVis].tend<start) {
+        this.visDets.delete(this.detsEnd[this.firstVis]);
+        this.firstVis++;
+      } 
+    }
+
+    if(end>this.visEnd) {
+      while(this.lastVis<this.detsEnd.length-1 && this.detsStart[this.lastVis+1].tstart<end)  {
+        this.lastVis++;
+        this.visDets.add(this.detsStart[this.lastVis]);
+      } 
+    }
+
+    else if(end<this.visEnd) {
+      while(this.lastVis>=0 && this.detsStart[this.lastVis].tstart>end) {
+        this.visDets.delete(this.detsStart[this.lastVis]);
+        this.lastVis--;
+        
+      } 
+    }
+
+    this.visStart=start;
+    this.visEnd=end;
+
+
+
+
+
+    // if(start<memStart) {
+    //   loading();
+    //   $.get(
+    //         '/det/getvis',
+    //         {
+    //           ts: start,
+    //           te: end,
+    //           ord: 0
+    //         }).done(
+    //           function(newVisDets) {
+    //             if(newVisDets.length==0) {
+    //               memStart = start;
+    //             }
+    //             else {
+    //               $.get(
+    //                 '/det/getleft',
+    //                 {
+    //                   ts: newVisDets[0]["tstart"],
+    //                   te: visStart,
+    //                   ord: 0
+    //                 }).done(
+    //                   function(newMemDet) {
+    //                     let newDets  = [new Detection(newVisDets[0])];
+    //                     for (var i = 0; i < newMemDet.length; i++) {
+    //                       let det = new Detection(newMemDet[i]);
+    //                       newDets[i].next = det;
+    //                       newDets.push(det);
+    //                     }
+
+    //                     for (var i = 1; i < newVisDets.length; i++) {
+    //                       let det = new Detection(newVisDets[i]);
+    //                       newDets[newMemDet.length+i].next = det;
+    //                       newDets.push(det);
+    //                     }
+                        
+        
+    //                     newDets.sort((a,b) => a.tstart-b.tstart);
+    //                     for (var i = 0; i < newMemDet.length; i++) {
+    //                       if(i+1<newMemDet.length) {
+    //                         newDets[i].next = newDets[i+1];
+    //                       }
+    //                       else {
+    //                         newDets[i].next = newDets[i+1];
+    //                       }
+    //                     }
+    //                   }
+    //                 );
+    //             }
+    //             stopLoading();
+    //           }
+    //         );    
+
+    // }
+  }
+   
+}
+
+class Detection {
+  constructor(data,x=false,y=false) {
+    this.xstart=fqwidth;
+    this.ystart=tinfocvsheight;
     this.x=x;
     this.y=y;
-    this.width = 0;
-    this.height = 0;
-    this.updateTF();
-    this.append();
-    this.create();
+    this.w,this.h,this.oldx,this.oldy,this.oldw,this.oldh;
+    this.isHover = false;
+    this.frame=6;
+    if(data) {
+      this.label = new Label(data["label_id"]);
+      this.pinned = data["pinned"];
+      this.maual = data["manual"];
+      this.id = data["id"];
+      this.tstart = data["tstart"];
+      this.tend = data["tend"];
+      this.dur = this.tstart-this.tend;
+      this.fstart = data["fstart"];
+      this.fend = data["fend"];
+      this.fRange = this.fend - this.fstart;
+      // this.append();
+      // this.update();
+    }
+
+    else {
+      // this.label = new Label("adding");
+      // this.id="adding";
+      // this.manual = true;
+      // this.pinned = false;
+      // this.x=x;
+      // this.y=y;
+      // this.width = 0;
+      // this.height = 0;
+      // this.updateTF();
+      // this.append();
+      // this.create();
+    }
+  }
+
+  update() {
+    this.x=(this.tstart-view.tx)/sPx*view.rx+this.xstart;
+    this.y=(view.fy-this.fend)/HzPx*view.ry+this.ystart;
+    this.w=(this.tend-this.tstart)/sPx*view.rx;
+    this.h=(this.fend-this.fstart)/HzPx*view.ry;
+  }
+
+
+
+  hover(x,y) {
+    this.update();
+    return (x>=this.x && x<=this.x+this.w && y>=this.y && y<=this.y+this.h);
+  }
+
+  setResize() {
+    this.oldx=this.x, this.oldy=this.y;
+    this.oldw=this.w, this.oldh=this.h;
+    this.isResizing = true;
+  }
+
+  resize(x,y) {
+    this.x=(this.tstart-view.tx)/sPx*view.rx+this.xstart;
+    this.y=(view.fy-this.fend)/HzPx*view.ry+this.ystart;
+    this.w=(this.tend-this.tstart)/sPx*view.rx;
+    this.h=(this.fend-this.fstart)/HzPx*view.ry;
+  }
+  
+  checkResize(x,y) {
+    this.update();
+    if(this.isHover || this.isResizing) {
+      let t = y<=this.y+this.frame;
+      let r = x>=this.x+this.w-this.frame;
+      let b = y>=this.y+this.h-this.frame;
+      let l = x<=this.x+this.frame;
+      if(t) {
+        if(r) return 2;
+        else if(l) return 8;
+        return 1;
+      }
+      else if(b) {
+        if(r) return 4;
+        else if(l) return 6;
+        return 5;
+      }
+      else {
+        if(l) return 7;
+        if(r) return 3;
+      }
+      return 0;
+    }
+    
+  }
+
+  drawOnCanvas() {
+   
+
+    if(this.isHover) {
+      this.update();
+      ctx.beginPath();
+      ctx.lineWidth = "3";
+      ctx.strokeStyle = "green"; 
+      ctx.rect(this.x, this.y, this.w, this.h);
+      ctx.stroke();
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = 'green';
+      ctx.fillRect(this.x, this.y, this.w, this.h);
+      ctx.globalAlpha = 1;
+    }
+
+    else {
+      this.update();
+      ctx.beginPath();
+      ctx.lineWidth = "3";
+      ctx.strokeStyle = "red"; 
+      ctx.rect(this.x, this.y, this.w, this.h);
+      ctx.stroke();
+    }
   }
 }
 
@@ -793,18 +1160,19 @@ function Axes() {
   this.drawOnCanvas();
 }
 
-function xAx(parent) {
+class xAx extends CanvasDrawableStationary {
 
-  this.unit= "s";
+  constructor(parent) {
+    let y = tinfocvsheight+fqheight;
 
-  this.y = tinfocvsheight+fqheight;
-  this.xstart = fqwidth;
-  this.xend =   fqwidth+cvswidth;
+    super(fqwidth,fqwidth+cvswidth,y,y);
+    this.y = y;
+    this.unit= "s";
 
+    this.deltas = parent.deltas;
+  }
   
-
-  this.deltas = parent.deltas;
-  this.updateDelta = function() {
+  updateDelta() {
       var i = 0;
       var j =-2;
       while(Math.pow(10,j)*this.deltas[i]/sPx*view.rx<cvswidth/6) {
@@ -825,29 +1193,29 @@ function xAx(parent) {
       this.delta = Math.pow(10,j)*this.deltas[i];
   };
 
-  this.updatePos = function() {
+  updatePos() {
       this.first = Math.ceil(view.tx/this.delta-1)*this.delta;
       if (this.first<0) this.first=0;
   };
 
-  this.updateAll = function() {
+  updateAll() {
     this.updateDelta();
     this.updatePos();
   }
 
 
-  this.clear = function() {
+  clear() {
     ctx.clearRect(0,this.y, timelinewidth+fqwidth+10, timelineheight+10);
   }
 
-  this.drawOnCanvas = function() {
+  drawOnCanvas() {
     
     ctx.beginPath();
 
 
     for (var i = 0; this.first+i*this.delta <= view.txend && this.first+i*this.delta <= audio.duration; i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
-      var pos = (value-view.tx)/sPx*view.rx+this.xstart;
+      var pos = this.stoPx(value);
       var time = new Date(0,0,0,0,0,0,0);
 
       var timeStr = timeToStr(time,value);
@@ -875,7 +1243,7 @@ function xAx(parent) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;
         if(halfValue<=audio.duration) {
-          var halfPos = (halfValue-view.tx)/sPx*view.rx+this.xstart;
+          var halfPos = this.stoPx(halfValue);
 
           ctx.strokeStyle = "black";
           ctx.moveTo(halfPos, this.y);

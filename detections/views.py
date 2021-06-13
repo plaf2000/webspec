@@ -5,8 +5,30 @@ from .models import Detection
 from django.core import serializers
 import json
 
-def get(request):
-    queryset = list(Detection.objects.values().filter(tstart__lte=request.GET["te"],tend__gte=request.GET["ts"]))
+def getvis(request):
+    queryset = list(
+        Detection.objects
+        .order_by(["tstart","tend"][int(request.GET["ord"])]).
+        values()
+        .filter(
+            tstart__lt=request.GET["te"],
+            tend__gt=request.GET["ts"]
+        )
+    )
+    # queryset_json = serializers.serialize('json', queryset)
+    return JsonResponse(queryset,safe=False)
+
+def getleft(request):
+    queryset = list(
+        Detection.objects
+        .order_by(["tstart","tend"][int(request.GET["ord"])]).
+        values()
+        .filter(
+            tend__lte=request.GET["te"],
+            tstart__lte=request.GET["ms"],
+            tstart__gte=request.GET["ts"]
+        )
+    )
     # queryset_json = serializers.serialize('json', queryset)
     return JsonResponse(queryset,safe=False)
 

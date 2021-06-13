@@ -16,6 +16,7 @@ function getCookie(name) {
 
 
 
+
 function clearMemory(clear=false) {
   if(clear) { clearCanvas() };
   specImgs = [];
@@ -80,6 +81,8 @@ function drawSpecBorder() {
 
 function drawCanvas() {
 
+  updateCursorType()
+
   clearAll();
   ctx.save();
   
@@ -89,15 +92,16 @@ function drawCanvas() {
   }
 
 
-  for(var i =0; i<detections.length; i++) {
-    detections[i].update();
-  }
 
   
 
   ctx.resetTransform();
+  detections.drawOnCanvas();
+
 
   cursor.drawOnCanvas();
+
+  detections.drawOnFocusOnCanvas();
 
   clearInfos();
   drawSpecBorder();
@@ -117,7 +121,6 @@ function zoomCanvas(dir,x,y,shiftPressed) {
   var ratio=Math.pow(zoomRatio,dir);
 
   view.zoom(dir,ratio,x,y,shiftPressed);
-  updateMemory();
 
   axes.updateAll();
   tinfo.update();
@@ -129,10 +132,6 @@ function zoomCanvas(dir,x,y,shiftPressed) {
     audio.play();
   }
 
-  if(hoverI!='') {
-
-    detections[hoverI].updateCssLabel();
-  }
 }
 
 
@@ -145,7 +144,6 @@ function panView(x,y) {
   axes.updatePos();
   tinfo.update();
 
-  updateMemory();
 
 
   drawCanvas();
@@ -154,7 +152,6 @@ function panView(x,y) {
 
 function moveViewTo(x,y,xT,yF) {
   view.moveTo(xPx=x,yPx=y,xT=xT,yF=yF);
-  updateMemory();
   drawCanvas();
 }
 
@@ -175,36 +172,7 @@ function setMarker(x,marker) {
   drawCanvas();
 }
 
-function updateMemory() {
-  var buffer = view.txend-view.tx;
-  if(view.tx<memoryStart) {
-    loadDetections(view.tx-buffer,memoryStart);
-    memoryStart = view.tx-buffer;
-  }
-  if(view.txend>memoryEnd) {
-    loadDetections(memoryEnd,view.txend+buffer);
-    memoryEnd = view.txend+buffer;
-  }
 
-}
-
-function loadDetections(tStart,tEnd) {
-  loading();
-  $.get(
-        '/det/get',
-        {
-          ts: tStart,
-          te: tEnd
-        }).done(
-          function(detsToAdd) {
-            var lenDet = detections.length;
-            for (var i = 0; i < detsToAdd.length; i++) {
-              detections[i+lenDet] = new Detection(detsToAdd[i]);
-            }
-            stopLoading();
-          }
-        );
-}
 
 
 function updateVal(nfftChanged) {
@@ -269,8 +237,6 @@ function addToCanvas(offset,i,left=false,duration=dur) {
   loading();
 
   ctx.save();
-  // console.log(i);
-  // console.log(offset,duration);
   requestSpec(offset,i,duration).done(
     function(data) {
 
@@ -417,9 +383,6 @@ function mouseMove(e) {
     var x = e.clientX-specLeft;
     var y = e.clientY-specTop;
     detections[detI].resize(x,y,scaleTopDet,scaleBottomDet,scaleLeftDet,scaleRightDet);
-
-
-
   }
 
   else {
@@ -427,7 +390,16 @@ function mouseMove(e) {
 
   }
 
-  updateCursorType();
+  
+  
+  if(detections.hover(e.offsetX, e.offsetY)) {
+    updateCursorType(detections.checkResize(e.offsetX, e.offsetY));
+  }
+  else {
+    updateCursorType("auto");
+  }
+  drawCanvas();
+  
 }
 
 function mouseUp(e) {
@@ -455,25 +427,9 @@ function mouseUp(e) {
 
 }
 
-function updateCursorType() {
-
-  current = resizeClass;
-  
-  resizeClass = "resize-";
-  if (scaleTopDet) { resizeClass += "n"; }
-  else if (scaleBottomDet) { resizeClass += "s"; }
-  if (scaleLeftDet) { resizeClass += "w"; }
-  else if (scaleRightDet) { resizeClass += "e"; }
-
-  if(resizeClass!=current) {
-    if(current !="") {
-      $("*").removeClass(current);
-    }
-    if(resizeClass=="resize-") {
-      resizeClass="";
-    }
-    else {
-      $("*").addClass(resizeClass);
-    }
-  }  
+function updateCursorType(newType) {
+  if(newType!=cursorType) {
+    $("#spec").css("cursor",newType);
+    cursorType=newType;
+  }
 }

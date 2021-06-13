@@ -6,7 +6,7 @@ $(function(){
   var detectionStart = 1570;
   var detectionEnd = 1580;
 
-  window.detections = [];
+  
 
   $('#nfft option[value="' + dfn + '"]').prop('selected',true);
   $('#wfft option[value="' + wfft + '"]').prop('selected',true);
@@ -47,6 +47,7 @@ $(function(){
 
 
   window.view = new View(offset);
+  window.detections = new Detections();
 
 
   window.cursor = new Cursor();
@@ -64,11 +65,6 @@ $(function(){
   addToCanvas(offset,0);
   view.moveTo(xPx=0,yPx=0);
 
-  window.memoryStart = view.tx;
-  window.memoryEnd = view.txend;
-
-  loadDetections(view.tx,view.txend);
-
   window.axes = new Axes();
 
   window.isFirefox = (/Firefox/i.test(navigator.userAgent));
@@ -79,12 +75,13 @@ $(function(){
   window.md=false;
   window.moveDet=false;
   window.mm=false;
-  window.hoverI;
 
   window.scaleTopDet = false;
   window.scaleBottomDet = false;
   window.scaleLeftDet = false;
   window.scaleRightDet = false;
+
+  window.cursorType = "auto";
 
 
   window.scaleDet=false;
@@ -119,45 +116,27 @@ $(function(){
 
   }
 
-  $("#spec").mousedown(function(e) {
 
-    if(e.which != 3) {
 
-      if (e.which == 1 && e.shiftKey) {
-        detI = detections.length;
-        var newDet = new Detection(false,e.offsetX,e.offsetY);
-        detections.push(newDet);
-        scaleDet = true;
-        creatingDet = true;
+
+  $("#spec").on('mousedown', (e) => {
+    mp.x=e.offsetX;
+    mp.y=e.offsetY;
+
+    if(e.button==0) {
+      if(detections.checkResize(mp.x,mp.y)) {
+        md=false;
+        detections.resize();
       }
-
       else {
+        // Start panning
         md=true;
       }
-
-      mp.x=e.clientX;
-      mp.y=e.clientY;
-
     }
 
-  });
+    else if(e.button==0 && e.shiftKey) {
+      // Create new detection
 
-
-
-  $("#spec-td").on('mousedown','.detection',function(e) {
-
-    mp.x=e.clientX;
-    mp.y=e.clientY;
-
-    detI =$(".detection").index($(this));
-
-    if(e.which == 1 && e.target == this) {
-      scaleDet = (scaleTopDet || scaleBottomDet || scaleLeftDet || scaleRightDet) && (this==e.target);
-      moveDet = (!scaleDet);
-      detections[detI].focus();
-    }
-
-    else if(e.which == 2) {
       md=true;
     }
   });
@@ -184,9 +163,9 @@ $(function(){
 
     if(!scaleDet && !moveDet) {
 
-      hoverI = triggeredI;
-      detections[hoverI].updateCssLabel();
-      detections[hoverI].focus();
+      // hoverI = triggeredI;
+      // detections[hoverI].updateCssLabel();
+      // detections[hoverI].focus();
 
     }
   });
@@ -194,9 +173,9 @@ $(function(){
 
   $("#spec-td").on('mouseleave','.detection',function(e) {
     if(!scaleDet && !moveDet) {
-      if(hoverI<detections.length) {
-        detections[hoverI].unFocus();
-      }
+      // if(hoverI<detections.length) {
+      //   detections[hoverI].unFocus();
+      // }
     }
   });
 
