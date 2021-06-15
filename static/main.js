@@ -210,9 +210,14 @@ $(document).ready(function(){
     mouseUp(e);
   });
 
-  $("input, select").change(function(e) {
+  $("input, select").on('change', function(e) {
     updateVal((e.currentTarget.id=="nfft"));
-    updateCanvas();
+    if(e.currentTarget.id!="offset") {
+      updateCanvas();
+    }
+    else {
+      drawCanvas();
+    }
   });
 
 

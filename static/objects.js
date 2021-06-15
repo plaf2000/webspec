@@ -618,7 +618,7 @@ function View(offset) {
       xT = this.tx;
     }
     else {
-      xPx = (xPx===undefined) ? HztoPx(xT) : xPx;
+      xPx = (xPx===undefined) ? stoPx(xT) : xPx;
       xT = (xT===undefined) ? pxtoS(xPx) : xT;
     }
 
@@ -631,6 +631,8 @@ function View(offset) {
       yPx = (yPx===undefined) ? HztoPx(yF) : yPx;
       yF = (yF===undefined) ? pxtoHz(yPx) : yF;
     }
+
+    // console.log(xPx,yPx,xT,yF)
 
 
 

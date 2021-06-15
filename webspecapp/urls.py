@@ -7,5 +7,5 @@ urlpatterns = [
     path('test/', views.spec, name='test'),
     # path('files/<int:file_id>', views.get_audio, name='get_audio')
     path('audio/', views.get_audio, name='get_audio'),
-    
+    path('',views.redirect_to_projects, name='redirect_to_projects')
 ]

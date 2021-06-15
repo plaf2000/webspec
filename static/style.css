@@ -110,7 +110,7 @@ Detection
    box-sizing: content-box;
    overflow: visible;
    position: absolute;
-   border: 1px solid white;
+   border: 1px solid rgb(181, 49, 14);
    z-index:0;
    user-select: none;
    user-drag: none;

@@ -9,6 +9,11 @@ import base64
 from io import BytesIO
 import math
 from pathlib import Path
+from django.shortcuts import redirect
+
+def redirect_to_projects(request):
+    response = redirect('/projects')
+    return response
 
 def callback(event):
     line_x=event.x
@@ -18,10 +23,13 @@ def spec(request):
 
 
 def create_spec(request):
+
+    
     offset=float(request.GET['offset'])
     dur=float(request.GET['dur'])
     ch=str(request.GET['ch'])
     sens=100-float(request.GET['sens'])
+    print("Sens:",sens)
     con=100-float(request.GET['con'])
     fname=request.GET['fname']
     spx=float(request.GET['spx'])

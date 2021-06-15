@@ -211,8 +211,6 @@ function addToCanvas(offset, i, left = false, duration = dur) {
   loading();
 
   ctx.save();
-  console.log(i);
-  console.log(offset, duration);
   requestSpec(offset, i, duration)
     .done(function (data) {
       var specImg = new SpecImg(data, offset, true, duration);
