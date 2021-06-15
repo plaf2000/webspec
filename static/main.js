@@ -126,7 +126,6 @@ $(function(){
     if(e.button==0) {
       detections.checkResize(mp.x,mp.y);
       if(detections.resizeDir>0) {
-        console.log("asdf");
         md=false;
         detections.setResize();
       }
