@@ -2,6 +2,7 @@ key.txt
 *.log
 *.pot
 *.pyc
+*.ts
 __pycache__/
 .env
 db.sqlite3
