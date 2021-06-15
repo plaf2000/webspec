@@ -24,7 +24,7 @@ About the spectrogram interface:
 
 
 
-**The current version contains a lot of bugs. Many things are getting correct in the unstable branch, which will be pulled in the main branch once the work will be completed.**
+**The current version contains a lot of bugs. Many things are getting corrected in the unstable branch, which will be pulled in the main branch once the work will be completed.**
 
 ## Installation
 
