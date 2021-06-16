@@ -4,7 +4,7 @@ Web interface that allows to listen to tracks and label them. The spectrogram ca
 
 ![Screenshot](https://github.com/plaf2000/webspec/blob/master/screenshot.jpeg)
 
-You can create a project from the home page, but, at the moment, a forms to add devices, recorders, places and audio files is unfortunately unavailable, so you have to add them from http://localhost:8000/admin:
+You can create a project from the home page, but, at the moment, forms to add devices, recorders, places and audio files is unfortunately unavailable, so you have to add them from http://localhost:8000/admin:
 
 1. Add the desired recorder(s) and place(s)
 2. Add the desired device(s) (use the recorder's id to reference it)
