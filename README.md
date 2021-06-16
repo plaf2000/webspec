@@ -1,6 +1,6 @@
 # webspec
 
-Web interface that allows to listen to tracks and label them. The spectrogram can be zoomed, panned and scaled.
+Web interface that allows to listen to tracks and label them while viewing the spectrogram. The tracks can be organized into projects and devices.
 
 ![Screenshot](https://github.com/plaf2000/webspec/blob/master/screenshot.jpeg)
 
