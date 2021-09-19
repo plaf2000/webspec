@@ -1,3 +1,28 @@
+class Box {
+  constructor(xstart, xend, ystart, yend) {
+    this.xstart = xstart;
+    this.xend = xend;
+    this.ystart = ystart;
+    this.yend = yend;
+  }
+
+  isHover(x,y) {
+    return x>=this.xstart && x<=this.xend && y>= this.ystart && y<=this.yend;
+  }
+
+  isHoverStrict(x,y) {
+    return x>this.xstart && x<this.xend && y> this.ystart && y<this.yend;
+  }
+}
+
+class Canvas extends Box {
+  constructor(ctx, ) {
+
+  }
+}
+
+
+
 function SpecImg(base64data,offset,adding=false,duration=dur) {
   this.base64=window.btoa(base64data);
   this.start=offset;
@@ -173,14 +198,10 @@ function Cursor() {
 }
 
 
-class CanvasDrawableStationary {
+class CanvasDrawableStationary extends Box {
   constructor(xstart,xend,ystart,yend) {
+    super(xstart,xend,ystart,yend)
     this.view = view;
-
-    this.xstart = xstart;
-    this.xend = xend;
-    this.ystart = ystart;
-    this.yend = yend;
   }
 
   stoPx(t) {
@@ -1239,10 +1260,9 @@ function View(offset) {
 
 function Axes() {
   this.deltas = [1,2,5];
-  var parent = this;
 
-  this.x = new xAx(parent);
-  this.y = new yAx(parent);
+  this.x = new xAx(this);
+  this.y = new yAx(this);
 
 
   this.updateAll = function() {
@@ -1323,7 +1343,8 @@ class xAx extends CanvasDrawableStationary {
     ctx.beginPath();
 
 
-    for (var i = 0; this.first+i*this.delta <= view.txend && this.first+i*this.delta <= audio.duration; i++) {
+    console.log(audio.duration)
+    for (var i = 0; this.first+i*this.delta <= view.txend && (isNaN(audio.duration) || this.first+i*this.delta <= audio.duration); i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
       var pos = this.stoPx(value);
       var time = new Date(0,0,0,0,0,0,0);
@@ -1352,7 +1373,8 @@ class xAx extends CanvasDrawableStationary {
       for (var k = 1; k*sub < 1; k++) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;
-        if(halfValue<=audio.duration) {
+
+        if((isNaN(audio.duration) || halfValue<=audio.duration)) {
           var halfPos = this.stoPx(halfValue);
 
           ctx.strokeStyle = "black";

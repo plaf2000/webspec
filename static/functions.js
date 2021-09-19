@@ -81,7 +81,6 @@ function drawSpecBorder() {
 
 function drawCanvas() {
 
-  updateCursorType()
 
   clearAll();
   ctx.save();
@@ -324,13 +323,21 @@ function mouseMove(e) {
 
   if(detections.resizing) {
     detections.resize(e.offsetX,e.offsetY);
+    drawCanvas();
   }
   else {
+    let upt, uf
     if(detections.hover(e.offsetX, e.offsetY)) {
-      updateCursorType(detections.checkResize(e.offsetX, e.offsetY));
+      upt = updateCursorType(detections.checkResize(e.offsetX, e.offsetY))
+      uf = updateFocus(true)
     }
     else {
-      updateCursorType("auto");
+      upt = updateCursorType("auto")
+      uf = updateFocus(false)
+    }
+    
+    if(uf || upt) {
+      drawCanvas();
     }
   }
 
@@ -338,7 +345,7 @@ function mouseMove(e) {
     panView(e.clientX-mp.x,e.clientY-mp.y);
     mp.x=e.clientX;
     mp.y=e.clientY;
-
+    drawCanvas();
   }
 
   else {
@@ -346,7 +353,7 @@ function mouseMove(e) {
 
   }
 
-  drawCanvas();
+  
   
 }
 
@@ -375,7 +382,17 @@ function mouseUp(e) {
 
 function updateCursorType(newType) {
   if(newType!=cursorType) {
+    console.log(newType,"!=",cursorType)
     $("#spec").css("cursor",newType);
-    cursorType=newType;
+    window.cursorType=newType;
+    return true
   }
+  return false
 }
+
+function updateFocus(f) {
+  if(f!=focusSomething) {
+    focusSomething = f
+    return true
+  }
+} 

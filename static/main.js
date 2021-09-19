@@ -82,6 +82,7 @@ $(function(){
   window.scaleRightDet = false;
 
   window.cursorType = "auto";
+  window.focusSomething=false;
 
 
   window.scaleDet=false;
