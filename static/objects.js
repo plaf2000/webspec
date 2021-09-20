@@ -15,9 +15,41 @@ class Box {
   }
 }
 
-class Canvas extends Box {
-  constructor(ctx, ) {
+class DrawableBox extends Box {
+  constructor(xstart,xend,ystart,yend) {
+    super(xstart,xend,ystart,yend)
+    this.view = view;
+  }
 
+  stoPx(t) {
+    return (t-this.view.tx)/sPx*this.view.rx+this.xstart;
+  }
+
+  pxtoS(x) {
+    return (x-this.xstart)/this.view.rx*sPx+this.view.tx;
+  }
+
+  HztoPx(f) {
+    return (this.view.fy-f)/HzPx*this.view.ry+this.ystart;
+  }
+
+  pxtoHz(y) {
+    return this.view.fy-(y-this.ystart)/this.view.ry*HzPx;
+  }
+  
+
+}
+
+class Canvas extends Box {
+  constructor(xstart, xend, ystart, yend) {
+    super(xstart, xend, ystart, yend);
+  }
+
+
+  onClick(x,y) {
+    if(view.isHover(x,y)) {
+
+    }
   }
 }
 
@@ -198,30 +230,7 @@ function Cursor() {
 }
 
 
-class CanvasDrawableStationary extends Box {
-  constructor(xstart,xend,ystart,yend) {
-    super(xstart,xend,ystart,yend)
-    this.view = view;
-  }
 
-  stoPx(t) {
-    return (t-this.view.tx)/sPx*this.view.rx+this.xstart;
-  }
-
-  pxtoS(x) {
-    return (x-this.xstart)/this.view.rx*sPx+this.view.tx;
-  }
-
-  HztoPx(f) {
-    return (this.view.fy-f)/HzPx*this.view.ry+this.ystart;
-  }
-
-  pxtoHz(y) {
-    return this.view.fy-(y-this.ystart)/this.view.ry*HzPx;
-  }
-  
-
-}
 // function Detection(data,x=false,y=false) {
 
 //   this.update = function() {
@@ -735,7 +744,7 @@ class Detections {
    
 }
 
-class Detection extends CanvasDrawableStationary {
+class Detection extends DrawableBox {
   constructor(data,x=false,y=false) {
     super(fqwidth,fqwidth+cvswidth, tinfocvsheight, tinfocvsheight+cvsheight);
     this.xs=x;
@@ -1058,6 +1067,35 @@ function Tinfo() {
   this.update();
 }
 
+class View { 
+  static rx=1;
+  static ry=1;
+  static x=0;
+  static y=0;
+  static tx=0;
+  static origOffset=0;
+  static start=0;
+  static end=0;
+
+  static set(offset,dur) {
+    this.origOffset=offset;
+    this.start=offset;
+    this.end=this.start+dur;
+  }
+
+  static zoom(dir, ratio, x, y, squish) {
+    let newRx =  newRatio(this.rx,ratio, true);
+    let newRy = newRatio(this.ry,ratio, false);
+    
+  }
+
+  static newRatio(actual, r, equal) {
+    let newR = r*ratio;
+    let roundedNewR = Math.round(newR*Math.pow(10,12))/Math.pow(10,12);
+    return (roundedNewR==1 || (!equal && roundedNewR<1))? 1 : newR;
+  }
+}
+
 function View(offset) {
 
   this.rx=1;
@@ -1290,7 +1328,7 @@ function Axes() {
   this.drawOnCanvas();
 }
 
-class xAx extends CanvasDrawableStationary {
+class xAx extends DrawableBox {
 
   constructor(parent) {
     let y = tinfocvsheight+fqheight;
@@ -1343,7 +1381,7 @@ class xAx extends CanvasDrawableStationary {
     ctx.beginPath();
 
 
-    console.log(audio.duration)
+    // console.log(audio.duration)
     for (var i = 0; this.first+i*this.delta <= view.txend && (isNaN(audio.duration) || this.first+i*this.delta <= audio.duration); i++) {
       var value = Math.round((this.first+i*this.delta)*1000)/1000;
       var pos = this.stoPx(value);
@@ -1407,7 +1445,7 @@ class xAx extends CanvasDrawableStationary {
 }
 
 
-class yAx extends CanvasDrawableStationary {
+class yAx extends DrawableBox {
 
 
   constructor(parent) {

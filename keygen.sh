@@ -1,1 +1,1 @@
-export SECRET_KEY="`python3 generatekey.py`"
+"`python3 generatekey.py`" > key
