@@ -1,4 +1,4 @@
-class Tinfo {
+export class Tinfo {
     cursor: {
         x: number,
         timeStr: number,
@@ -9,13 +9,13 @@ class Tinfo {
         this.update();
     }
 
-    update(): void {
+    static update(): void {
         this.cursor.x = cursor.relx();
         let time = new Date(0, 0, 0, 0, 0, 0, 0);
         this.cursor.timeStr = timeToStr(time, cursor.tx, true);
     }
 
-    drawOnCanvas(): void {
+    static drawOnCanvas(): void {
         let margin = 10;
         let l = 20;
 

@@ -36,7 +36,7 @@ $(function(){
   window.fqheight=parseInt(window.innerHeight*3/4);
 
 
-  getAudio();
+  Track.getAudio(fname,sr,offset);
 
   updateVal();
 
@@ -168,27 +168,22 @@ $(function(){
 
 
 
-  $(document).keyup(function(e){
-     if(e.keyCode == 32 && !wl){
-       if(!audio.paused) {
-         audio.pause();
-       }
-       else {
-         audio.play();
-       }
+  $(document).on('keyup', e => {
+     if(e.key == 32 && !wl){
+      Track.playPause();
      }
   });
 
-  $(document).keydown(function(e) {
+  $(document).on('keydown', e => {
     if(!wl) {
-      if(e.keyCode == 39) {
+      if(e.key == 39) {
         if(!movingRight) {
           movingRight=true;
           panView(-20,0);
           movingRight=false;
         }
       }
-      else if(e.keyCode == 37) {
+      else if(e.key == 37) {
 
         if(!movingRight) {
           movingRight=true;

@@ -62,7 +62,7 @@ function SpecImg(base64data,offset,adding=false,duration=dur) {
   this.duration = duration;
   this.img=new Image;
   this.img.src = 'data:image/png;base64,'+this.base64;
-  this.img.style="-webkit-filter: blur(500px);  filter: blur(500px);";
+  // this.img.style="-webkit-filter: blur(500px);  filter: blur(500px);";
 
   var parent=this;
   this.img.onload = function() {
@@ -1067,34 +1067,63 @@ function Tinfo() {
   this.update();
 }
 
-class View { 
-  static rx=1;
-  static ry=1;
-  static x=0;
-  static y=0;
-  static tx=0;
-  static origOffset=0;
-  static start=0;
-  static end=0;
+// class View { 
+//   static rx=1;
+//   static ry=1;
+//   static x=0;
+//   static xend=0;
+//   static y=0;
+//   static yend=0;
+//   static tx=0;
+//   static origOffset=0;
+//   static start=0;
+//   static end=0;
 
-  static set(offset,dur) {
-    this.origOffset=offset;
-    this.start=offset;
-    this.end=this.start+dur;
-  }
+//   static set(offset,dur) {
+//     this.origOffset=offset;
+//     this.start=offset;
+//     this.end=this.start+dur;
+//   }
 
-  static zoom(dir, ratio, x, y, squish) {
-    let newRx =  newRatio(this.rx,ratio, true);
-    let newRy = newRatio(this.ry,ratio, false);
+//   static zoom(dir, ratio, x, y, squish) {
+//     let newRx =  newRatio(this.rx,ratio, true);
+//     let newRy = newRatio(this.ry,ratio, false);
+
+//     let absx = this.x+x/this.rx;
+//     let absy = this.y+y/this.ry;
+
+//     let ry=1;
+
+//     if (!squish){
+//       ry = ratio;
+//       this.ry = newRy;
+//     };
+
+//     if (newRx<=1){
+//       ry=1;
+//       this.ry = 1;
+//     };
+
+//     this.rx = newRx;
+
+//     this.x=0;
+//     this.y=0;
     
-  }
+//   }
 
-  static newRatio(actual, r, equal) {
-    let newR = r*ratio;
-    let roundedNewR = Math.round(newR*Math.pow(10,12))/Math.pow(10,12);
-    return (roundedNewR==1 || (!equal && roundedNewR<1))? 1 : newR;
-  }
-}
+
+
+
+
+
+
+
+//   static newRatio(actual, r, equal) {
+//     let newR = r*ratio;
+//     let roundedNewR = Math.round(newR*Math.pow(10,12))/Math.pow(10,12);
+//     return (roundedNewR==1 || (!equal && roundedNewR<1))? 1 : newR;
+//   }
+// }
 
 function View(offset) {
 

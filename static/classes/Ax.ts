@@ -1,3 +1,6 @@
+import {Axes} from "./Axes";
+import {Track} from "./Track";
+
 export abstract class Ax {
     abstract unit: string;
     first: number = 0;
@@ -59,7 +62,7 @@ export abstract class Ax {
         for (
           let i: number = 0;
           this.first + i * this.delta <= this.unitEnd &&
-          this.first + i * this.delta <= audio.duration;
+          this.first + i * this.delta <= Track.audio.duration;
           i++
         ) {
           let value: number = Math.round((this.first + i * this.delta) * 1000) / 1000;
@@ -78,7 +81,7 @@ export abstract class Ax {
             let frac: number = Math.round(sub * k * 10000) / 10000;
             let halfValue: number =
               Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;
-            if (halfValue <= audio.duration) {
+            if (halfValue <= Track.audio.duration) {
               let halfPos: number = ((halfValue - this.unitStart) / this.rConv) * this.r;
     
               this.ctxAx.strokeStyle = "black";
