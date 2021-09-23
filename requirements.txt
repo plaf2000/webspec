@@ -1,5 +1,5 @@
-Django==3.2.4
-numpy==1.17.4
-librosa==0.8.0
 pandas==1.1.2
+Django==3.2.7
+librosa==0.8.0
+numpy==1.17.4
 Pillow==8.3.2
