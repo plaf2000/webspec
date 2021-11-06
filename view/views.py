@@ -1,5 +1,6 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+import struct
 import numpy as np
 import pandas as pd
 import librosa
@@ -11,6 +12,7 @@ import math
 from pathlib import Path
 from files.models import File
 from projects.models import Project
+import json
 
 class Data():
     def __init__(self,request, proj_id, device_id, file_id):
@@ -246,9 +248,11 @@ def create_spec(request, proj_id, device_id, file_id):
     data=np.flip(data,axis=0)
     img = Image.fromarray(data, 'L')
     buffered = BytesIO()
+    
+    buffered.write(struct.pack('d',offset))
     img.save(buffered, format="png")
-    img_str = buffered.getvalue().decode('latin1')
-    response=HttpResponse(img_str,content_type="text/plain")
+    img_str = buffered.getvalue()
+    response=HttpResponse(img_str,content_type="application/octet-stream")
     return response
 
 def clear_data(request):

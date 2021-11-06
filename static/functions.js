@@ -14,6 +14,16 @@ function getCookie(name) {
   return cookieValue;
 }
 
+function double64toDec(f) {
+  let bytes = new Uint8Array(8);
+  for (let i = 0; i < 8; i++) {
+    bytes[i] += f.charCodeAt(i);
+  }
+
+  let dec = new Float64Array(bytes.buffer);
+  return dec;
+}
+
 function clearMemory(clear = false) {
   if (clear) {
     clearCanvas();
@@ -183,7 +193,7 @@ function requestSpec(offset, i, duration = dur) {
   last = offset + duration > audio.duration ? 1 : 0;
   factor = 1;
 
-  var request = $.get("spec/", {
+  let params = {
     offset: offset,
     lf: lf,
     hf: hf,
@@ -197,7 +207,28 @@ function requestSpec(offset, i, duration = dur) {
     last: last,
     i: i,
     factor: factor,
+  };
+
+  var url = new URL("spec/", window.location);
+  Object.keys(params).forEach((key) =>
+    url.searchParams.append(key, params[key])
+  );
+
+  var request = fetch(url, {
+    method: "GET",
+    mimeType: "blob",
   });
+
+  // var request = $.ajax({
+  //   method: "GET",
+  //   url: "spec/",
+  //   data: params,
+  //   mimeType: "blob"
+  // });
+  // var request = $.get(
+  //   "spec/",
+  //   params
+  // );
   return request;
 }
 
@@ -211,20 +242,34 @@ function addToCanvas(offset, i, left = false, duration = dur) {
   loading();
 
   ctx.save();
-  requestSpec(offset, i, duration)
-    .done(function (data) {
-      var specImg = new SpecImg(data, offset, true, duration);
-      !left ? specImgs.push(specImg) : specImgs.unshift(specImg);
 
+  requestSpec(offset, i, duration).then(function (data) {
+    
+    data.blob().then((blob) => {
+      var specImg = new SpecImg(blob, duration);
+      !left ? specImgs.push(specImg) : specImgs.unshift(specImg);
+  
       if (left) {
         view.origFrame++;
       }
       stopLoading();
-    })
-    .fail(function () {
-      stopLoading();
-      addToCanvas(offset, i, left, duration);
     });
+  });
+
+  // requestSpec(offset, i, duration)
+  // .done(function (data) {
+  //   var specImg = new SpecImg(data, duration);
+  //   !left ? specImgs.push(specImg) : specImgs.unshift(specImg);
+
+  //   if (left) {
+  //     view.origFrame++;
+  //   }
+  //   stopLoading();
+  // })
+  // .fail(function () {
+  //   stopLoading();
+  //   addToCanvas(offset, i, left, duration);
+  // });
 }
 
 function stoPx(x) {
