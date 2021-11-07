@@ -1,5 +1,5 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.View = void 0;
 var Canvas_1 = require("./Canvas");
 var Values_1 = require("./Values");

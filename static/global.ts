@@ -1,15 +1,10 @@
-// export let window: {
-//     fname     : string = (window as any).fname;
-//     csrftoken : string = (window as any).csrftoken;
-//     projectId : number = (window as any).projectId;
-//     dfn       : number = (window as any).dfn;
-//     wfft      : number = (window as any).wfft;
-//     sr        : number = (window as any).sr;
-//     analysisId: number = (window as any).analysisId;
-//     zoomRatio : number
-// }
-
-
-// class Global {
-//      = (window as any).zoomRatio;
-// }
+export const globals = {
+    fname     : (window as any).fname,
+    csrftoken : (window as any).csrftoken,
+    projectId : (window as any).projectId,
+    dfn       : (window as any).dfn,
+    wfft      : (window as any).wfft,
+    sr        : (window as any).sr,
+    analysisId: (window as any).analysisId,
+    zoomRatio : .8
+}

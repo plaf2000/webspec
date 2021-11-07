@@ -36,7 +36,7 @@ $(function(){
   window.fqheight=parseInt(window.innerHeight*3/4);
 
 
-  Track.getAudio(fname,sr,offset);
+  getAudio(fname,sr,offset);
 
   updateVal();
 
@@ -170,7 +170,7 @@ $(function(){
 
   $(document).on('keyup', e => {
      if(e.key == 32 && !wl){
-      Track.playPause();
+      cursor.playPause();
      }
   });
 

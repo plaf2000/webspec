@@ -1,5 +1,5 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Axes = void 0;
 var Axes = /** @class */ (function () {
     function Axes() {

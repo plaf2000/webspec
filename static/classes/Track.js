@@ -1,5 +1,5 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Track = void 0;
 var Cursors_1 = require("./Cursors");
 var Track = /** @class */ (function () {

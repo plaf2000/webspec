@@ -1,6 +1,7 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Ax = void 0;
+var Track_1 = require("./Track");
 var Ax = /** @class */ (function () {
     function Ax(parent) {
         this.first = 0;
@@ -41,7 +42,7 @@ var Ax = /** @class */ (function () {
         this.ctxAx.clearRect(0, 0, this.w, this.h);
         this.ctxAx.beginPath();
         for (var i = 0; this.first + i * this.delta <= this.unitEnd &&
-            this.first + i * this.delta <= audio.duration; i++) {
+            this.first + i * this.delta <= Track_1.Track.audio.duration; i++) {
             var value = Math.round((this.first + i * this.delta) * 1000) / 1000;
             var pos = ((value - this.unitStart) / this.rConv) * this.r;
             var time = new Date(0, 0, 0, 0, 0, 0, 0);
@@ -53,7 +54,7 @@ var Ax = /** @class */ (function () {
             for (var k = 1; k * sub < 1; k++) {
                 var frac = Math.round(sub * k * 10000) / 10000;
                 var halfValue = Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;
-                if (halfValue <= audio.duration) {
+                if (halfValue <= Track_1.Track.audio.duration) {
                     var halfPos = ((halfValue - this.unitStart) / this.rConv) * this.r;
                     this.ctxAx.strokeStyle = "black";
                     this.ctxAx.moveTo(halfPos, 0);
