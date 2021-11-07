@@ -107,7 +107,6 @@ def get_audio(request):
 
     f=open(fname,'rb')
     audio=f.read()
-    size=str(Path(fname).stat().st_size)
     response=HttpResponse(audio,content_type="audio/wav")
     response["Accept-Ranges"] = "bytes"
     f.close()

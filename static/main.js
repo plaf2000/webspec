@@ -34,7 +34,7 @@ $(document).ready(function(){
   window.ctxFq=fq.getContext("2d");
 
 
-  getAudio();
+  getAudio(0.0);
 
   updateVal();
 
