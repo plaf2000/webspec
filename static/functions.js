@@ -49,9 +49,9 @@ function stopLoading() {
   }
 }
 
-function getAudio(offset) {
+function getAudio() {
   var fnameURI = encodeURIComponent(fname);
-  var url = "../?offset="+offset;
+  var url = "/audio/?f="+fnameURI;
   window.audio = new Audio(url);
   audio.onloadeddata = function () {
     this.currentTime = offset;
