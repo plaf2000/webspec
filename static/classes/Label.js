@@ -1,7 +1,6 @@
 "use strict";
-var Label = /** @class */ (function () {
-    function Label(id, position) {
-        if (position === void 0) { position = "top"; }
+class Label {
+    constructor(id, position = "top") {
         this.position = position;
         this.html =
             '<div class="label ' +
@@ -10,13 +9,12 @@ var Label = /** @class */ (function () {
                 id +
                 '</div></span><span><div class="delete-det"></div></span></div>';
     }
-    Label.prototype.append = function (detectionJQuery) {
+    append(detectionJQuery) {
         detectionJQuery.append(this.html);
         this.jqueryElement = detectionJQuery.find(".label");
-    };
+    }
     ;
-    Label.prototype.updatePos = function (position, translationY) {
-        if (translationY === void 0) { translationY = false; }
+    updatePos(position, translationY = false) {
         if (typeof this.jqueryElement != "undefined") {
             this.jqueryElement.removeClass(this.position);
             this.jqueryElement.addClass(position);
@@ -32,16 +30,15 @@ var Label = /** @class */ (function () {
             }
         }
         this.position = position;
-    };
+    }
     ;
-    Label.prototype.id = function () {
+    id() {
         var id = parseInt(this.jqueryElement.find(".id").html());
         return isNaN(id) ? 0 : id;
-    };
+    }
     ;
-    Label.prototype.setId = function (id) {
+    setId(id) {
         this.jqueryElement.find(".id").html(id);
-    };
+    }
     ;
-    return Label;
-}());
+}

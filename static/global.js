@@ -1,7 +1,4 @@
-"use strict";
-exports.__esModule = true;
-exports.globals = void 0;
-exports.globals = {
+export const globals = {
     fname: window.fname,
     csrftoken: window.csrftoken,
     projectId: window.projectId,
@@ -9,5 +6,6 @@ exports.globals = {
     wfft: window.wfft,
     sr: window.sr,
     analysisId: window.analysisId,
-    zoomRatio: .8
+    zoomRatio: 0.8,
+    fontSize: 15,
 };

@@ -1,27 +1,21 @@
 import { Detection } from './classes/Detection';
-import { globals } from './global';
+import { globals } from './global.js';
 
 
 export const fontSize: number = 15;
 export let detections: Detection[] = [];
-export const csrftoken: string = (window as any).csrftoken;
-export const projectId: number = (window as any).projectId;
-export let dfn: number = (window as any).fname;
-export let wfft: number = (window as any).wfft;
-export let sr: number = (window as any).sr;   
-export let analysisId: number = (window as any).analysisId;  
 
 export let tinfocvs: any = undefined;
 export let ctxTinfo: any = undefined;
 
-console.log(globals.analysisId);
+console.log("👋😂");
 
 
 // $(function(){
 
 //   $('#nfft option[value="' + dfn + '"]').prop('selected',true);
 //   $('#wfft option[value="' + wfft + '"]').prop('selected',true);
-
+//   🏙️
 //   tinfocvs = document.getElementById("tinfo");
 //   tinfocvs.width=parseInt(window.innerWidth*95/100-2);
 //   tinfocvs.height=parseInt(window.innerHeight/20);

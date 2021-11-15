@@ -1,31 +1,26 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.View = void 0;
-var Canvas_1 = require("./Canvas");
-var Values_1 = require("./Values");
-var Track_1 = require("./Track");
-var View = /** @class */ (function () {
-    function View() {
-    }
-    View.setOffset = function (top, left, offset, dur) {
+import { Canvas } from "./Canvas";
+import { Values } from "./Values";
+import { Track } from "./Track";
+export class View {
+    static setOffset(top, left, offset, dur) {
         View.origOffset = offset;
         View.start = offset;
         View.end = offset + dur;
         View.left = left;
         View.top = top;
-    };
-    View.zoom = function (dir, ratio, x, y, shiftPressed) {
-        var newRx = View.rx * ratio;
+    }
+    static zoom(dir, ratio, x, y, shiftPressed) {
+        let newRx = View.rx * ratio;
         // if(newRx<.018) return;
         newRx =
             Math.round(newRx * Math.pow(10, 12)) / Math.pow(10, 12) == 1 ? 1 : newRx;
-        var newRy = View.ry * ratio;
+        let newRy = View.ry * ratio;
         newRy =
             Math.round(newRy * Math.pow(10, 12)) / Math.pow(10, 12) <= 1 ? 1 : newRy;
-        Canvas_1.Canvas.ctx.resetTransform();
-        var absx = View.x + x / View.rx;
-        var absy = View.y + y / View.ry;
-        var ry = 1;
+        Canvas.ctx.resetTransform();
+        let absx = View.x + x / View.rx;
+        let absy = View.y + y / View.ry;
+        let ry = 1;
         if (!shiftPressed) {
             ry = ratio;
             View.ry = newRy;
@@ -37,17 +32,17 @@ var View = /** @class */ (function () {
         View.rx = newRx;
         View.x = 0;
         View.y = 0;
-        Canvas_1.Canvas.ctx.scale(View.rx, View.ry);
+        Canvas.ctx.scale(View.rx, View.ry);
         var dx = x - absx * View.rx;
         var dy = y - absy * View.ry;
         View.pan(dx, dy);
-    };
-    View.pan = function (dx, dy) {
-        var x = View.x - dx / View.rx;
-        var y = View.y - dy / View.ry;
+    }
+    static pan(dx, dy) {
+        let x = View.x - dx / View.rx;
+        let y = View.y - dy / View.ry;
         View.moveTo(x, y, undefined, undefined);
-    };
-    View.moveTo = function (xPx, yPx, xT, yF) {
+    }
+    static moveTo(xPx, yPx, xT, yF) {
         if ((!xPx && !xT)) {
             throw new Error("x coordinates not specified!");
         }
@@ -70,29 +65,29 @@ var View = /** @class */ (function () {
         }
         if (yPx < 0) {
             yPx = 0;
-            yF = Values_1.Values.hf;
+            yF = Values.hf;
         }
-        else if (yPx + Canvas_1.Canvas.cvs.height / View.ry > Canvas_1.Canvas.cvs.height) {
-            yPx = Canvas_1.Canvas.cvs.height * (1 - 1 / View.ry);
-            yF = Values_1.Values.hf - (Values_1.Values.hf - Values_1.Values.lf) * (1 - 1 / View.ry);
+        else if (yPx + Canvas.cvs.height / View.ry > Canvas.cvs.height) {
+            yPx = Canvas.cvs.height * (1 - 1 / View.ry);
+            yF = Values.hf - (Values.hf - Values.lf) * (1 - 1 / View.ry);
         }
-        if (xT + (Canvas_1.Canvas.cvs.width * Values_1.Values.sPx) / View.rx > Track_1.Track.audio.duration) {
-            xT = Track_1.Track.audio.duration - (Canvas_1.Canvas.cvs.width * Values_1.Values.sPx) / View.rx;
+        if (xT + (Canvas.cvs.width * Values.sPx) / View.rx > Track.audio.duration) {
+            xT = Track.audio.duration - (Canvas.cvs.width * Values.sPx) / View.rx;
             xPx = View.stoPx(xT);
         }
         if (xT < 0) {
             xT = 0;
             xPx = View.stoPx(0);
         }
-        var dx = View.x - xPx;
-        var dy = View.y - yPx;
-        Canvas_1.Canvas.ctx.translate(dx, dy);
+        let dx = View.x - xPx;
+        let dy = View.y - yPx;
+        Canvas.ctx.translate(dx, dy);
         View.detx += dx * View.rx;
         View.dety += dy * View.ry;
         View.x = xPx;
         View.y = yPx;
-        View.xend = View.x + Canvas_1.Canvas.cvs.width / View.rx;
-        View.yend = View.y + Canvas_1.Canvas.cvs.height / View.ry;
+        View.xend = View.x + Canvas.cvs.width / View.rx;
+        View.yend = View.y + Canvas.cvs.height / View.ry;
         View.tx = xT;
         View.fy = yF;
         View.txend = View.pxtoS(View.xend);
@@ -120,32 +115,30 @@ var View = /** @class */ (function () {
         //   }
         //   nSpecs++;
         // }
-    };
+    }
     ;
-    View.stoPx = function (t) {
-        return ((t - View.origOffset) / Values_1.Values.sPx) + View.left / View.rx;
-    };
-    View.pxtoS = function (x) {
-        return (x - View.left / View.rx) * Values_1.Values.sPx + View.origOffset;
-    };
-    View.HztoPx = function (f) {
-        return (Values_1.Values.hf - f) / Values_1.Values.HzPx + View.top / View.ry;
-    };
-    View.pxtoHz = function (y) {
-        return Values_1.Values.hf - (y - View.top / View.ry) * Values_1.Values.HzPx;
-    };
-    View.rx = 1;
-    View.ry = 1;
-    View.x = 0;
-    View.y = 0;
-    View.detx = 0;
-    View.dety = 0;
-    View.origFrame = 0;
-    View.actualI = 0;
-    View.fy = 0;
-    View.tx = 0;
-    View.txend = 0;
-    View.fyend = 0;
-    return View;
-}());
-exports.View = View;
+    static stoPx(t) {
+        return ((t - View.origOffset) / Values.sPx) + View.left / View.rx;
+    }
+    static pxtoS(x) {
+        return (x - View.left / View.rx) * Values.sPx + View.origOffset;
+    }
+    static HztoPx(f) {
+        return (Values.hf - f) / Values.HzPx + View.top / View.ry;
+    }
+    static pxtoHz(y) {
+        return Values.hf - (y - View.top / View.ry) * Values.HzPx;
+    }
+}
+View.rx = 1;
+View.ry = 1;
+View.x = 0;
+View.y = 0;
+View.detx = 0;
+View.dety = 0;
+View.origFrame = 0;
+View.actualI = 0;
+View.fy = 0;
+View.tx = 0;
+View.txend = 0;
+View.fyend = 0;

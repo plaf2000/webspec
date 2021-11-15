@@ -1,12 +1,9 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCookie = void 0;
-function getCookie(name) {
-    var cookieValue = null;
+export function getCookie(name) {
+    let cookieValue = null;
     if (document.cookie && document.cookie !== "") {
-        var cookies = document.cookie.split(";");
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
             // Does this cookie string begin with the name we want?
             if (cookie.substring(0, name.length + 1) === name + "=") {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
@@ -16,9 +13,7 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-exports.getCookie = getCookie;
-function clearMemory(clear) {
-    if (clear === void 0) { clear = false; }
+function clearMemory(clear = false) {
     if (clear) {
         clearCanvas();
     }
@@ -154,8 +149,7 @@ function updateVal(nfftChanged) {
     window.sPx = dur / cvs.width;
     window.HzPx = (hf - lf) / cvs.height;
 }
-function requestSpec(offset, i, duration) {
-    if (duration === void 0) { duration = dur; }
+function requestSpec(offset, i, duration = dur) {
     last = offset + duration > audio.duration ? 1 : 0;
     factor = 1;
     var request = $.get("spec/", {
@@ -180,9 +174,7 @@ function updateCanvas() {
     clearMemory(false);
     view.pan(0, 0);
 }
-function addToCanvas(offset, i, left, duration) {
-    if (left === void 0) { left = false; }
-    if (duration === void 0) { duration = dur; }
+function addToCanvas(offset, i, left = false, duration = dur) {
     loading();
     ctx.save();
     console.log(i);
@@ -213,8 +205,7 @@ function HztoPx(y) {
 function pxtoHz(y) {
     return hf - y * HzPx;
 }
-function timeToStr(time, value, cs) {
-    if (cs === void 0) { cs = false; }
+function timeToStr(time, value, cs = false) {
     var s = parseInt(value);
     var ms = value - s;
     time.setSeconds(s);

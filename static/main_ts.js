@@ -1,21 +1,12 @@
-"use strict";
-exports.__esModule = true;
-exports.ctxTinfo = exports.tinfocvs = exports.analysisId = exports.sr = exports.wfft = exports.dfn = exports.projectId = exports.csrftoken = exports.detections = exports.fontSize = void 0;
-var global_1 = require("./global");
-exports.fontSize = 15;
-exports.detections = [];
-exports.csrftoken = window.csrftoken;
-exports.projectId = window.projectId;
-exports.dfn = window.fname;
-exports.wfft = window.wfft;
-exports.sr = window.sr;
-exports.analysisId = window.analysisId;
-exports.tinfocvs = undefined;
-exports.ctxTinfo = undefined;
-console.log(global_1.globals.analysisId);
+export const fontSize = 15;
+export let detections = [];
+export let tinfocvs = undefined;
+export let ctxTinfo = undefined;
+console.log("👋😂");
 // $(function(){
 //   $('#nfft option[value="' + dfn + '"]').prop('selected',true);
 //   $('#wfft option[value="' + wfft + '"]').prop('selected',true);
+//   🏙️
 //   tinfocvs = document.getElementById("tinfo");
 //   tinfocvs.width=parseInt(window.innerWidth*95/100-2);
 //   tinfocvs.height=parseInt(window.innerHeight/20);
