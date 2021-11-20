@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'places',
     'devices',
     'files',
-    'view'
+    'view',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'middleware.BytesRange.RangesMiddleware',
 ]
 
 ROOT_URLCONF = 'webspec.urls'

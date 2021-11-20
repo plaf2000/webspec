@@ -105,10 +105,12 @@ def get_audio(request):
 
     fname = request.GET["f"]
 
-    f=open(fname,'rb')
+    f=open(fname,"rb")
     audio=f.read()
-    response=HttpResponse(audio,content_type="audio/wav")
-    response["Accept-Ranges"] = "bytes"
-    f.close()
-
+    response=HttpResponse(audio,content_type="audio/x-wav")
+    if request.META.get('HTTP_RANGE') is not None:
+        setattr(response, "file_to_stream", f)
+    else: 
+        f.close()
+    # setattr(response, "file_to_stream", f)
     return response
