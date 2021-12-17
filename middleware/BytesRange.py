@@ -33,5 +33,4 @@ class RangesMiddleware(MiddlewareMixin):
         response['Content-Length'] = l
         response['Content-Range'] = 'bytes %d-%d/%d' % (start, end, statobj.st_size)
         setattr(response, "block_size", l)
-        print("4")
         return response

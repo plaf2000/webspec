@@ -112,5 +112,4 @@ def get_audio(request):
         setattr(response, "file_to_stream", f)
     else: 
         f.close()
-    # setattr(response, "file_to_stream", f)
     return response
