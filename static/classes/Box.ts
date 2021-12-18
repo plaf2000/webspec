@@ -1,49 +1,40 @@
+
+
+import { Coord } from "./Coord";
+import { xPx, xUnit, yPx, yUnit } from "./Units";
+import { Values } from "./Values";
 import { View } from "./View";
-import { Values } from "./Values"
 
-export class Box {
 
-  xstart: number;
-  xend: number;
-  ystart: number;
-  yend: number;
 
-  constructor(xstart: number, xend: number, ystart: number, yend: number) {
-    this.xstart = xstart;
-    this.xend = xend;
-    this.ystart = ystart;
-    this.yend = yend;
+
+
+
+
+export class Box<xU extends xUnit,yU extends yUnit> {
+  s: Coord<xU,yU>;
+  e: Coord<xU,yU>;
+
+  constructor(s: Coord<xU,yU>, e: Coord<xU,yU>) {
+    this.s = s;
+    this.e = e;
   }
 
-  isHover(x: number,y: number) {
-    return x>=this.xstart && x<=this.xend && y>= this.ystart && y<=this.yend;
+  isHover(x: xPx, y: yPx) {
+    return x >= this.s.x.convert(xPx) && x <= this.e.x && y >= this.s.y && y <= this.e.y;
   }
 
-  isHoverStrict(x: number,y: number) {
-    return x>this.xstart && x<this.xend && y> this.ystart && y<this.yend;
+  isHoverStrict(x: number, y: number) {
+    return x > this.s.x && x < this.e.x && y > this.s.y && y < this.e.y;
   }
 }
 
 export class DrawableBox extends Box {
-  constructor(xstart: number,xend: number,ystart: number,yend: number) {
-    super(xstart,xend,ystart,yend)
+  view: View;
+  constructor(view: View, pxCoord: PxCoord) {
+    super(pxCoord);
+    this.view = view;
   }
 
-  stoPx(t: number) {
-    return (t-View.tx)/Values.sPx*View.rx+this.xstart;
-  }
-
-  pxtoS(x: number) {
-    return (x-this.xstart)/View.rx*Values.sPx+View.tx;
-  }
-
-  HztoPx(f: number) {
-    return (View.fy-f)/Values.HzPx*View.ry+this.ystart;
-  }
-
-  pxtoHz(y: number) {
-    return View.fy-(y-this.ystart)/View.ry*Values.HzPx;
-  }
-  
-
+  updatetf() {}
 }

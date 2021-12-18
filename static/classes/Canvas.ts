@@ -1,17 +1,18 @@
 import { View } from "./View";
 
 export class Canvas {
-    static cvs: HTMLCanvasElement;
-    static ctx : CanvasRenderingContext2D;
-    loadCvs(cvs: HTMLCanvasElement) {
-        Canvas.cvs = cvs;
+    cvs: HTMLCanvasElement;
+    ctx : CanvasRenderingContext2D;
+
+    constructor(cvs: HTMLCanvasElement) {
+        this.cvs = cvs;
         let ctx = cvs.getContext("2d");
         if(ctx == null) {
             throw new Error("Context is null!");
         }
-        Canvas.ctx = ctx;
+        this.ctx = ctx;
     }
-    static drawCanvas() {
+    drawCanvas() {
         
     }
 }
