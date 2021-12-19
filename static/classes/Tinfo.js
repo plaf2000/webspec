@@ -1,15 +1,18 @@
-export class Tinfo {
-    constructor() {
+"use strict";
+exports.__esModule = true;
+exports.Tinfo = void 0;
+var Tinfo = /** @class */ (function () {
+    function Tinfo() {
         this.update();
     }
-    static update() {
+    Tinfo.update = function () {
         this.cursor.x = cursor.relx();
-        let time = new Date(0, 0, 0, 0, 0, 0, 0);
+        var time = new Date(0, 0, 0, 0, 0, 0, 0);
         this.cursor.timeStr = timeToStr(time, cursor.tx, true);
-    }
-    static drawOnCanvas() {
-        let margin = 10;
-        let l = 20;
+    };
+    Tinfo.drawOnCanvas = function () {
+        var margin = 10;
+        var l = 20;
         ctxTinfo.fillStyle = "white";
         ctxTinfo.strokeStyle = "black";
         if (this.cursor.x < 0) {
@@ -33,5 +36,7 @@ export class Tinfo {
             ctxTinfo.textBaseline = "top";
             ctxTinfo.strokeText(this.cursor.timeStr, this.cursor.x, tinfocvs.height - fontSize);
         }
-    }
-}
+    };
+    return Tinfo;
+}());
+exports.Tinfo = Tinfo;

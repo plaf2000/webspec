@@ -1,144 +1,155 @@
-import { Canvas } from "./Canvas";
-import { Values } from "./Values";
-import { Track } from "./Track";
-export class View {
-    static setOffset(top, left, offset, dur) {
-        View.origOffset = offset;
-        View.start = offset;
-        View.end = offset + dur;
-        View.left = left;
-        View.top = top;
+"use strict";
+exports.__esModule = true;
+exports.View = void 0;
+var Canvas_1 = require("./Canvas");
+var Values_1 = require("./Values");
+var Track_1 = require("./Track");
+var View = /** @class */ (function () {
+    function View(top, left, offset, dur) {
+        this.rx = 1;
+        this.ry = 1;
+        this.x = 0;
+        this.y = 0;
+        this.detx = 0;
+        this.dety = 0;
+        this.origFrame = 0;
+        this.actualI = 0;
+        this.fy = 0;
+        this.tx = 0;
+        this.txend = 0;
+        this.fyend = 0;
+        this.origOffset = offset;
+        this.start = offset;
+        this.end = offset + dur;
+        this.left = left;
+        this.top = top;
     }
-    static zoom(dir, ratio, x, y, shiftPressed) {
-        let newRx = View.rx * ratio;
+    View.prototype.setOffset = function (top, left, offset, dur) {
+        this.origOffset = offset;
+        this.start = offset;
+        this.end = offset + dur;
+        this.left = left;
+        this.top = top;
+    };
+    View.prototype.zoom = function (dir, ratio, x, y, shiftPressed) {
+        var newRx = this.rx * ratio;
         // if(newRx<.018) return;
         newRx =
             Math.round(newRx * Math.pow(10, 12)) / Math.pow(10, 12) == 1 ? 1 : newRx;
-        let newRy = View.ry * ratio;
+        var newRy = this.ry * ratio;
         newRy =
             Math.round(newRy * Math.pow(10, 12)) / Math.pow(10, 12) <= 1 ? 1 : newRy;
-        Canvas.ctx.resetTransform();
-        let absx = View.x + x / View.rx;
-        let absy = View.y + y / View.ry;
-        let ry = 1;
+        Canvas_1.Canvas.ctx.resetTransform();
+        var absx = this.x + x / this.rx;
+        var absy = this.y + y / this.ry;
+        var ry = 1;
         if (!shiftPressed) {
             ry = ratio;
-            View.ry = newRy;
+            this.ry = newRy;
         }
         if (newRx <= 1) {
             ry = 1;
-            View.ry = 1;
+            this.ry = 1;
         }
-        View.rx = newRx;
-        View.x = 0;
-        View.y = 0;
-        Canvas.ctx.scale(View.rx, View.ry);
-        var dx = x - absx * View.rx;
-        var dy = y - absy * View.ry;
-        View.pan(dx, dy);
-    }
-    static pan(dx, dy) {
-        let x = View.x - dx / View.rx;
-        let y = View.y - dy / View.ry;
-        View.moveTo(x, y, undefined, undefined);
-    }
-    static moveTo(xPx, yPx, xT, yF) {
-        if ((!xPx && !xT)) {
+        this.rx = newRx;
+        this.x = 0;
+        this.y = 0;
+        Canvas_1.Canvas.ctx.scale(this.rx, this.ry);
+        var dx = x - absx * this.rx;
+        var dy = y - absy * this.ry;
+        this.pan(dx, dy);
+    };
+    View.prototype.pan = function (dx, dy) {
+        var x = this.x - dx / this.rx;
+        var y = this.y - dy / this.ry;
+        this.moveTo(x, y, undefined, undefined);
+    };
+    View.prototype.moveTo = function (xPx, yPx, xT, yF) {
+        if (!xPx && !xT) {
             throw new Error("x coordinates not specified!");
         }
-        if ((!yPx && !yF)) {
+        if (!yPx && !yF) {
             throw new Error("y coordinates not specified!");
         }
         if (yPx) {
-            yF = View.pxtoHz(yPx);
+            yF = this.pxtoHz(yPx);
         }
         else {
-            yPx = (yF) ? View.HztoPx(yF) : 0;
-            yF = (yF) ? yF : 0;
+            yPx = yF ? this.HztoPx(yF) : 0;
+            yF = yF ? yF : 0;
         }
         if (xPx) {
-            xT = View.pxtoS(xPx);
+            xT = this.pxtoS(xPx);
         }
         else {
-            xPx = (xT) ? View.stoPx(xT) : 0;
-            xT = (xT) ? xT : 0;
+            xPx = xT ? this.stoPx(xT) : 0;
+            xT = xT ? xT : 0;
         }
         if (yPx < 0) {
             yPx = 0;
-            yF = Values.hf;
+            yF = Values_1.Values.hf;
         }
-        else if (yPx + Canvas.cvs.height / View.ry > Canvas.cvs.height) {
-            yPx = Canvas.cvs.height * (1 - 1 / View.ry);
-            yF = Values.hf - (Values.hf - Values.lf) * (1 - 1 / View.ry);
+        else if (yPx + Canvas_1.Canvas.cvs.height / this.ry > Canvas_1.Canvas.cvs.height) {
+            yPx = Canvas_1.Canvas.cvs.height * (1 - 1 / this.ry);
+            yF = Values_1.Values.hf - (Values_1.Values.hf - Values_1.Values.lf) * (1 - 1 / this.ry);
         }
-        if (xT + (Canvas.cvs.width * Values.sPx) / View.rx > Track.audio.duration) {
-            xT = Track.audio.duration - (Canvas.cvs.width * Values.sPx) / View.rx;
-            xPx = View.stoPx(xT);
+        if (xT + (Canvas_1.Canvas.cvs.width * Values_1.Values.sPx) / this.rx > Track_1.Track.audio.duration) {
+            xT = Track_1.Track.audio.duration - (Canvas_1.Canvas.cvs.width * Values_1.Values.sPx) / this.rx;
+            xPx = this.stoPx(xT);
         }
         if (xT < 0) {
             xT = 0;
-            xPx = View.stoPx(0);
+            xPx = this.stoPx(0);
         }
-        let dx = View.x - xPx;
-        let dy = View.y - yPx;
-        Canvas.ctx.translate(dx, dy);
-        View.detx += dx * View.rx;
-        View.dety += dy * View.ry;
-        View.x = xPx;
-        View.y = yPx;
-        View.xend = View.x + Canvas.cvs.width / View.rx;
-        View.yend = View.y + Canvas.cvs.height / View.ry;
-        View.tx = xT;
-        View.fy = yF;
-        View.txend = View.pxtoS(View.xend);
-        View.fyend = View.pxtoHz(View.yend);
-        // while (View.tx < View.start && View.start > 0) {
-        //   // View.start =  ? 0 : View.start-dur;
-        //   // addToCanvas(View.start,true);
-        //   if (View.start > Values.dur) {
-        //     View.start -= Values.dur;
-        //     addToCanvas(View.start, nSpecs, true);
+        var dx = this.x - xPx;
+        var dy = this.y - yPx;
+        Canvas_1.Canvas.ctx.translate(dx, dy);
+        this.detx += dx * this.rx;
+        this.dety += dy * this.ry;
+        this.x = xPx;
+        this.y = yPx;
+        this.xend = this.x + Canvas_1.Canvas.cvs.width / this.rx;
+        this.yend = this.y + Canvas_1.Canvas.cvs.height / this.ry;
+        this.tx = xT;
+        this.fy = yF;
+        this.txend = this.pxtoS(this.xend);
+        this.fyend = this.pxtoHz(this.yend);
+        // while (this.tx < this.start && this.start > 0) {
+        //   // this.start =  ? 0 : this.start-dur;
+        //   // addToCanvas(this.start,true);
+        //   if (this.start > Values.dur) {
+        //     this.start -= Values.dur;
+        //     addToCanvas(this.start, nSpecs, true);
         //   } else {
         //     addToCanvas(0, nSpecs, true);
-        //     // addToCanvas(0,true,View.start);
-        //     View.start = 0;
+        //     // addToCanvas(0,true,this.start);
+        //     this.start = 0;
         //   }
         //   nSpecs++;
         // }
-        // while (View.txend > View.end && View.end < audio.duration) {
-        //   if (View.end + Values.dur < audio.duration) {
-        //     addToCanvas(View.end, nSpecs, false);
-        //     View.end += Values.dur;
+        // while (this.txend > this.end && this.end < audio.duration) {
+        //   if (this.end + Values.dur < audio.duration) {
+        //     addToCanvas(this.end, nSpecs, false);
+        //     this.end += Values.dur;
         //   } else {
-        //     addToCanvas(View.end, nSpecs, false, audio.duration - View.end);
-        //     View.end = audio.duration;
+        //     addToCanvas(this.end, nSpecs, false, audio.duration - this.end);
+        //     this.end = audio.duration;
         //   }
         //   nSpecs++;
         // }
-    }
-    ;
-    static stoPx(t) {
-        return ((t - View.origOffset) / Values.sPx) + View.left / View.rx;
-    }
-    static pxtoS(x) {
-        return (x - View.left / View.rx) * Values.sPx + View.origOffset;
-    }
-    static HztoPx(f) {
-        return (Values.hf - f) / Values.HzPx + View.top / View.ry;
-    }
-    static pxtoHz(y) {
-        return Values.hf - (y - View.top / View.ry) * Values.HzPx;
-    }
-}
-View.rx = 1;
-View.ry = 1;
-View.x = 0;
-View.y = 0;
-View.detx = 0;
-View.dety = 0;
-View.origFrame = 0;
-View.actualI = 0;
-View.fy = 0;
-View.tx = 0;
-View.txend = 0;
-View.fyend = 0;
+    };
+    View.prototype.stoPx = function (t) {
+        return (t - this.origOffset) / Values_1.Values.sPx + this.left / this.rx;
+    };
+    View.prototype.pxtoS = function (x) {
+        return (x - this.left / this.rx) * Values_1.Values.sPx + this.origOffset;
+    };
+    View.prototype.HztoPx = function (f) {
+        return (Values_1.Values.hf - f) / Values_1.Values.HzPx + this.top / this.ry;
+    };
+    View.prototype.pxtoHz = function (y) {
+        return Values_1.Values.hf - (y - this.top / this.ry) * Values_1.Values.HzPx;
+    };
+    return View;
+}());
+exports.View = View;

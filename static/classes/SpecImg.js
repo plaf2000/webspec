@@ -1,6 +1,7 @@
-"use strict";
-class SpecImg {
-    constructor(base64data, offset, adding = false, duration = dur) {
+var SpecImg = /** @class */ (function () {
+    function SpecImg(base64data, offset, adding, duration) {
+        if (adding === void 0) { adding = false; }
+        if (duration === void 0) { duration = dur; }
         this.base64 = window.btoa(base64data);
         this.start = offset;
         this.end = offset + duration;
@@ -12,7 +13,8 @@ class SpecImg {
             drawCanvas();
         };
     }
-    drawOnCanvas() {
+    SpecImg.prototype.drawOnCanvas = function () {
         ctx.drawImage(this.img, 0, 0, this.img.width, this.img.height, stoPx(this.start), 0, this.duration / sPx, window.cvs.height);
-    }
-}
+    };
+    return SpecImg;
+}());
