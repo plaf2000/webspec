@@ -1,30 +1,28 @@
-import { Coord2D } from "./Coord";
-import { xPx, xUnit, xyUnit, yPx, yUnit } from "./Units";
+import { genCoord2D, Coord2D } from "./Coord";
+import { xPx, xUnit, yUnit, yPx, yUnit, xNumUnits, yNumUnits } from "./Units";
 import { Values } from "./Values";
 import { View } from "./View";
 
 
 
 export class Box {
-  private tl: Coord2D;
-  private br: Coord2D;
+  protected tl: genCoord2D;
+  protected br: genCoord2D;
 
   get xs(): number {
-    return this.tl.xpx;
+    return this.tl.x.px;
   }
 
-
-
   get xe(): number {
-    return this.br.xpx;
+    return this.br.x.px;
   }
 
   get ys(): number {
-    return this.tl.ypx;
+    return this.tl.y.px;
   }
 
   get ye(): number {
-    return this.br.ypx;
+    return this.br.y.px;
   }
 
   get pxW(): number {
@@ -35,47 +33,46 @@ export class Box {
     return this.ye - this.ys;
   }
 
-  constructor(tl: Coord2D, br: Coord2D) {
-    Box.prototype.set(tl,br);
-  }
-
-  set(tl: Coord2D, br: Coord2D) {
+  constructor(tl: genCoord2D, br: genCoord2D) {
     this.tl = tl;
     this.br = br;
   }
 
-  isHover(coord: Coord2D): boolean {
-    coord = coord.convert(xPx, yPx);
+  set(tl: genCoord2D, br: genCoord2D) {
+    this.tl = tl;
+    this.br = br;
+  }
+
+  isHover(p: genCoord2D,xunit: xNumUnits, yunit: yNumUnits): boolean {
     return (
-      coord.x.geq(this.tl.x) &&
-      coord.x.leq(this.br.x) &&
-      coord.y.geq(this.tl.y) &&
-      coord.y.leq(this.br.y)
+      p.x[xunit]>=this.tl.x[xunit] &&
+      p.x[xunit]<=this.br.x[xunit] &&
+      p.y[yunit]>=this.tl.y[yunit] &&
+      p.y[yunit]>=this.br.y[yunit]
     );
   }
 
   isHoverPx(x: number, y: number): boolean {
-    return this.isHover(new Coord2D(x, y, xPx, yPx));
+    return this.isHover(new Coord2D(x, y, xPx, yPx),"px","px");
   }
 
-  isHoverStrict(coord: Coord2D): boolean {
-    coord = coord.convert(xPx, yPx);
+  isHoverStrict(p: genCoord2D,xunit: xNumUnits, yunit: yNumUnits): boolean {
     return (
-      coord.x.ge(this.tl.x) &&
-      coord.x.le(this.br.x) &&
-      coord.y.ge(this.tl.y) &&
-      coord.y.le(this.br.y)
+      p.x[xunit]>=this.tl.x[xunit] &&
+      p.x[xunit]<=this.br.x[xunit] &&
+      p.y[yunit]>=this.tl.y[yunit] &&
+      p.y[yunit]>=this.br.y[yunit]
     );
   }
 
   isHoverStrictPx(x: number, y: number): boolean {
-    return this.isHoverStrict(new Coord2D(x, y, xPx, yPx));
+    return this.isHoverStrict(new Coord2D(x, y, xPx, yPx), "px", "px");
   }
 }
 
 export class DrawableBox extends Box {
   ctx: CanvasRenderingContext2D;
-  constructor(ctx: CanvasRenderingContext2D, tl: Coord2D, br: Coord2D) {
+  constructor(ctx: CanvasRenderingContext2D, tl: genCoord2D, br: genCoord2D) {
     super(tl, br);
     this.ctx = ctx;
   }

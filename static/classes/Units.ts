@@ -1,26 +1,32 @@
 export type Constr<Arg, ObjType> = { new (arg: Arg): ObjType };
 
+/*
+
+Type definitions
+
+*/
+
 type xTimeArg = number | Date;
 type yFreqArg = number;
 type pxArg  = number;
 type xPxArg = pxArg;
 type yPxArg = pxArg;
 
-export type xArg = xTimeArg | xPxArg;
-export type yArg = yPxArg | yFreqArg;
+export type xArg = xTimeArg & xPxArg;
+export type yArg = yPxArg & yFreqArg;
 
-type xTimeConstr = Constr<xTimeArg,xTime>;
-type xPxConstr = Constr<xPxArg, xPx>;
-type yPxConstr = Constr<yPxArg, yPx>;
-type yFreqConstr = Constr<yFreqArg, yFreq>;
-
-export type xConstr = xTimeConstr | xPxConstr;
-export type yConstr = yPxConstr | yFreqConstr;
+export type xConstr = Constr<xArg,xUnit>;
+export type yConstr = Constr<yArg,yUnit>;
 
 export type xNumUnits = "seconds" | "px";
 export type yNumUnits = "hz" | "px";
 
 
+/*
+
+Class used for conversions
+
+*/
 
 export class xUnitConv {
   static px_s = 10;
@@ -52,47 +58,26 @@ export class xUnitConv {
   }
 }
 
+/*
+
+x and y units definitons
+
+*/
+
 export class yUnitConv {
-  static fqEnd = 22000;
-  static pxHz = .1;
+  static fq_end = 22000;
+  static px_hz = .1;
 
-  static pxToS(x: number): number {
-    return x/xUnitConv.px_s+xUnitConv.start_time;
+  static pxToHz(y: number): number {
+    return yUnitConv.fq_end-y/yUnitConv.px_hz;
   }
 
-  static sToPx(x: number): number {
-    return (x-xUnitConv.start_time)*xUnitConv.px_s;
-  }
-
-  static dateToS(x: Date): number {
-    return x.getMilliseconds()/1000-xUnitConv.time_offset;
-  }
-
-  static sToDate(x: number): Date {
-    return new Date(x*1000);
-  }
-
-  static pxToDate(x: number): Date {
-    return xUnitConv.sToDate(xUnitConv.pxToS(x));
-  }
-
-  static dateToPx(x: Date): number {
-    return xUnitConv.sToPx(xUnitConv.dateToS(x));
+  static hzToPx(y: number): number {
+    return (y-yUnitConv.fq_end)*yUnitConv.px_hz;
   }
 }
 
-
-export interface Unit {
-  // toStr(): String;
-  // distance(x: Unit): number;
-  // absDistance(x: Unit): number;
-  // le(x: Unit): boolean;
-  // leq(x: Unit): boolean;
-  // eq(x: Unit): boolean;
-  // geq(x: Unit): boolean;
-  // ge(x: Unit): boolean;
-}
-export abstract class xUnit implements Unit {
+export abstract class xUnit {
   abstract date: Date;
   abstract seconds: number;
   abstract px: number;
@@ -103,18 +88,14 @@ export abstract class xUnit implements Unit {
   }
 
   constructors: {
-    seconds: xTimeConstr,
-    date: xTimeConstr,
-    px: xPxConstr
+    seconds: xConstr,
+    date: xConstr,
+    px: xConstr
   } = {
     seconds: xTime,
     date: xTime,
     px: xPx,
   }
-
-  seconds_constr = xTime;
-  date_constr = xTime;
-  px_constr = xPx;
 
   set time(x: Date | number) {
     if(x instanceof Date) {
@@ -126,10 +107,31 @@ export abstract class xUnit implements Unit {
   }
 }
 
-export interface yUnit extends Unit {
-  hz: number;
-  px: number;
+export abstract class yUnit {
+  abstract hz: number;
+  abstract px: number;
+  protected val: number;
+
+  constructor(arg: number) {
+    this.val = arg;
+  }
+
+  constructors: {
+    hz: yConstr,
+    px: yConstr
+  } = {
+    hz: yFreq,
+    px: yPx,
+  }
 }
+
+/*
+
+x and y units implementations
+
+*/
+
+// x implementations
 
 export class xTime extends xUnit {
   constructor(arg: xTimeArg) {
@@ -187,135 +189,43 @@ export class xPx extends xUnit {
   }
 }
 
+// y implementations
 
+export class yPx extends yUnit {
 
-// class yPx extends Px implements yUnitType {
-//   toFreq(): yFreq {
-//     return new yFreq();
-//   }
-// }
+  get hz(): number {
+    return yUnitConv.pxToHz(this.val);
+  }
 
-// export class xUnit {
+  get px(): number {
+    return this.val;
+  } 
 
-//   private u: xUnitType;
+  set hz(x: number) {
+    this.val = yUnitConv.hzToPx(x);
+  }
 
-//   constructor(x: xUnitType) {
-//     this.u = x;
-//   }
+  set px(x: number) {
+    this.val = x;
+  }
+}
 
+export class yFreq extends yUnit {
 
-//   set time(x: number | Date) {
-//     if(this.u instanceof xPx) {
-//       this.u.time = x;
-//   }
+  get px(): number {
+    return yUnitConv.hzToPx(this.val);
+  }
 
-//   set px(x: number) {
-//     if(this.u instanceof xPx) {
-//       this.u = new xPx(x);
-//     }
-//     else if(this.u instanceof xTime) {
-//       this.u = new xPx(x).toTime();
-//     }
-//     else { 
-//       throw new Error("Unknown type.");
-//     }
-//   }
+  get hz(): number {
+    return this.val;
+  } 
 
-//   get seconds(): number {
-//     if(this.u instanceof xPx) {
-//       return this.u.toTime().val;
-//     }
-//     else if(this.u instanceof xTime) {
-//       return this.u.val;
-//     }
-//     else { 
-//       throw new Error("Unknown type.");
-//     }
-//   }
+  set px(x: number) {
+    this.val = yUnitConv.pxToHz(x);
+  }
 
-//   get date(): Date {
-//     if(this.u instanceof xPx) {
-//       return this.u.toTime().date;
-//     }
-//     else if(this.u instanceof xTime) {
-//       return this.u.date;
-//     }
-//     else { 
-//       throw new Error("Unknown type.");
-//     }
-//   }
-// }
+  set hz(x: number) {
+    this.val = x;
+  }
+}
 
-
-// export abstract class yUnit extends xyUnit {
-//   static pxHz = .1;
-//   static fqEnd = 22000;
-//   abstract convert(constr: Constr<yUnit, yUnit>): yUnit;
-//   abstract get freq(): number;
-// }
-
-
-
-// export class Freq extends yUnit {
-//   constructor(arg: number | yUnit) {
-//     if (typeof arg == "number") {
-//       super(arg);
-//     } else if (arg instanceof yPx) {
-//       super(yUnit.fqEnd - arg.val / yUnit.pxHz);
-//     } else {
-//       super(arg.val);
-//     }
-//   }
-
-//   toStr() {
-//     return `${this.val} Hz`;
-//   }
-
-//   convert(constr: Constr<Freq, yUnit>): yUnit {
-//     return new constr(this);
-//   }
-
-//   distance(x: yUnit): number {
-//     return x.convert(Freq).val - this.val;
-//   }
-
-//   get px(): number {
-//     return this.convert(yPx).val;
-//   }
-
-//   get freq(): number {
-//     return this.val;
-//   }
-// }
-
-// export class yPx extends yUnit {
-//   constructor(arg: number | yUnit) {
-//     if (typeof arg == "number") {
-//       super(arg);
-//     } else if (arg instanceof yPx) {
-//       super((yUnit.fqEnd - arg.val) * yUnit.pxHz);
-//     } else {
-//       super(arg.val);
-//     }
-//   }
-
-//   toStr() {
-//     return `${this.val} px`;
-//   }
-
-//   convert(constr: Constr<yPx, yUnit>): yUnit {
-//     return new constr(this);
-//   }
-
-//   distance(x: yUnit): number {
-//     return x.convert(yPx).val - this.val;
-//   }
-
-//   get px(): number {
-//     return this.val;
-//   }
-
-//   get freq(): number {
-//     return this.convert(Freq).val;
-//   }
-// }

@@ -1,15 +1,34 @@
-import { xUnit, yUnit, Constr, xPx, yPx, xArg, yArg, xNumUnits, yNumUnits, xConstr } from "./Units";
+import {
+  xUnit,
+  yUnit,
+  Constr,
+  xArg,
+  yArg,
+  xNumUnits,
+  yNumUnits,
+} from "./Units";
 
-export class Coord2D<Xraw extends xArg, Yraw extends yArg> {
-  private x_: xUnit;
-  private y_: yUnit;
-  private x_unit_type: Constr<Xraw,xUnit> ;
-  private y_unit_type: Constr<yArg, yUnit>;
+export type genCoord2D = Coord2D<
+ xArg,
+ yArg,
+ xUnit,
+ yUnit
+>;
+export class Coord2D<
+  Xraw extends xArg,
+  Yraw extends yArg,
+  xU extends xUnit,
+  yU extends yUnit
+> {
+  private x_: xU;
+  private y_: yU;
+  private x_unit_type: Constr<Xraw, xU>;
+  private y_unit_type: Constr<yArg, yU>;
   constructor(
     x: Xraw,
     y: Yraw,
-    x_unit_type: Constr<Xraw, xUnit>,
-    y_unit_type: Constr<yArg, yUnit>
+    x_unit_type: Constr<Xraw, xU>,
+    y_unit_type: Constr<yArg, yU>
   ) {
     this.x_unit_type = x_unit_type;
     this.y_unit_type = y_unit_type;
@@ -17,39 +36,43 @@ export class Coord2D<Xraw extends xArg, Yraw extends yArg> {
     this.y_ = new this.y_unit_type(y);
   }
 
-  set x(x: Xraw) {
+  set xraw(x: Xraw) {
     this.x_ = new this.x_unit_type(x);
   }
 
-  set y(y: Yraw) {
+  set yraw(y: Yraw) {
     this.y_ = new this.y_unit_type(y);
   }
 
-  get xu(): xUnit {
+  set x(x: xU) {
+    this.x_ = x;
+  }
+
+  set y(y: yU) {
+    this.y_ = y;
+  }
+
+  get x(): xU {
     return this.x_;
   }
 
-  get yu(): yUnit {
+  get y(): yU {
     return this.y_;
   }
 
-  distance(p: Coord2D<xArg,yArg>, xunit: xNumUnits, yunit: yNumUnits) {
-    let dx = p.xu[xunit]-this.xu[xunit];
-    let dy = p.yu[yunit]-this.yu[yunit];
+  distance(p: genCoord2D, xunit: xNumUnits, yunit: yNumUnits) {
+    let dx = p.x[xunit] - this.x[xunit];
+    let dy = p.y[yunit] - this.y[yunit];
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  midPoint(p: Coord2D<xArg,yArg>, xunit: xNumUnits, yunit: yNumUnits) {
-    let x = p.xu[xunit]+this.xu[xunit];
-    let y = p.yu[yunit]+this.yu[yunit];
+  midPoint(p: genCoord2D, xunit: xNumUnits, yunit: yNumUnits) {
+    let x = p.x[xunit] + this.x[xunit];
+    let y = p.y[yunit] + this.y[yunit];
 
-    let constrx = p.xu.constructors[xunit];
-    let constry = p.yu.constructors[yunit];
+    let constrx = p.x.constructors[xunit];
+    let constry = p.y.constructors[yunit];
 
-    return new Coord2D(x,y,constrx,constry);
+    return new Coord2D(x / 2, y / 2, constrx, constry);
   }
-
 }
-
-
-let test = new Coord2D(1,1,xPx,yPx);
