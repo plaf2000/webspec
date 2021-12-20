@@ -1,84 +1,129 @@
-import { genCoord2D, Coord2D } from "./Coord";
-import { xPx, xUnit, yUnit, yPx, yUnit, xNumUnits, yNumUnits } from "./Units";
+import { genCoord2D, Coord2D, genECoord2D, ECoord2D } from "./Coord";
+import {
+  xPx,
+  xPxArg,
+  yPxArg,
+  yPx,
+  yUnit,
+  xNumUnits,
+  yNumUnits,
+  xEPx,
+  yEPx,
+  xTime,
+  xUnit,
+} from "./Units";
 import { Values } from "./Values";
 import { View } from "./View";
 
+export class Box<TL extends genCoord2D, BR extends genCoord2D> {
+  protected tl_: TL;
+  protected br_: BR;
 
-
-export class Box {
-  protected tl: genCoord2D;
-  protected br: genCoord2D;
-
-  get xs(): number {
-    return this.tl.x.px;
+  width(xunit: xNumUnits): number {
+    return this.br_.x[xunit] - this.tl_.x[xunit];
   }
 
-  get xe(): number {
-    return this.br.x.px;
+  height(yunit: yNumUnits): number {
+    return this.br_.y[yunit] - this.tl_.y[yunit];
   }
 
-  get ys(): number {
-    return this.tl.y.px;
+  constructor(tl: TL, br: BR) {
+    this.tl_ = tl;
+    this.br_ = br;
   }
 
-  get ye(): number {
-    return this.br.y.px;
-  }
-
-  get pxW(): number {
-    return this.xe - this.xs;
-  }
-
-  get pxH(): number {
-    return this.ye - this.ys;
-  }
-
-  constructor(tl: genCoord2D, br: genCoord2D) {
-    this.tl = tl;
-    this.br = br;
-  }
-
-  set(tl: genCoord2D, br: genCoord2D) {
-    this.tl = tl;
-    this.br = br;
-  }
-
-  isHover(p: genCoord2D,xunit: xNumUnits, yunit: yNumUnits): boolean {
+  isHover(p: genCoord2D, xunit: xNumUnits, yunit: yNumUnits): boolean {
     return (
-      p.x[xunit]>=this.tl.x[xunit] &&
-      p.x[xunit]<=this.br.x[xunit] &&
-      p.y[yunit]>=this.tl.y[yunit] &&
-      p.y[yunit]>=this.br.y[yunit]
+      p.x[xunit] >= this.tl_.x[xunit] &&
+      p.x[xunit] <= this.br_.x[xunit] &&
+      p.y[yunit] >= this.tl_.y[yunit] &&
+      p.y[yunit] >= this.br_.y[yunit]
     );
   }
 
-  isHoverPx(x: number, y: number): boolean {
-    return this.isHover(new Coord2D(x, y, xPx, yPx),"px","px");
+  isHoverPx(x: xPxArg, y: yPxArg): boolean {
+    return this.isHover(new Coord2D(x, y, xPx, yPx), "px", "px");
   }
 
-  isHoverStrict(p: genCoord2D,xunit: xNumUnits, yunit: yNumUnits): boolean {
+  isHoverStrict(p: genCoord2D, xunit: xNumUnits, yunit: yNumUnits): boolean {
     return (
-      p.x[xunit]>=this.tl.x[xunit] &&
-      p.x[xunit]<=this.br.x[xunit] &&
-      p.y[yunit]>=this.tl.y[yunit] &&
-      p.y[yunit]>=this.br.y[yunit]
+      p.x[xunit] >= this.tl_.x[xunit] &&
+      p.x[xunit] <= this.br_.x[xunit] &&
+      p.y[yunit] >= this.tl_.y[yunit] &&
+      p.y[yunit] >= this.br_.y[yunit]
     );
   }
 
-  isHoverStrictPx(x: number, y: number): boolean {
+  isHoverStrictPx(x: xPxArg, y: yPxArg): boolean {
     return this.isHoverStrict(new Coord2D(x, y, xPx, yPx), "px", "px");
   }
 }
 
-export class DrawableBox extends Box {
+export class DrawableBox<
+  TL extends genCoord2D,
+  BR extends genCoord2D
+> extends Box<TL, BR> {
   ctx: CanvasRenderingContext2D;
-  constructor(ctx: CanvasRenderingContext2D, tl: genCoord2D, br: genCoord2D) {
+
+  get xl(): number {
+    return this.tl_.x.px;
+  }
+
+  get yt(): number {
+    return this.tl_.y.px;
+  }
+
+  get w(): number {
+    return this.width("px");
+  }
+
+  get h(): number {
+    return this.height("px");
+  }
+
+  get dur(): number {
+    return this.width("s");
+  }
+
+  get dfreq(): number {
+    return this.height("hz");
+  }
+
+  constructor(ctx: CanvasRenderingContext2D, tl: TL, br: BR) {
     super(tl, br);
     this.ctx = ctx;
   }
 
   clear(): void {
-    this.ctx.clearRect(this.xs, this.ys, this.pxW, this.pxH);
+    this.ctx.clearRect(this.xl, this.yt, this.w, this.h);
+  }
+}
+
+export class EditableBox<
+  TL extends genCoord2D,
+  BR extends genCoord2D
+> extends DrawableBox<TL, BR> {
+  set tl(tl: TL) {
+    this.tl = tl;
   }
 
+  set br(br: BR) {
+    this.br = br;
+  }
+
+  set tlpx(coord: { x: xPxArg; y: yPxArg }) {
+    this.tl.x.px = coord.x;
+    this.tl.y.px = coord.y;
+  }
+
+  // set brpx
+
+  constructor(ctx: CanvasRenderingContext2D, tl: TL, br: BR) {
+    super(ctx, tl, br);
+  }
 }
+
+let lol: Unit<number> = new xPx(234) as Unit<number>;
+
+let b = new ECoord2D<number, number, xPx, yPx>(1, 1, xPx, yPx);
+let yolo = new EditableBox(new CanvasRenderingContext2D(), b, b);
