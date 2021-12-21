@@ -15,154 +15,141 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 exports.__esModule = true;
-exports.yPx = exports.Freq = exports.xTime = exports.xPx = exports.yUnit = exports.xUnit = exports.xyUnit = void 0;
-function test(arg) {
-    return;
-}
-var xyUnit = /** @class */ (function () {
-    function xyUnit(x) {
-        this.value = x;
+exports.x = exports.constructors = exports.yFreq = exports.yPx = exports.xPx = exports.xTime = exports.yUnit = exports.xUnit = exports.Unit = exports.yUnitConv = exports.xUnitConv = void 0;
+/*
+
+Classes used for conversions
+
+*/
+var xUnitConv = /** @class */ (function () {
+    function xUnitConv() {
     }
-    xyUnit.prototype.le = function (x) {
-        return 0 < this.distance(x);
+    xUnitConv.pxToS = function (x) {
+        return x / xUnitConv.px_s + xUnitConv.start_time;
     };
-    xyUnit.prototype.leq = function (x) {
-        return 0 <= this.distance(x);
+    xUnitConv.sToPx = function (x) {
+        return (x - xUnitConv.start_time) * xUnitConv.px_s;
     };
-    xyUnit.prototype.eq = function (x) {
-        return 0 == this.distance(x);
+    xUnitConv.dateToS = function (x) {
+        return x.getMilliseconds() / 1000 - xUnitConv.time_offset;
     };
-    xyUnit.prototype.geq = function (x) {
-        return 0 >= this.distance(x);
+    xUnitConv.sToDate = function (x) {
+        return new Date(x * 1000);
     };
-    xyUnit.prototype.ge = function (x) {
-        return 0 > this.distance(x);
+    xUnitConv.pxToDate = function (x) {
+        return xUnitConv.sToDate(xUnitConv.pxToS(x));
     };
-    xyUnit.prototype.absDistance = function (x) {
-        return Math.abs(this.distance(x));
+    xUnitConv.dateToPx = function (x) {
+        return xUnitConv.sToPx(xUnitConv.dateToS(x));
     };
-    Object.defineProperty(xyUnit.prototype, "val", {
+    xUnitConv.px_s = 10;
+    xUnitConv.time_offset = 0;
+    xUnitConv.start_time = xUnitConv.time_offset;
+    return xUnitConv;
+}());
+exports.xUnitConv = xUnitConv;
+var yUnitConv = /** @class */ (function () {
+    function yUnitConv() {
+    }
+    yUnitConv.pxToHz = function (y) {
+        return yUnitConv.fq_end - y / yUnitConv.px_hz;
+    };
+    yUnitConv.hzToPx = function (y) {
+        return (y - yUnitConv.fq_end) * yUnitConv.px_hz;
+    };
+    yUnitConv.fq_end = 22000;
+    yUnitConv.px_hz = 0.1;
+    return yUnitConv;
+}());
+exports.yUnitConv = yUnitConv;
+/*
+
+x and y units definitons
+
+*/
+var Unit = /** @class */ (function () {
+    function Unit(val, e) {
+        this.val_ = val;
+        this.editable_ = e || false;
+    }
+    Object.defineProperty(Unit.prototype, "editable", {
         get: function () {
-            return this.value;
+            return this.editable_;
         },
         enumerable: false,
         configurable: true
     });
-    return xyUnit;
+    Object.defineProperty(Unit.prototype, "val", {
+        get: function () {
+            return this.val_;
+        },
+        set: function (v) {
+            if (this.editable)
+                this.val_ = v;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return Unit;
 }());
-exports.xyUnit = xyUnit;
+exports.Unit = Unit;
 var xUnit = /** @class */ (function (_super) {
     __extends(xUnit, _super);
     function xUnit() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    xUnit.pxS = 10;
-    xUnit.timeOffset = 0;
     return xUnit;
-}(xyUnit));
+}(Unit));
 exports.xUnit = xUnit;
 var yUnit = /** @class */ (function (_super) {
     __extends(yUnit, _super);
     function yUnit() {
         return _super !== null && _super.apply(this, arguments) || this;
     }
-    yUnit.pxHz = .1;
-    yUnit.fqEnd = 22000;
     return yUnit;
-}(xyUnit));
+}(Unit));
 exports.yUnit = yUnit;
-var xPx = /** @class */ (function (_super) {
-    __extends(xPx, _super);
-    function xPx(arg) {
-        var _this = this;
-        if (typeof arg == "number") {
-            _this = _super.call(this, arg) || this;
-        }
-        else if (arg instanceof xTime) {
-            _this = _super.call(this, arg.val * xUnit.pxS) || this;
-        }
-        else {
-            _this = _super.call(this, arg.val) || this;
-        }
-        return _this;
-    }
-    xPx.prototype.toStr = function () {
-        return this.val + " px";
-    };
-    xPx.prototype.convert = function (constr) {
-        return new constr(this);
-    };
-    xPx.prototype.distance = function (x) {
-        return x.convert(xPx).val - this.val;
-    };
-    Object.defineProperty(xPx.prototype, "px", {
-        get: function () {
-            return this.val;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(xPx.prototype, "seconds", {
-        get: function () {
-            return this.convert(xTime).val;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(xPx.prototype, "datetime", {
-        get: function () {
-            return this.convert(xTime).datetime;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return xPx;
-}(xUnit));
-exports.xPx = xPx;
-test(new xPx(3));
+/*
+
+x and y units implementations
+
+*/
+// x implementations
 var xTime = /** @class */ (function (_super) {
     __extends(xTime, _super);
     function xTime(arg) {
         var _this = this;
-        var val;
-        if (typeof arg == "number") {
-            _this = _super.call(this, arg) || this;
-        }
-        else if (arg instanceof xPx) {
-            _this = _super.call(this, arg.val * xUnit.pxS) || this;
-        }
-        else {
-            _this = _super.call(this, arg.val) || this;
-        }
-        _this.date = new Date((xUnit.timeOffset + _this.val) * 1000);
+        if (arg instanceof Date)
+            arg = xUnitConv.dateToS(arg);
+        _this = _super.call(this, arg, false) || this;
         return _this;
     }
-    xTime.prototype.toStr = function () {
-        return this.date.toTimeString();
-    };
-    xTime.prototype.convert = function (constr) {
-        return new constr(this);
-    };
-    xTime.prototype.distance = function (x) {
-        return x.convert(xTime).val - this.val;
-    };
-    Object.defineProperty(xTime.prototype, "px", {
-        get: function () {
-            return this.convert(xPx).val;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(xTime.prototype, "seconds", {
+    Object.defineProperty(xTime.prototype, "s", {
         get: function () {
             return this.val;
         },
+        set: function (x) {
+            this.val = x;
+        },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(xTime.prototype, "datetime", {
+    Object.defineProperty(xTime.prototype, "date", {
         get: function () {
-            return this.date;
+            return xUnitConv.sToDate(this.val);
+        },
+        set: function (x) {
+            this.val = xUnitConv.dateToS(x);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(xTime.prototype, "px", {
+        get: function () {
+            return xUnitConv.sToPx(this.val);
+        },
+        set: function (x) {
+            this.val = xUnitConv.pxToS(x);
         },
         enumerable: false,
         configurable: true
@@ -170,81 +157,66 @@ var xTime = /** @class */ (function (_super) {
     return xTime;
 }(xUnit));
 exports.xTime = xTime;
-var Freq = /** @class */ (function (_super) {
-    __extends(Freq, _super);
-    function Freq(arg) {
-        var _this = this;
-        if (typeof arg == "number") {
-            _this = _super.call(this, arg) || this;
-        }
-        else if (arg instanceof yPx) {
-            _this = _super.call(this, yUnit.fqEnd - arg.val / yUnit.pxHz) || this;
-        }
-        else {
-            _this = _super.call(this, arg.val) || this;
-        }
-        return _this;
+var xPx = /** @class */ (function (_super) {
+    __extends(xPx, _super);
+    function xPx() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-    Freq.prototype.toStr = function () {
-        return this.val + " Hz";
-    };
-    Freq.prototype.convert = function (constr) {
-        return new constr(this);
-    };
-    Freq.prototype.distance = function (x) {
-        return x.convert(Freq).val - this.val;
-    };
-    Object.defineProperty(Freq.prototype, "px", {
+    Object.defineProperty(xPx.prototype, "s", {
         get: function () {
-            return this.convert(yPx).val;
+            return xUnitConv.pxToS(this.val);
+        },
+        set: function (x) {
+            this.val = xUnitConv.sToPx(x);
         },
         enumerable: false,
         configurable: true
     });
-    Object.defineProperty(Freq.prototype, "freq", {
+    Object.defineProperty(xPx.prototype, "date", {
+        get: function () {
+            return xUnitConv.pxToDate(this.val);
+        },
+        set: function (x) {
+            this.val = xUnitConv.dateToPx(x);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(xPx.prototype, "px", {
         get: function () {
             return this.val;
         },
+        set: function (x) {
+            this.val = x;
+        },
         enumerable: false,
         configurable: true
     });
-    return Freq;
-}(yUnit));
-exports.Freq = Freq;
+    return xPx;
+}(xUnit));
+exports.xPx = xPx;
+// y implementations
 var yPx = /** @class */ (function (_super) {
     __extends(yPx, _super);
-    function yPx(arg) {
-        var _this = this;
-        if (typeof arg == "number") {
-            _this = _super.call(this, arg) || this;
-        }
-        else if (arg instanceof yPx) {
-            _this = _super.call(this, (yUnit.fqEnd - arg.val) * yUnit.pxHz) || this;
-        }
-        else {
-            _this = _super.call(this, arg.val) || this;
-        }
-        return _this;
+    function yPx() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-    yPx.prototype.toStr = function () {
-        return this.val + " px";
-    };
-    yPx.prototype.convert = function (constr) {
-        return new constr(this);
-    };
-    yPx.prototype.distance = function (x) {
-        return x.convert(yPx).val - this.val;
-    };
+    Object.defineProperty(yPx.prototype, "hz", {
+        get: function () {
+            return yUnitConv.pxToHz(this.val);
+        },
+        set: function (x) {
+            this.val = yUnitConv.hzToPx(x);
+        },
+        enumerable: false,
+        configurable: true
+    });
     Object.defineProperty(yPx.prototype, "px", {
         get: function () {
             return this.val;
         },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(yPx.prototype, "freq", {
-        get: function () {
-            return this.convert(Freq).val;
+        set: function (x) {
+            this.val = x;
         },
         enumerable: false,
         configurable: true
@@ -252,3 +224,53 @@ var yPx = /** @class */ (function (_super) {
     return yPx;
 }(yUnit));
 exports.yPx = yPx;
+var yFreq = /** @class */ (function (_super) {
+    __extends(yFreq, _super);
+    function yFreq() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Object.defineProperty(yFreq.prototype, "px", {
+        get: function () {
+            return yUnitConv.hzToPx(this.val);
+        },
+        set: function (x) {
+            this.val = yUnitConv.pxToHz(x);
+        },
+        enumerable: false,
+        configurable: true
+    });
+    Object.defineProperty(yFreq.prototype, "hz", {
+        get: function () {
+            return this.val;
+        },
+        set: function (x) {
+            this.val = x;
+        },
+        enumerable: false,
+        configurable: true
+    });
+    return yFreq;
+}(yUnit));
+exports.yFreq = yFreq;
+/*
+
+Helper functions
+
+*/
+// x
+exports.constructors = {
+    x: {
+        s: xTime,
+        px: xPx,
+        date: xTime
+    },
+    y: {
+        px: yPx,
+        hz: yFreq
+    }
+};
+function x(val, utype, e) {
+    return new exports.constructors["x"][utype](val);
+}
+exports.x = x;
+x(new Date(4), "date");

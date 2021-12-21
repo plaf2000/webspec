@@ -1,4 +1,4 @@
-export type Constr<Arg, ObjType> = { new (arg: Arg): ObjType };
+export type UConstr<Arg, ObjType> = { new (arg: Arg, e?: boolean): ObjType };
 
 /*
 
@@ -6,24 +6,67 @@ Type definitions
 
 */
 
-type xTimeArg = number | Date;
-type yFreqArg = number;
-type pxArg = number;
-export type xPxArg = pxArg;
-export type yPxArg = pxArg;
+export type xVal = number;
+export type yVal = number;
 
-export type xArg = xTimeArg & xPxArg;
-export type yArg = yPxArg & yFreqArg;
+export type nUnit<T extends keyof PrimUnit> = PrimUnit[T]["number"]
 
-export type xConstr = Constr<xArg, xUnit<xArg>>;
-export type yConstr = Constr<yArg, yUnit<yArg>>;
+export type Constr = {
+  x: {
+    px: UConstr<Arg["xPx"], xPx>;
+    s: UConstr<Arg["xTime"], xTime>;
+    date: UConstr<Arg["xTime"], xTime>;
+  };
+  y: {
+    px: UConstr<Arg["yPx"], yPx>;
+    hz: UConstr<Arg["yFreq"], yFreq>;
+  };
+};
 
-export type xNumUnits = "s" | "px";
-export type yNumUnits = "hz" | "px";
-export type UnitConstrType = "editable" | "non_editable";
+export type UnitClass = {
+  x: {
+    px: xPx,
+    s: xTime,
+    date: xTime
+  };
+  y: {
+    px: yPx,
+    hz: yFreq
+  };
+};
 
-export let editable = (e: boolean): UnitConstrType =>
-  e ? "editable" : "non_editable";
+export type Arg = {
+  xPx: number;
+  xTime: number | Date;
+  yPx: number;
+  yFreq: number;
+};
+
+export type UnitPrim = {
+  x: {
+    px: number;
+    s: number;
+    date: Date;
+  };
+  y: {
+    px: number;
+    hz: number;
+  };
+};
+
+export type PrimUnit = {
+  x: {
+    Date: "date";
+    number: "s" | "px";
+  };
+  y: {
+    number: "px" | "hz";
+  };
+};
+
+// Get unit string either by x or y (= type T)
+
+export type UnitStr<T extends keyof UnitPrim> = keyof UnitPrim[T];
 
 /*
 
@@ -82,97 +125,45 @@ x and y units definitons
 
 export abstract class Unit<U> {
   protected editable_: boolean;
-  protected val: U;
+  private val_: U;
   constructor(val: U, e?: boolean) {
-    this.val = val;
+    this.val_ = val;
     this.editable_ = e || false;
   }
   get editable(): boolean {
     return this.editable_;
   }
+
+  protected set val(v: U) {
+    if (this.editable) this.val_ = v;
+  }
+
+  get val(): U {
+    return this.val_;
+  }
 }
 
-export abstract class xUnit<U extends xArg> extends Unit<U> {
-  abstract get date(): Date;
-  abstract get s(): number;
-  abstract get px(): number;
-  constructors: {
-    non_editable: {
-      s: xConstr;
-      date: xConstr;
-      px: xConstr;
-    };
-    editable: {
-      s: xConstr;
-      date: xConstr;
-      px: xConstr;
-    };
-  } = {
-    non_editable: {
-      s: xTime,
-      date: xTime,
-      px: xPx,
-    },
-    editable: {
-      s: xETime,
-      date: xETime,
-      px: xEPx,
-    },
-  };
+export abstract class xUnit<U extends xVal> extends Unit<U> {
+  abstract date: Date;
+  abstract s: number;
+  abstract px: number;
 }
 
-export abstract class yUnit<U extends yArg> extends Unit<U> {
-  abstract get hz(): number;
-  abstract get px(): number;
-
-  constructors: {
-    non_editable: {
-      hz: yConstr;
-      px: yConstr;
-    };
-    editable: {
-      hz: yConstr;
-      px: yConstr;
-    };
-  } = {
-    non_editable: {
-      hz: yFreq,
-      px: yPx,
-    },
-    editable: {
-      hz: yEFreq,
-      px: yEPx,
-    },
-  };
+export abstract class yUnit<U extends yVal> extends Unit<U> {
+  abstract hz: number;
+  abstract px: number;
 }
 
 /*
 
-x and y editable units
-
-*/
-
-export abstract class xEUnit<U extends xArg> extends xUnit<U> {
-  abstract set date(x: Date);
-  abstract set s(x: number);
-  abstract set px(x: number);
-}
-
-export abstract class yEUnit<U extends yArg> extends yUnit<U> {
-  abstract set hz(y: number);
-  abstract set px(y: number);
-}
-
-/*
-
-x and y non-editable units implementations
+x and y units implementations
 
 */
 
 // x implementations
 
 export class xTime extends xUnit<number> {
-  constructor(arg: xTimeArg) {
+  constructor(arg: Arg["xTime"]) {
     if (arg instanceof Date) arg = xUnitConv.dateToS(arg);
     super(arg, false);
   }
@@ -186,6 +177,18 @@ export class xTime extends xUnit<number> {
 
   get px(): number {
     return xUnitConv.sToPx(this.val);
+  }
+
+  set s(x: number) {
+    this.val = x;
+  }
+
+  set date(x: Date) {
+    this.val = xUnitConv.dateToS(x);
+  }
+
+  set px(x: number) {
+    this.val = xUnitConv.pxToS(x);
   }
 }
 
@@ -201,42 +204,7 @@ export class xPx extends xUnit<number> {
   get px(): number {
     return this.val;
   }
-}
 
-// y implementations
-
-export class yPx extends yUnit<number> {
-  get hz(): number {
-    return yUnitConv.pxToHz(this.val);
-  }
-
-  get px(): number {
-    return this.val;
-  }
-}
-
-export class yFreq extends yUnit<number> {
-  get px(): number {
-    return yUnitConv.hzToPx(this.val);
-  }
-
-  get hz(): number {
-    return this.val;
-  }
-}
-
-/*
-
-x and y editable units implementations
-
-*/
-
-// x implementations
-
-export class xEPx extends xPx implements xEUnit<number> {
-  constructor(x: number) {
-    super(x,false);
-  }
   set s(x: number) {
     this.val = xUnitConv.sToPx(x);
   }
@@ -249,23 +217,17 @@ export class xEPx extends xPx implements xEUnit<number> {
     this.val = x;
   }
 }
-export class xETime extends xTime implements xEUnit<number> {
-  set s(x: number) {
-    this.val = x;
-  }
-
-  set date(x: Date) {
-    this.val = xUnitConv.dateToS(x);
-  }
-
-  set px(x: number) {
-    this.val = xUnitConv.pxToS(x);
-  }
-}
 
 // y implementations
 
-export class yEPx extends yPx implements yEUnit<number> {
+export class yPx extends yUnit<number> {
+  get hz(): number {
+    return yUnitConv.pxToHz(this.val);
+  }
+
+  get px(): number {
+    return this.val;
+  }
 
   set hz(x: number) {
     this.val = yUnitConv.hzToPx(x);
@@ -276,7 +238,15 @@ export class yEPx extends yPx implements yEUnit<number> {
   }
 }
 
-export class yEFreq extends yFreq implements yEUnit<number> {
+export class yFreq extends yUnit<number> {
+  get px(): number {
+    return yUnitConv.hzToPx(this.val);
+  }
+
+  get hz(): number {
+    return this.val;
+  }
+
   set px(x: number) {
     this.val = yUnitConv.pxToHz(x);
   }
@@ -285,3 +255,38 @@ export class yEFreq extends yFreq implements yEUnit<number> {
     this.val = x;
   }
 }
+
+/*
+
+Helper functions
+
+*/
+
+// x
+
+export let constructors: Constr = {
+  x: {
+    s: xTime,
+    px: xPx,
+    date: xTime,
+  },
+  y: {
+    px: yPx,
+    hz: yFreq,
+  },
+};
+
+export function Xu<
+  xU extends UnitStr<"x">
+>(val: UnitPrim["x"][xU], utype: xU, e?: boolean) {
+  if(val instanceof Date) return new xTime(val);
+  return new constructors["x"][utype](val);
+}
+
+
+export function Yu<
+  yU extends UnitStr<"y">
+>(val: UnitPrim["y"][yU], utype: yU, e?: boolean) {
+ return new constructors["y"][utype](val);
+}
+

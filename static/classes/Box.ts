@@ -1,29 +1,33 @@
-import { genCoord2D, Coord2D, genECoord2D, ECoord2D } from "./Coord";
-import {
-  xPx,
-  xPxArg,
-  yPxArg,
-  yPx,
-  yUnit,
-  xNumUnits,
-  yNumUnits,
-  xEPx,
-  yEPx,
-  xTime,
-  xUnit,
-} from "./Units";
+import { buildCoord, pxCoord, tfCoord, xyCoord, xyGenCoord } from "./Coord";
+import { xPx, yPx, yUnit, xTime, xUnit, PrimUnit, Arg, nUnit, xGenUnit } from "./Units";
 import { Values } from "./Values";
 import { View } from "./View";
 
-export class Box<TL extends genCoord2D, BR extends genCoord2D> {
+export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
   protected tl_: TL;
   protected br_: BR;
 
-  width(xunit: xNumUnits): number {
+  get tl(): xyGenCoord {
+    return this.tl_;
+  }
+
+  get br(): xyGenCoord {
+    return this.br_;
+  }
+
+  get tr(): xyGenCoord {
+    return new xyCoord(this.br.x, this.tl.y);
+  }
+
+  get lb(): xyGenCoord {
+    return new xyCoord(this.tl.x, this.br.y);
+  }
+
+  width(xunit: nUnit<"x">): number {
     return this.br_.x[xunit] - this.tl_.x[xunit];
   }
 
-  height(yunit: yNumUnits): number {
+  height(yunit: nUnit<"y">): number {
     return this.br_.y[yunit] - this.tl_.y[yunit];
   }
 
@@ -32,36 +36,36 @@ export class Box<TL extends genCoord2D, BR extends genCoord2D> {
     this.br_ = br;
   }
 
-  isHover(p: genCoord2D, xunit: xNumUnits, yunit: yNumUnits): boolean {
+  isHover(
+    p: xyGenCoord,
+    xunit: nUnit<"x">,
+    yunit: nUnit<"y">,
+    strict?: false
+  ): boolean {
+    let check: (
+      a: number,
+      b: number,
+      op: (x: number, y: number) => boolean
+    ) => boolean = (a, b, op) => {
+      if (strict) return op(a, b);
+      return op(a, b) || a == b;
+    };
     return (
-      p.x[xunit] >= this.tl_.x[xunit] &&
-      p.x[xunit] <= this.br_.x[xunit] &&
-      p.y[yunit] >= this.tl_.y[yunit] &&
-      p.y[yunit] >= this.br_.y[yunit]
+      check(p.x[xunit], this.tl_.x[xunit], (a: number, b: number) => a > b) &&
+      check(p.x[xunit], this.br_.x[xunit], (a: number, b: number) => a < b) &&
+      check(p.y[yunit], this.tl_.y[yunit], (a: number, b: number) => a > b) &&
+      check(p.y[yunit], this.br_.y[yunit], (a: number, b: number) => a < b)
     );
   }
 
-  isHoverPx(x: xPxArg, y: yPxArg): boolean {
-    return this.isHover(new Coord2D(x, y, xPx, yPx), "px", "px");
-  }
-
-  isHoverStrict(p: genCoord2D, xunit: xNumUnits, yunit: yNumUnits): boolean {
-    return (
-      p.x[xunit] >= this.tl_.x[xunit] &&
-      p.x[xunit] <= this.br_.x[xunit] &&
-      p.y[yunit] >= this.tl_.y[yunit] &&
-      p.y[yunit] >= this.br_.y[yunit]
-    );
-  }
-
-  isHoverStrictPx(x: xPxArg, y: yPxArg): boolean {
-    return this.isHoverStrict(new Coord2D(x, y, xPx, yPx), "px", "px");
+  isHoverPx(x: Arg["xPx"], y: Arg["yPx"], strict?: false): boolean {
+    return this.isHover(pxCoord(x, y), "px", "px", strict);
   }
 }
 
 export class DrawableBox<
-  TL extends genCoord2D,
-  BR extends genCoord2D
+  TL extends xyGenCoord,
+  BR extends xyGenCoord
 > extends Box<TL, BR> {
   ctx: CanvasRenderingContext2D;
 
@@ -100,20 +104,35 @@ export class DrawableBox<
 }
 
 export class EditableBox<
-  TL extends genCoord2D,
-  BR extends genCoord2D
+  TL extends xyGenCoord,
+  BR extends xyGenCoord
 > extends DrawableBox<TL, BR> {
-  set tl(tl: TL) {
-    this.tl = tl;
+  set tl(tl: xyGenCoord) {
+    this.t = t.y;
+    this.l = tl.x;
   }
 
-  set br(br: BR) {
-    this.br = br;
+  set br(br: xyGenCoord) {
+    this.br.x.px = br.x.px;
+    this.br.y.px = br.y.px;
   }
 
-  set tlpx(coord: { x: xPxArg; y: yPxArg }) {
-    this.tl.x.px = coord.x;
-    this.tl.y.px = coord.y;
+  set tr(tr: xyGenCoord) {
+    this.tl.y.px = tr.y.px;
+    this.br.x.px = tr.x.px;
+  }
+
+  set bl(bl: xyGenCoord) {
+    this.tl.x.px = bl.x.px;
+    this.br.y.px = bl.y.px;
+  }
+
+  set l(x: xGenUnit) {
+    if(x.px>this.br.x.px) this.tl.x. 
+    else this.tl.x.px = x.px;
+  }
+
+  relativePos(p: xyGenCoord): "tl" | "tr" | "bl" | "br" {
   }
 
   // set brpx
@@ -123,7 +142,8 @@ export class EditableBox<
   }
 }
 
-let lol: Unit<number> = new xPx(234) as Unit<number>;
-
-let b = new ECoord2D<number, number, xPx, yPx>(1, 1, xPx, yPx);
-let yolo = new EditableBox(new CanvasRenderingContext2D(), b, b);
+let kobi = new EditableBox(
+  new CanvasRenderingContext2D(),
+  tfCoord(2, 3),
+  tfCoord(3, 4)
+);
