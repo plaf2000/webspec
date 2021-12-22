@@ -9,13 +9,13 @@ Type definitions
 export type xVal = number;
 export type yVal = number;
 
-type TableConv = {
-  [Ax in keyof Units]: {
-    [from in keyof Units[Ax]]: {
-      [to in keyof Units[Ax]]: (arg: Units[Ax][from]) => Units[Ax][to];
-    };
-  };
-};
+// type TableConv = {
+//   [Ax in keyof Units]: {
+//     [from in keyof Units[Ax]]: {
+//       [to in keyof Units[Ax]]: (arg: Units[Ax][from]) => Units[Ax][to];
+//     };
+//   };
+// };
 
 export type nUnit = {
   [A in keyof Units]: nUnit_[A] & keyof Units[A]; 
@@ -47,7 +47,7 @@ Classes used for conversions
 
 */
 
-let identity: <X>(arg: X) => X = (arg) => arg;
+// let identity: <X>(arg: X) => X = (arg) => arg;
 
 export class Conv {
   static px_s = 10;
@@ -56,35 +56,35 @@ export class Conv {
   static fq_end = 22000;
   static px_hz = 0.1;
 
-  static tableConv: TableConv = {
-    x: {
-      px: {
-        px: identity,
-        s: (v) => v / Conv.px_s + Conv.start_time,
-        date: (v) => this.tableConv.x.s.date(this.tableConv.x.px.s(v)),
-      },
-      s: {
-        px: identity,
-        s: identity,
-        date: (v) => new Date(v * 1000),
-      },
-      date: {
-        px: (v) => v.getMilliseconds(),
-        s: (v) => v.getMilliseconds(),
-        date: identity,
-      },
-    },
-    y: {
-      px: {
-        px: identity,
-        hz: identity,
-      },
-      hz: {
-        px: identity,
-        hz: identity,
-      },
-    },
-  };
+  // static tableConv: TableConv = {
+  //   x: {
+  //     px: {
+  //       px: identity,
+  //       s: (v) => v / Conv.px_s + Conv.start_time,
+  //       date: (v) => this.tableConv.x.s.date(this.tableConv.x.px.s(v)),
+  //     },
+  //     s: {
+  //       px: identity,
+  //       s: identity,
+  //       date: (v) => new Date(v * 1000),
+  //     },
+  //     date: {
+  //       px: (v) => v.getMilliseconds(),
+  //       s: (v) => v.getMilliseconds(),
+  //       date: identity,
+  //     },
+  //   },
+  //   y: {
+  //     px: {
+  //       px: identity,
+  //       hz: identity,
+  //     },
+  //     hz: {
+  //       px: identity,
+  //       hz: identity,
+  //     },
+  //   },
+  // };
 
   static conv<
     A extends AxT,
@@ -163,24 +163,6 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return typeof this.val_;
   }
 
-  dist<X extends Unit<A, keyof Units[A]>, xU extends keyof Units[A]>(
-    x: X,
-    u: xU
-  ): number | undefined {
-    let s = this.getv(u);
-    let e = x.getv(u);
-    if (typeof s === "number" && typeof e === "number") return s - e;
-  }
-
-  midPoint<X extends Unit<A, keyof Units[A]>, xU extends >(
-    x: X,
-    u: nUnit[A],
-    e = false,
-  ): any {
-    let m = this.getv("px") + x.getv("px");
-    return new Unit(m / 2,this.ax,u,e);
-  }
-
   getv<T extends keyof Units[A]>(t: T): Units[A][T] {
     return Conv.conv(this.val,this.unit,t,this.ax);
   }
@@ -192,13 +174,18 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
-  get date() {
+
+  constructor (val: Units["x"][U], unit: U, e = false) {
+    super(val, "x", unit, e);
+  }
+
+  get date(): Units["x"]["date"] {
     return this.getv("date");
   }
-  get s() {
+  get s(): Units["x"]["s"] {
     return this.getv("s");
   }
-  get px() {
+  get px(): Units["x"]["px"] {
     return this.getv("px");
   }
 
@@ -213,12 +200,28 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
   }
 }
 
-// export abstract class yUnit<U extends yVal> extends Unit<U> {
-//   abstract hz: number;
-//   abstract px: number;
-// }
+export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
+
+  constructor (val: Units["y"][U], unit: U, e = false) {
+    super(val, "y", unit, e);
+  }
+
+  get hz(): Units["y"]["hz"] {
+    return this.getv("hz");
+  }
+  get px(): Units["y"]["px"] {
+    return this.getv("px");
+  }
+
+  set hz(v: Units["y"]["hz"]) {
+    this.setv(v, "hz");
+  }
+  set px(v: Units["y"]["px"]) {
+    this.setv(v, "px");
+  }
+}
 
 let ass = new Unit(32,"x","px");
-let b = ass.getv("px");
+let b = (ass as xUnit<"px">).px;
 
 console.log(b)

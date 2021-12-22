@@ -1,29 +1,17 @@
 import {
   xUnit,
   yUnit,
-  Constr,
   yVal,
   xVal,
   UConstr,
-  xPx,
-  yPx,
-  PrimUnit,
-  Xu,
-  Yu,
-  UnitPrim,
-  UnitStr,
-  UnitClass,
-  Arg,
   nUnit,
-  xGenUnit,
-  yGenUnit,
   AxT,
   uList,
   Unit,
   Units,
 } from "./Units";
 
-export type xyGenCoord = Coord2D<"x", "y", uList<"x">, uList<"y">>;
+export type xyGenCoord = xyCoord<uList<"x">, uList<"y">>;
 
 export class Coord2D<
   X extends AxT,
@@ -57,52 +45,62 @@ export class Coord2D<
   set y(y: Unit<Y, yU>) {
     if (this.y.editable) this.y_ = y;
   }
+}
 
-  distance(
-    p: Coord2D<X, Y, uList<X>, uList<Y>>,
-    xunit: keyof Units[X],
-    yunit: keyof Units[Y]
-  ) {
-    let dx = this.x.dist(p.x, xunit);
-    let dy = this.y.dist(p.y, yunit);
-    if (dx && dy) return Math.sqrt(dx * dx + dy * dy);
+export class xyCoord<
+  xU extends uList<"x">,
+  yU extends uList<"y">
+> extends Coord2D<"x", "y", xU, yU> {
+  get x() {
+    return super.x as xUnit<xU>;
+  }
+  get y() {
+    return super.y as yUnit<yU>;
+  }
+  distance(p: xyGenCoord, xunit: nUnit["x"], yunit: nUnit["y"]): number {
+    let dx = this.x[xunit] - p.x[xunit];
+    let dy = this.y[yunit] - p.y[yunit];
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
-  midPoint(
-    p: Coord2D<X, Y, uList<X>, uList<Y>>,
-    xunit: keyof Units[X],
-    yunit: keyof Units[Y]
-  ) {
-    let mx = this.x.midPoint(p.x, xunit);
-    let my = this.y.midPoint(p.y, yunit)
-    if(mx && my) return new Coord2D(mx,my);
+  midPoint<xR extends nUnit["x"], yR extends nUnit["y"]>(
+    p: xyGenCoord,
+    xunit: xR,
+    yunit: yR,
+    ex?: boolean,
+    ey?: boolean
+  ): xyCoord<xR, yR> {
+    let x = p.x[xunit] + this.x[xunit];
+    let y = p.y[yunit] + this.y[yunit];
+
+    return xy(x / 2, y / 2, xunit, yunit, ex, ey);
   }
 }
 
-export function buildCoord<xU extends UnitStr<"x">, yU extends UnitStr<"y">>(
-  x: UnitPrim["x"][xU],
-  y: UnitPrim["y"][yU],
+export function xy<xU extends uList<"x">, yU extends uList<"y">>(
+  x: Units["x"][xU],
+  y: Units["y"][yU],
   xunit: xU,
   yunit: yU,
   ex?: boolean,
   ey?: boolean
-): xyCoord<UnitClass["x"][xU], UnitClass["y"][yU]> {
-  return new xyCoord(Xu(x, xunit, ex), Yu(y, yunit, ey));
+): xyCoord<xU, yU> {
+  return new xyCoord(new xUnit<xU>(x, xunit, ex), new yUnit<yU>(y, yunit, ey));
 }
 
 export let pxCoord = (
-  x: Arg["xPx"],
-  y: Arg["yPx"],
+  x: Units["x"]["px"],
+  y: Units["y"]["px"],
   ex?: boolean,
   ey?: boolean
-) => buildCoord(x, y, "px", "px", ex, ey);
+) => xy(x, y, "px", "px", ex, ey);
 
 export let tfCoord = (
-  x: Arg["xTime"],
-  y: Arg["yFreq"],
+  x: Units["x"]["s"] | Units["x"]["date"],
+  y: Units["y"]["hz"],
   ex?: boolean,
   ey?: boolean
 ) => {
-  if (x instanceof Date) return buildCoord(x, y, "date", "hz", ex, ey);
-  else return buildCoord(x, y, "s", "hz", ex, ey);
+  if (x instanceof Date) return xy(x, y, "date", "hz", ex, ey);
+  else return xy(x, y, "s", "hz", ex, ey);
 };
