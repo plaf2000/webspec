@@ -17,14 +17,23 @@ import {
   nUnit,
   xGenUnit,
   yGenUnit,
+  AxT,
+  uList,
+  Unit,
+  Units,
 } from "./Units";
 
-export type xyGenCoord = xyCoord<xGenUnit, yGenUnit>;
+export type xyGenCoord = Coord2D<"x", "y", uList<"x">, uList<"y">>;
 
-export class xyCoord<xU extends xUnit<xVal>, yU extends yUnit<yVal>> {
-  protected x_: xU;
-  protected y_: yU;
-  constructor(x: xU, y: yU) {
+export class Coord2D<
+  X extends AxT,
+  Y extends AxT,
+  xU extends uList<X>,
+  yU extends uList<Y>
+> {
+  protected x_: Unit<X, xU>;
+  protected y_: Unit<Y, yU>;
+  constructor(x: Unit<X, xU>, y: Unit<Y, yU>) {
     this.x_ = x;
     this.y_ = y;
   }
@@ -33,39 +42,40 @@ export class xyCoord<xU extends xUnit<xVal>, yU extends yUnit<yVal>> {
     return this.x.editable && this.y.editable;
   }
 
-  get x(): xU {
+  get x(): Unit<X, xU> {
     return this.x_;
   }
 
-  get y(): yU {
+  get y(): Unit<Y, yU> {
     return this.y_;
   }
 
-  set x(x: xU) {
+  set x(x: Unit<X, xU>) {
     if (this.x.editable) this.x_ = x;
   }
 
-  set y(y: yU) {
+  set y(y: Unit<Y, yU>) {
     if (this.y.editable) this.y_ = y;
   }
 
-  distance(p: xyGenCoord, xunit: nUnit<"x">, yunit: nUnit<"y">) {
-    let dx = p.x[xunit] - this.x[xunit];
-    let dy = p.y[yunit] - this.y[yunit];
-    return Math.sqrt(dx * dx + dy * dy);
+  distance(
+    p: Coord2D<X, Y, uList<X>, uList<Y>>,
+    xunit: keyof Units[X],
+    yunit: keyof Units[Y]
+  ) {
+    let dx = this.x.dist(p.x, xunit);
+    let dy = this.y.dist(p.y, yunit);
+    if (dx && dy) return Math.sqrt(dx * dx + dy * dy);
   }
 
   midPoint(
-    p: xyGenCoord,
-    xunit: nUnit<"x">,
-    yunit: nUnit<"y">,
-    ex?: boolean,
-    ey?: boolean
+    p: Coord2D<X, Y, uList<X>, uList<Y>>,
+    xunit: keyof Units[X],
+    yunit: keyof Units[Y]
   ) {
-    let x = p.x[xunit] + this.x[xunit];
-    let y = p.y[yunit] + this.y[yunit];
-
-    return new xyCoord(Xu(x / 2, xunit, ex), Yu(y / 2, yunit, ey));
+    let mx = this.x.midPoint(p.x, xunit);
+    let my = this.y.midPoint(p.y, yunit)
+    if(mx && my) return new Coord2D(mx,my);
   }
 }
 

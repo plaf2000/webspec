@@ -9,40 +9,27 @@ Type definitions
 export type xVal = number;
 export type yVal = number;
 
-export type nUnit<T extends keyof PrimUnit> = PrimUnit[T]["number"]
-
-export type Constr = {
-  x: {
-    px: UConstr<Arg["xPx"], xPx>;
-    s: UConstr<Arg["xTime"], xTime>;
-    date: UConstr<Arg["xTime"], xTime>;
-  };
-  y: {
-    px: UConstr<Arg["yPx"], yPx>;
-    hz: UConstr<Arg["yFreq"], yFreq>;
+type TableConv = {
+  [Ax in keyof Units]: {
+    [from in keyof Units[Ax]]: {
+      [to in keyof Units[Ax]]: (arg: Units[Ax][from]) => Units[Ax][to];
+    };
   };
 };
 
-export type UnitClass = {
-  x: {
-    px: xPx,
-    s: xTime,
-    date: xTime
-  };
-  y: {
-    px: yPx,
-    hz: yFreq
-  };
+export type nUnit = {
+  [A in keyof Units]: nUnit_[A] & keyof Units[A]; 
+}
+
+export type nUnit_ = {
+  x: "px" | "s";
+  y: "px" | "hz";
 };
 
-export type Arg = {
-  xPx: number;
-  xTime: number | Date;
-  yPx: number;
-  yFreq: number;
-};
+export type uList<A extends AxT> = keyof Units[A];
+export type AxT = keyof Units;
 
-export type UnitPrim = {
+export type Units = {
   x: {
     px: number;
     s: number;
@@ -54,66 +41,95 @@ export type UnitPrim = {
   };
 };
 
-export type PrimUnit = {
-  x: {
-    Date: "date";
-    number: "s" | "px";
-  };
-  y: {
-    number: "px" | "hz";
-  };
-};
-
-// Get unit string either by x or y (= type T)
-
-export type UnitStr<T extends keyof UnitPrim> = keyof UnitPrim[T];
-
 /*
-
+ extends keyof Units[A]
 Classes used for conversions
 
 */
 
-export class xUnitConv {
+let identity: <X>(arg: X) => X = (arg) => arg;
+
+export class Conv {
   static px_s = 10;
   static time_offset = 0;
-  static start_time = xUnitConv.time_offset;
-
-  static pxToS(x: number): number {
-    return x / xUnitConv.px_s + xUnitConv.start_time;
-  }
-
-  static sToPx(x: number): number {
-    return (x - xUnitConv.start_time) * xUnitConv.px_s;
-  }
-
-  static dateToS(x: Date): number {
-    return x.getMilliseconds() / 1000 - xUnitConv.time_offset;
-  }
-
-  static sToDate(x: number): Date {
-    return new Date(x * 1000);
-  }
-
-  static pxToDate(x: number): Date {
-    return xUnitConv.sToDate(xUnitConv.pxToS(x));
-  }
-
-  static dateToPx(x: Date): number {
-    return xUnitConv.sToPx(xUnitConv.dateToS(x));
-  }
-}
-
-export class yUnitConv {
+  static start_time = Conv.time_offset;
   static fq_end = 22000;
   static px_hz = 0.1;
 
-  static pxToHz(y: number): number {
-    return yUnitConv.fq_end - y / yUnitConv.px_hz;
-  }
+  static tableConv: TableConv = {
+    x: {
+      px: {
+        px: identity,
+        s: (v) => v / Conv.px_s + Conv.start_time,
+        date: (v) => this.tableConv.x.s.date(this.tableConv.x.px.s(v)),
+      },
+      s: {
+        px: identity,
+        s: identity,
+        date: (v) => new Date(v * 1000),
+      },
+      date: {
+        px: (v) => v.getMilliseconds(),
+        s: (v) => v.getMilliseconds(),
+        date: identity,
+      },
+    },
+    y: {
+      px: {
+        px: identity,
+        hz: identity,
+      },
+      hz: {
+        px: identity,
+        hz: identity,
+      },
+    },
+  };
 
-  static hzToPx(y: number): number {
-    return (y - yUnitConv.fq_end) * yUnitConv.px_hz;
+  static conv<
+    A extends AxT,
+    F extends keyof Units[A],
+    T extends keyof Units[A]
+  >(v: Units[A][F], f: F, t: T, a: A): any { 
+    if ((f as string) == (t as string)) {
+      return v;
+    }
+    else {
+      if(a == "x") {
+        if(f == "px" && typeof v == "number") {
+          if(t == "s") {
+            return v / Conv.px_s + Conv.start_time;
+          }
+          else {
+            return Conv.conv(Conv.conv(v,"px","s","x"),"s","date","x");
+          }
+        }
+        else if(f == "s" && typeof v == "number") {
+          if(t == "px") {
+            return (v - Conv.start_time) * Conv.px_s;
+          }
+          else {
+            return new Date((v+Conv.time_offset) * 1000);
+          }
+        }
+        else if(v instanceof Date) {
+          if(t == "px") {
+            return Conv.conv(Conv.conv(v,"date","s","x"),"s","px","x");
+          }
+          else {
+            return v.getMilliseconds() / 1000 - Conv.time_offset;
+          }
+        }
+      }
+      else if(typeof v == "number") {
+        if(f=="px") {
+          return Conv.fq_end - v / Conv.px_hz;
+        }
+        else {
+          return (v - Conv.fq_end) * Conv.px_hz;
+        }
+      }
+    }
   }
 }
 
@@ -123,170 +139,86 @@ x and y units definitons
 
 */
 
-export abstract class Unit<U> {
-  protected editable_: boolean;
-  private val_: U;
-  constructor(val: U, e?: boolean) {
+export class Unit<A extends keyof Units, U extends keyof Units[A]> {
+  readonly editable: boolean;
+  private val_: Units[A][U];
+  readonly unit: U;
+  readonly ax: A;
+  constructor(val: Units[A][U], ax: A, unit: U, e = false) {
     this.val_ = val;
-    this.editable_ = e || false;
-  }
-  get editable(): boolean {
-    return this.editable_;
+    this.editable = e;
+    this.unit = unit;
+    this.ax = ax;
   }
 
-  protected set val(v: U) {
+  protected set val(v: Units[A][U]) {
     if (this.editable) this.val_ = v;
   }
 
-  get val(): U {
+  get val(): Units[A][U] {
     return this.val_;
   }
-}
 
-export abstract class xUnit<U extends xVal> extends Unit<U> {
-  abstract date: Date;
-  abstract s: number;
-  abstract px: number;
-}
-
-export abstract class yUnit<U extends yVal> extends Unit<U> {
-  abstract hz: number;
-  abstract px: number;
-}
-
-/*
-
-x and y units implementations
-
-*/
-
-// x implementations
-
-export class xTime extends xUnit<number> {
-  constructor(arg: Arg["xTime"]) {
-    if (arg instanceof Date) arg = xUnitConv.dateToS(arg);
-    super(arg, false);
-  }
-  get s(): number {
-    return this.val;
+  get prim_type(): string {
+    return typeof this.val_;
   }
 
-  get date(): Date {
-    return xUnitConv.sToDate(this.val);
+  dist<X extends Unit<A, keyof Units[A]>, xU extends keyof Units[A]>(
+    x: X,
+    u: xU
+  ): number | undefined {
+    let s = this.getv(u);
+    let e = x.getv(u);
+    if (typeof s === "number" && typeof e === "number") return s - e;
   }
 
-  get px(): number {
-    return xUnitConv.sToPx(this.val);
+  midPoint<X extends Unit<A, keyof Units[A]>, xU extends >(
+    x: X,
+    u: nUnit[A],
+    e = false,
+  ): any {
+    let m = this.getv("px") + x.getv("px");
+    return new Unit(m / 2,this.ax,u,e);
   }
 
-  set s(x: number) {
-    this.val = x;
+  getv<T extends keyof Units[A]>(t: T): Units[A][T] {
+    return Conv.conv(this.val,this.unit,t,this.ax);
   }
 
-  set date(x: Date) {
-    this.val = xUnitConv.dateToS(x);
-  }
-
-  set px(x: number) {
-    this.val = xUnitConv.pxToS(x);
+  setv<F extends keyof Units[A]>(v: Units[A][F] | Unit<A, F>, f: F) {
+    if (v instanceof Unit) v = v.getv(f);
+    this.val = Conv.conv(v,f,this.unit,this.ax);
   }
 }
 
-export class xPx extends xUnit<number> {
-  get s(): number {
-    return xUnitConv.pxToS(this.val);
+export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
+  get date() {
+    return this.getv("date");
+  }
+  get s() {
+    return this.getv("s");
+  }
+  get px() {
+    return this.getv("px");
   }
 
-  get date(): Date {
-    return xUnitConv.pxToDate(this.val);
+  set date(v: Units["x"]["date"]) {
+    this.setv(v, "date");
   }
-
-  get px(): number {
-    return this.val;
+  set s(v: Units["x"]["s"]) {
+    this.setv(v, "s");
   }
-
-  set s(x: number) {
-    this.val = xUnitConv.sToPx(x);
-  }
-
-  set date(x: Date) {
-    this.val = xUnitConv.dateToPx(x);
-  }
-
-  set px(x: number) {
-    this.val = x;
+  set px(v: Units["x"]["px"]) {
+    this.setv(v, "px");
   }
 }
 
-// y implementations
+// export abstract class yUnit<U extends yVal> extends Unit<U> {
+//   abstract hz: number;
+//   abstract px: number;
+// }
 
-export class yPx extends yUnit<number> {
-  get hz(): number {
-    return yUnitConv.pxToHz(this.val);
-  }
+let ass = new Unit(32,"x","px");
+let b = ass.getv("px");
 
-  get px(): number {
-    return this.val;
-  }
-
-  set hz(x: number) {
-    this.val = yUnitConv.hzToPx(x);
-  }
-
-  set px(x: number) {
-    this.val = x;
-  }
-}
-
-export class yFreq extends yUnit<number> {
-  get px(): number {
-    return yUnitConv.hzToPx(this.val);
-  }
-
-  get hz(): number {
-    return this.val;
-  }
-
-  set px(x: number) {
-    this.val = yUnitConv.pxToHz(x);
-  }
-
-  set hz(x: number) {
-    this.val = x;
-  }
-}
-
-/*
-
-Helper functions
-
-*/
-
-// x
-
-export let constructors: Constr = {
-  x: {
-    s: xTime,
-    px: xPx,
-    date: xTime,
-  },
-  y: {
-    px: yPx,
-    hz: yFreq,
-  },
-};
-
-export function Xu<
-  xU extends UnitStr<"x">
->(val: UnitPrim["x"][xU], utype: xU, e?: boolean) {
-  if(val instanceof Date) return new xTime(val);
-  return new constructors["x"][utype](val);
-}
-
-
-export function Yu<
-  yU extends UnitStr<"y">
->(val: UnitPrim["y"][yU], utype: yU, e?: boolean) {
- return new constructors["y"][utype](val);
-}
-
+console.log(b)
