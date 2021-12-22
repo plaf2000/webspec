@@ -57,6 +57,13 @@ export class xyCoord<
   get y() {
     return super.y as yUnit<yU>;
   }
+
+  set x(x: xUnit<xU>) {
+    super.x = x;
+  }
+  set y(y: yUnit<yU>) {
+    super.y = y;
+  }
   distance(p: xyGenCoord, xunit: nUnit["x"], yunit: nUnit["y"]): number {
     let dx = this.x[xunit] - p.x[xunit];
     let dy = this.y[yunit] - p.y[yunit];

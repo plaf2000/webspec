@@ -1,18 +1,5 @@
-import { buildCoord, pxCoord, tfCoord, xyCoord, xyGenCoord } from "./Coord";
-import {
-  xPx,
-  yPx,
-  yUnit,
-  xTime,
-  xUnit,
-  PrimUnit,
-  Arg,
-  nUnit,
-  xGenUnit,
-  yGenUnit,
-  xUnitConv,
-  Xu,
-} from "./Units";
+import { xy, pxCoord, tfCoord, xyCoord, xyGenCoord } from "./Coord";
+import { yUnit, xUnit, nUnit, Units, xGenUnit, yGenUnit } from "./Units";
 import { Values } from "./Values";
 import { View } from "./View";
 
@@ -36,11 +23,11 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     return new xyCoord(this.tl.x, this.br.y);
   }
 
-  width(xunit: nUnit<"x">): number {
+  width(xunit: nUnit["x"]): number {
     return this.br_.x[xunit] - this.tl_.x[xunit];
   }
 
-  height(yunit: nUnit<"y">): number {
+  height(yunit: nUnit["y"]): number {
     return this.br_.y[yunit] - this.tl_.y[yunit];
   }
 
@@ -51,8 +38,8 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
 
   isHover(
     p: xyGenCoord,
-    xunit: nUnit<"x">,
-    yunit: nUnit<"y">,
+    xunit: nUnit["x"],
+    yunit: nUnit["y"],
     strict?: false
   ): boolean {
     let check: (
@@ -71,7 +58,7 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     );
   }
 
-  isHoverPx(x: Arg["xPx"], y: Arg["yPx"], strict?: false): boolean {
+  isHoverPx(x: Units["x"]["px"], y: Units["y"]["px"], strict?: false): boolean {
     return this.isHover(pxCoord(x, y), "px", "px", strict);
   }
 }
@@ -120,7 +107,7 @@ type Corners = "tl" | "tr" | "bl" | "br";
 
 type Corner = {
   [key in Corners]: xyGenCoord;
-}
+};
 
 type CornerEdges = Corner & {
   l: xGenUnit;
@@ -129,11 +116,10 @@ type CornerEdges = Corner & {
   b: yGenUnit;
 };
 
-
-export class EditableBox<
-  TL extends xyGenCoord,
-  BR extends xyGenCoord
-> extends DrawableBox<TL, BR> implements CornerEdges {
+export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
+  extends DrawableBox<TL, BR>
+  implements CornerEdges
+{
   set tl(tl: CornerEdges["tl"]) {
     this.t = tl.y;
     this.l = tl.x;
@@ -182,7 +168,10 @@ export class EditableBox<
     } else this.br.y.px = y.px;
   }
 
-  set<EC extends keyof CornerEdges>(p: CornerEdges[EC], edge: EC): keyof CornerEdges {
+  set<EC extends keyof CornerEdges>(
+    p: CornerEdges[EC],
+    edge: EC
+  ): keyof CornerEdges {
     let next_edge: keyof CornerEdges = edge;
     switch (edge) {
       case "tl":

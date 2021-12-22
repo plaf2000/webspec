@@ -6,8 +6,8 @@ Type definitions
 
 */
 
-export type xVal = number;
-export type yVal = number;
+export type xGenUnit = xUnit<keyof Units["x"]>
+export type yGenUnit = yUnit<keyof Units["y"]>
 
 // type TableConv = {
 //   [Ax in keyof Units]: {
@@ -86,6 +86,10 @@ export class Conv {
   //   },
   // };
 
+
+  /*
+   * TODO: test the following function:
+  */
   static conv<
     A extends AxT,
     F extends keyof Units[A],
@@ -220,8 +224,3 @@ export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
     this.setv(v, "px");
   }
 }
-
-let ass = new Unit(32,"x","px");
-let b = (ass as xUnit<"px">).px;
-
-console.log(b)
