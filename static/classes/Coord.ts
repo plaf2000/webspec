@@ -1,9 +1,6 @@
 import {
   xUnit,
   yUnit,
-  yVal,
-  xVal,
-  UConstr,
   nUnit,
   AxT,
   uList,

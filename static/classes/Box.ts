@@ -40,25 +40,26 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     p: xyGenCoord,
     xunit: nUnit["x"],
     yunit: nUnit["y"],
-    strict?: false
+    strict = false
   ): boolean {
     let check: (
       a: number,
       b: number,
       op: (x: number, y: number) => boolean
     ) => boolean = (a, b, op) => {
-      if (strict) return op(a, b);
-      return op(a, b) || a == b;
+      return op(a, b) || (!strict && a == b);
     };
+    let gt = (a: number, b: number) => a > b;
+    let lt = (a: number, b: number) => a < b;
     return (
-      check(p.x[xunit], this.tl_.x[xunit], (a: number, b: number) => a > b) &&
-      check(p.x[xunit], this.br_.x[xunit], (a: number, b: number) => a < b) &&
-      check(p.y[yunit], this.tl_.y[yunit], (a: number, b: number) => a > b) &&
-      check(p.y[yunit], this.br_.y[yunit], (a: number, b: number) => a < b)
+      check(p.x[xunit], this.tl_.x[xunit], gt) &&
+      check(p.x[xunit], this.br_.x[xunit], lt) &&
+      check(p.y[yunit], this.tl_.y[yunit], gt) &&
+      check(p.y[yunit], this.br_.y[yunit], lt)
     );
   }
 
-  isHoverPx(x: Units["x"]["px"], y: Units["y"]["px"], strict?: false): boolean {
+  isHoverPx(x: Units["x"]["px"], y: Units["y"]["px"], strict = false): boolean {
     return this.isHover(pxCoord(x, y), "px", "px", strict);
   }
 }
@@ -101,99 +102,116 @@ export class DrawableBox<
   clear(): void {
     this.ctx.clearRect(this.xl, this.yt, this.w, this.h);
   }
+
+  drawOnCanvas() {
+    this.ctx.beginPath();
+    this.ctx.rect(this.xl, this.yt, this.w, this.h);
+    this.ctx.stroke();
+  }
 }
 
-type Corners = "tl" | "tr" | "bl" | "br";
-
-type Corner = {
-  [key in Corners]: xyGenCoord;
+type Edges = {
+  x: {
+    l: xGenUnit;
+    r: xGenUnit;
+  };
+  y: {
+    t: yGenUnit;
+    b: yGenUnit;
+  }
 };
 
-type CornerEdges = Corner & {
-  l: xGenUnit;
-  r: xGenUnit;
-  t: yGenUnit;
-  b: yGenUnit;
-};
+interface CornerEdges extends Edges {}
 
 export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
   extends DrawableBox<TL, BR>
-  implements CornerEdges
 {
-  set tl(tl: CornerEdges["tl"]) {
-    this.t = tl.y;
-    this.l = tl.x;
-  }
-
-  set br(br: CornerEdges["br"]) {
-    this.br.x = br.x;
-    this.br.y = br.y;
-  }
-
-  set tr(tr: CornerEdges["tr"]) {
-    this.tl.y = tr.y;
-    this.br.x = tr.x;
-  }
-
-  set bl(bl: CornerEdges["bl"]) {
-    this.tl.x = bl.x;
-    this.br.y = bl.y;
-  }
-
-  set l(x: CornerEdges["l"]) {
-    if (x.px > this.br.x.px) {
-      this.tl.x.px = this.br.x.px;
-      this.br.x.px = x.px;
-    } else this.tl.x.px = x.px;
-  }
-
-  set r(x: CornerEdges["r"]) {
-    if (x.px < this.tl.x.px) {
-      this.br.x.px = this.tl.x.px;
-      this.tl.x.px = x.px;
-    } else this.br.x.px = x.px;
-  }
-
-  set t(y: CornerEdges["t"]) {
-    if (y.px > this.br.y.px) {
-      this.tl.y.px = this.br.y.px;
-      this.br.y.px = y.px;
-    } else this.tl.y.px = y.px;
-  }
-
-  set b(y: CornerEdges["b"]) {
-    if (y.px < this.tl.y.px) {
-      this.br.y.px = this.tl.y.px;
-      this.tl.y.px = y.px;
-    } else this.br.y.px = y.px;
-  }
-
-  set<EC extends keyof CornerEdges>(
-    p: CornerEdges[EC],
-    edge: EC
-  ): keyof CornerEdges {
-    let next_edge: keyof CornerEdges = edge;
-    switch (edge) {
-      case "tl":
-        if (p.x.px > this.br.x.px) break;
-      default:
-        next_edge = edge;
-    }
-
-    this[edge] = p;
-
-    return next_edge;
-  }
-
-  // set brpx
+  protected resize_x: keyof Edges["x"] | undefined;
+  protected resize_y: keyof Edges["y"] | undefined;
 
   constructor(ctx: CanvasRenderingContext2D, tl: TL, br: BR) {
     super(ctx, tl, br);
   }
+
+  get resizing_x(): boolean {
+    return !(this.resize_x === undefined);
+  }
+
+  get resizing_y(): boolean {
+    return !(this.resize_y === undefined);
+  }
+
+  set tl(tl: xyGenCoord) {
+    this.t = tl.y;
+    this.l = tl.x;
+  }
+
+  set br(br: xyGenCoord) {
+    this.r = br.x;
+    this.b = br.y;
+  }
+
+  set tr(tr: xyGenCoord) {
+    this.t = tr.y;
+    this.r = tr.x;
+  }
+
+  set bl(bl: xyGenCoord) {
+    this.l = bl.x;
+    this.b = bl.y;
+  }
+
+  set l(x: Edges["x"]["l"]) {
+    if (x.px > this.br.x.px) {
+      this.tl.x.px = this.br.x.px;
+      this.br.x.px = x.px;
+      if(this.resizing_x) this.resize_x = "r"
+    } else this.tl.x.px = x.px;
+  }
+
+  set r(x: Edges["x"]["r"]) {
+    if (x.px < this.tl.x.px) {
+      this.br.x.px = this.tl.x.px;
+      this.tl.x.px = x.px;
+      if(this.resizing_x) this.resize_x = "l"
+    } else this.br.x.px = x.px;
+  }
+
+  set t(y: Edges["y"]["t"]) {
+    if (y.px > this.br.y.px) {
+      this.tl.y.px = this.br.y.px;
+      this.br.y.px = y.px;
+      if(this.resizing_y) this.resize_y = "b"
+    } else this.tl.y.px = y.px;
+  }
+
+  set b(y: Edges["y"]["b"]) {
+    if (y.px < this.tl.y.px) {
+      this.br.y.px = this.tl.y.px;
+      this.tl.y.px = y.px;
+      if(this.resizing_y) this.resize_y = "t"
+    } else this.br.y.px = y.px;
+  }
+
+  setResEdge(x?: keyof Edges["x"], y?: keyof Edges["y"]): void {
+    if(x) this.resize_x = x;
+    if(y) this.resize_y = y;
+  }
+
+  resize(p: xyGenCoord): void {
+    if(this.resize_x !== undefined) {
+      this[this.resize_x] = p.x;
+    }
+    if(this.resize_y !== undefined)  {
+      this[this.resize_y] = p.y;
+    }
+  }
+
+  stopResize(p: xyGenCoord): void {
+    this.resize(p);
+    this.resize_x = undefined;
+    this.resize_y = undefined;
+  }
 }
 
-let kobi = new EditableBox(
-  new CanvasRenderingContext2D(),
-  tfCoord(2, 3),
-  tfCoord(3, 4)
-);
+

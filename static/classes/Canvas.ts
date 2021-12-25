@@ -3,6 +3,8 @@ import { View } from "./View";
 export class Canvas {
     cvs: HTMLCanvasElement;
     ctx : CanvasRenderingContext2D;
+    // view : View;
+    
 
     constructor(cvs: HTMLCanvasElement) {
         this.cvs = cvs;
@@ -11,6 +13,7 @@ export class Canvas {
             throw new Error("Context is null!");
         }
         this.ctx = ctx;
+
     }
     drawCanvas() {
         
