@@ -19,8 +19,24 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     return new xyCoord(this.br.x, this.tl.y);
   }
 
-  get lb(): xyGenCoord {
+  get bl(): xyGenCoord {
     return new xyCoord(this.tl.x, this.br.y);
+  }
+
+  get l() {
+    return this.tl_.x;
+  }
+
+  get r() {
+    return this.br_.x;
+  }
+
+  get t() {
+    return this.tl_.y;
+  }
+
+  get b() {
+    return this.br_.y;
   }
 
   width(xunit: nUnit["x"]): number {
@@ -70,12 +86,44 @@ export class DrawableBox<
 > extends Box<TL, BR> {
   ctx: CanvasRenderingContext2D;
 
+  get tl(): xyGenCoord {
+    return super.tl;
+  }
+
+  get br(): xyGenCoord {
+    return super.br;
+  }
+
+  get tr(): xyGenCoord {
+    return super.tr;
+  }
+
+  get bl(): xyGenCoord {
+    return super.bl;
+  }
+
+  get l() {
+    return super.l;
+  }
+
+  get r() {
+    return super.r;
+  }
+
+  get t() {
+    return super.t;
+  }
+
+  get b() {
+    return super.b;
+  }
+
   get xl(): number {
-    return this.tl_.x.px;
+    return this.l.px;
   }
 
   get yt(): number {
-    return this.tl_.y.px;
+    return this.t.px;
   }
 
   get w(): number {
@@ -118,14 +166,71 @@ export type Edges = {
   y: {
     t: yGenUnit;
     b: yGenUnit;
-  }
+  };
 };
 
-export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
-  extends DrawableBox<TL, BR>
-{
+export class EditableBox<
+  TL extends xyGenCoord,
+  BR extends xyGenCoord
+> extends DrawableBox<TL, BR> {
   protected resize_x: keyof Edges["x"] | undefined;
   protected resize_y: keyof Edges["y"] | undefined;
+
+  get tl(): xyGenCoord {
+    return super.tl;
+  }
+
+  get br(): xyGenCoord {
+    return super.br;
+  }
+
+  get tr(): xyGenCoord {
+    return super.tr;
+  }
+
+  get bl(): xyGenCoord {
+    return super.bl;
+  }
+
+  get l() {
+    return super.l;
+  }
+
+  get r() {
+    return super.r;
+  }
+
+  get t() {
+    return super.t;
+  }
+
+  get b() {
+    return super.b;
+  }
+
+  get xl(): number {
+    return super.xl;
+  }
+
+  get yt(): number {
+    return super.yt;
+  }
+
+  get w(): number {
+    return super.w;
+  }
+
+  get h(): number {
+    return super.h;
+  }
+
+  get dur(): number {
+    return super.dur;
+  }
+
+  get dfreq(): number {
+    return super.dfreq;
+  }
 
   constructor(ctx: CanvasRenderingContext2D, tl: TL, br: BR) {
     super(ctx, tl, br);
@@ -163,7 +268,7 @@ export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
     if (x.px > this.br.x.px) {
       this.tl.x.px = this.br.x.px;
       this.br.x.px = x.px;
-      if(this.resizing_x) this.resize_x = "r"
+      if (this.resizing_x) this.resize_x = "r";
     } else this.tl.x.px = x.px;
   }
 
@@ -171,7 +276,7 @@ export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
     if (x.px < this.tl.x.px) {
       this.br.x.px = this.tl.x.px;
       this.tl.x.px = x.px;
-      if(this.resizing_x) this.resize_x = "l"
+      if (this.resizing_x) this.resize_x = "l";
     } else this.br.x.px = x.px;
   }
 
@@ -179,7 +284,7 @@ export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
     if (y.px > this.br.y.px) {
       this.tl.y.px = this.br.y.px;
       this.br.y.px = y.px;
-      if(this.resizing_y) this.resize_y = "b"
+      if (this.resizing_y) this.resize_y = "b";
     } else this.tl.y.px = y.px;
   }
 
@@ -187,15 +292,15 @@ export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
     if (y.px < this.tl.y.px) {
       this.br.y.px = this.tl.y.px;
       this.tl.y.px = y.px;
-      if(this.resizing_y) this.resize_y = "t"
+      if (this.resizing_y) this.resize_y = "t";
     } else this.br.y.px = y.px;
   }
 
   resize(p: xyGenCoord): void {
-    if(this.resize_x !== undefined) {
+    if (this.resize_x !== undefined) {
       this[this.resize_x] = p.x;
     }
-    if(this.resize_y !== undefined)  {
+    if (this.resize_y !== undefined) {
       this[this.resize_y] = p.y;
     }
   }
@@ -206,5 +311,3 @@ export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
     this.resize_y = undefined;
   }
 }
-
-

@@ -13,8 +13,20 @@ export class Box {
     get tr() {
         return new xyCoord(this.br.x, this.tl.y);
     }
-    get lb() {
+    get bl() {
         return new xyCoord(this.tl.x, this.br.y);
+    }
+    get l() {
+        return this.tl_.x;
+    }
+    get r() {
+        return this.br_.x;
+    }
+    get t() {
+        return this.tl_.y;
+    }
+    get b() {
+        return this.br_.y;
     }
     width(xunit) {
         return this.br_.x[xunit] - this.tl_.x[xunit];
@@ -42,11 +54,35 @@ export class DrawableBox extends Box {
         super(tl, br);
         this.ctx = ctx;
     }
+    get tl() {
+        return super.tl;
+    }
+    get br() {
+        return super.br;
+    }
+    get tr() {
+        return super.tr;
+    }
+    get bl() {
+        return super.bl;
+    }
+    get l() {
+        return super.l;
+    }
+    get r() {
+        return super.r;
+    }
+    get t() {
+        return super.t;
+    }
+    get b() {
+        return super.b;
+    }
     get xl() {
-        return this.tl_.x.px;
+        return this.l.px;
     }
     get yt() {
-        return this.tl_.y.px;
+        return this.t.px;
     }
     get w() {
         return this.width("px");
@@ -72,6 +108,48 @@ export class DrawableBox extends Box {
 export class EditableBox extends DrawableBox {
     constructor(ctx, tl, br) {
         super(ctx, tl, br);
+    }
+    get tl() {
+        return super.tl;
+    }
+    get br() {
+        return super.br;
+    }
+    get tr() {
+        return super.tr;
+    }
+    get bl() {
+        return super.bl;
+    }
+    get l() {
+        return super.l;
+    }
+    get r() {
+        return super.r;
+    }
+    get t() {
+        return super.t;
+    }
+    get b() {
+        return super.b;
+    }
+    get xl() {
+        return super.xl;
+    }
+    get yt() {
+        return super.yt;
+    }
+    get w() {
+        return super.w;
+    }
+    get h() {
+        return super.h;
+    }
+    get dur() {
+        return super.dur;
+    }
+    get dfreq() {
+        return super.dfreq;
     }
     get resizing_x() {
         return !(this.resize_x === undefined);
