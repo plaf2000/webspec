@@ -124,24 +124,11 @@ export class Detection extends EditableBox<TFCoord, TFCoord> {
         this.triggered_y = undefined;
       }
     }
-
-    console.log(this.triggered_x, this.triggered_y);
   }
 
   startResize(p: PXCoord): void {
     this.checkResize(p);
     this.resize_x = this.triggered_x;
     this.resize_y = this.triggered_y;
-  }
-
-  resize(p: PXCoord) {
-    if (this.resize_x) {
-      this[this.resize_x] = p.x;
-    }
-    if (this.resize_y) {
-      this[this.resize_y] = p.y;
-      console.log("Resizing y...")
-
-    }
   }
 }

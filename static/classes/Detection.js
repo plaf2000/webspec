@@ -100,7 +100,6 @@ export class Detection extends EditableBox {
                 this.triggered_y = undefined;
             }
         }
-        console.log(this.triggered_x, this.triggered_y);
     }
     startResize(p) {
         this.checkResize(p);
@@ -113,7 +112,6 @@ export class Detection extends EditableBox {
         }
         if (this.resize_y) {
             this[this.resize_y] = p.y;
-            console.log("Resizing y...");
         }
     }
 }

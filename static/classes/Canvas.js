@@ -16,7 +16,7 @@ export class Canvas {
         }
         this.ctx = ctx;
         ctx.resetTransform();
-        this.det = new Detection(this.ctx, tfCoord(Conv.conv(100, "px", "s", "x"), Conv.conv(100, "px", "hz", "y"), true, true), tfCoord(Conv.conv(200, "px", "s", "x"), Conv.conv(200, "px", "hz", "y"), true, true));
+        this.det = new Detection(this.ctx, tfCoord(Conv.conv(100, "px", "s", "x"), Conv.conv(100, "px", "hz", "y"), false, true), tfCoord(Conv.conv(200, "px", "s", "x"), Conv.conv(200, "px", "hz", "y"), true, true));
         this.mouse_pos_ = pxCoord(0, 0);
         this.drawCanvas();
     }

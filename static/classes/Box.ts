@@ -297,12 +297,12 @@ export class EditableBox<
   }
 
   resize(p: xyGenCoord): void {
-    if (this.resize_x !== undefined) {
+    if (this.resize_x !== undefined) 
       this[this.resize_x] = p.x;
-    }
-    if (this.resize_y !== undefined) {
+    
+    if (this.resize_y !== undefined) 
       this[this.resize_y] = p.y;
-    }
+    
   }
 
   stopResize(p: xyGenCoord): void {
