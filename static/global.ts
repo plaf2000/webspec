@@ -19,3 +19,4 @@ export const globals: {
   zoomRatio: 0.8,
   fontSize: 15,
 };
+

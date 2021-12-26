@@ -1,33 +1,16 @@
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-exports.__esModule = true;
-exports.Ax = void 0;
-var Track_1 = require("./Track");
-var Ax = /** @class */ (function () {
-    function Ax(parent) {
+import { DrawableBox } from "./Box";
+import { Track } from "./Track";
+export class Ax extends DrawableBox {
+    constructor(parent) {
         this.first = 0;
         this.delta = 0;
         this.deltas = parent.deltas;
         this.view = view;
         this.updateDelta();
     }
-    Ax.prototype.updateDelta = function () {
-        var i = 0;
-        var j = -2;
+    updateDelta() {
+        let i = 0;
+        let j = -2;
         while (((Math.pow(10, j) * this.deltas[i]) / this.rConv) * this.r <
             this.l / 6) {
             i++;
@@ -44,37 +27,37 @@ var Ax = /** @class */ (function () {
             i--;
         }
         this.delta = Math.pow(10, j) * this.deltas[i];
-    };
-    Ax.prototype.updatePos = function () {
+    }
+    updatePos() {
         this.first = Math.ceil(this.unitStart / this.delta - 1) * this.delta;
         if (this.first < 0)
             this.first = 0;
-    };
-    Ax.prototype.updateAll = function () {
+    }
+    updateAll() {
         this.updateDelta();
         this.updatePos();
-    };
-    Ax.prototype.drawOnCanvas = function () {
+    }
+    drawOnCanvas() {
         this.ctxAx.clearRect(0, 0, this.w, this.h);
         this.ctxAx.beginPath();
-        for (var i = 0; this.first + i * this.delta <= this.unitEnd &&
-            this.first + i * this.delta <= Track_1.Track.audio.duration; i++) {
-            var value = Math.round((this.first + i * this.delta) * 1000) / 1000;
-            var pos = ((value - this.unitStart) / this.rConv) * this.r;
-            var time = new Date(0, 0, 0, 0, 0, 0, 0);
-            var timeStr = timeToStr(time, value);
+        for (let i = 0; this.first + i * this.delta <= this.unitEnd &&
+            this.first + i * this.delta <= Track.audio.duration; i++) {
+            let value = Math.round((this.first + i * this.delta) * 1000) / 1000;
+            let pos = ((value - this.unitStart) / this.rConv) * this.r;
+            let time = new Date(0, 0, 0, 0, 0, 0, 0);
+            let timeStr = timeToStr(time, value);
             this.ctxAx.strokeStyle = "black";
             this.ctxAx.moveTo(pos, 0);
             this.ctxAx.lineTo(pos, 10);
-            var sub = 1 / 4;
-            for (var k = 1; k * sub < 1; k++) {
-                var frac = Math.round(sub * k * 10000) / 10000;
-                var halfValue = Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;
-                if (halfValue <= Track_1.Track.audio.duration) {
-                    var halfPos = ((halfValue - this.unitStart) / this.rConv) * this.r;
+            let sub = 1 / 4;
+            for (let k = 1; k * sub < 1; k++) {
+                let frac = Math.round(sub * k * 10000) / 10000;
+                let halfValue = Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;
+                if (halfValue <= Track.audio.duration) {
+                    let halfPos = ((halfValue - this.unitStart) / this.rConv) * this.r;
                     this.ctxAx.strokeStyle = "black";
                     this.ctxAx.moveTo(halfPos, 0);
-                    var len = 6;
+                    let len = 6;
                     if (frac == 0.5) {
                         len = 8;
                     }
@@ -97,22 +80,17 @@ var Ax = /** @class */ (function () {
         this.ctxAx.moveTo(0, 0);
         this.ctxAx.lineTo(this.w, 0);
         this.ctxAx.stroke();
-    };
-    return Ax;
-}());
-exports.Ax = Ax;
-var xAx = /** @class */ (function (_super) {
-    __extends(xAx, _super);
-    function xAx(parent) {
-        var _this = this;
-        var y = tinfocvsheight + fqheight;
-        _this = _super.call(this, fqwidth, fqwidth + cvswidth, y, y) || this;
-        _this.y = y;
-        _this.unit = "s";
-        _this.deltas = parent.deltas;
-        return _this;
     }
-    xAx.prototype.updateDelta = function () {
+}
+class xAx extends DrawableBox {
+    constructor(parent) {
+        let y = tinfocvsheight + fqheight;
+        super(fqwidth, fqwidth + cvswidth, y, y);
+        this.y = y;
+        this.unit = "s";
+        this.deltas = parent.deltas;
+    }
+    updateDelta() {
         var i = 0;
         var j = -2;
         while (Math.pow(10, j) * this.deltas[i] / sPx * view.rx < cvswidth / 6) {
@@ -130,22 +108,22 @@ var xAx = /** @class */ (function (_super) {
             i--;
         }
         this.delta = Math.pow(10, j) * this.deltas[i];
-    };
+    }
     ;
-    xAx.prototype.updatePos = function () {
+    updatePos() {
         this.first = Math.ceil(view.tx / this.delta - 1) * this.delta;
         if (this.first < 0)
             this.first = 0;
-    };
+    }
     ;
-    xAx.prototype.updateAll = function () {
+    updateAll() {
         this.updateDelta();
         this.updatePos();
-    };
-    xAx.prototype.clear = function () {
+    }
+    clear() {
         ctx.clearRect(0, this.y, timelinewidth + fqwidth + 10, timelineheight + 10);
-    };
-    xAx.prototype.drawOnCanvas = function () {
+    }
+    drawOnCanvas() {
         ctx.beginPath();
         // console.log(audio.duration)
         for (var i = 0; this.first + i * this.delta <= view.txend && (isNaN(audio.duration) || this.first + i * this.delta <= audio.duration); i++) {
@@ -184,22 +162,18 @@ var xAx = /** @class */ (function (_super) {
         ctx.moveTo(this.xstart, this.y);
         ctx.lineTo(this.xend, this.y);
         ctx.stroke();
-    };
-    ;
-    return xAx;
-}(DrawableBox));
-var yAx = /** @class */ (function (_super) {
-    __extends(yAx, _super);
-    function yAx(parent) {
-        var _this = this;
-        var x = fqwidth;
-        _this = _super.call(this, x, x, tinfocvsheight, tinfocvsheight + fqheight) || this;
-        _this.unit = "Hz";
-        _this.x = x;
-        _this.deltas = parent.deltas;
-        return _this;
     }
-    yAx.prototype.updateDelta = function () {
+    ;
+}
+class yAx extends Ax {
+    constructor(parent) {
+        let x = fqwidth;
+        super(x, x, tinfocvsheight, tinfocvsheight + fqheight);
+        this.unit = "Hz";
+        this.x = x;
+        this.deltas = parent.deltas;
+    }
+    updateDelta() {
         var i = 0;
         var j = -1;
         while (((Math.pow(10, j) * this.deltas[i]) / HzPx) * view.ry <
@@ -218,23 +192,23 @@ var yAx = /** @class */ (function (_super) {
             i--;
         }
         this.delta = Math.pow(10, j) * this.deltas[i];
-    };
-    yAx.prototype.updatePos = function () {
+    }
+    updatePos() {
         this.first = Math.ceil(view.fyend / this.delta - 1) * this.delta;
         if (this.first < 0)
             this.first = 0;
-    };
-    yAx.prototype.updateAll = function () {
+    }
+    updateAll() {
         this.updateDelta();
         this.updatePos();
-    };
-    yAx.prototype.clear = function () {
+    }
+    clear() {
         ctx.clearRect(0, 0, fqwidth, fqheight + tinfocvsheight + timelineheight);
-    };
-    yAx.prototype.inside = function (val) {
+    }
+    inside(val) {
         return val <= view.fy && val >= view.fyend;
-    };
-    yAx.prototype.drawOnCanvas = function () {
+    }
+    drawOnCanvas() {
         ctx.beginPath();
         for (var i = 0; this.first + i * this.delta <= view.fy; i++) {
             var value = Math.round((this.first + i * this.delta) * 1000) / 1000;
@@ -264,6 +238,5 @@ var yAx = /** @class */ (function (_super) {
             }
         }
         ctx.stroke();
-    };
-    return yAx;
-}(Ax));
+    }
+}

@@ -1,104 +1,151 @@
-"use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
-exports.__esModule = true;
-exports.DrawableBox = exports.Box = void 0;
-var Coord_1 = require("./Coord");
-var Units_1 = require("./Units");
-var Box = /** @class */ (function () {
-    function Box(tl, br) {
-        this.tl = tl;
-        this.br = br;
+import { pxCoord, xyCoord } from "./Coord.js";
+export class Box {
+    constructor(tl, br) {
+        this.tl_ = tl;
+        this.br_ = br;
     }
-    Object.defineProperty(Box.prototype, "xs", {
-        get: function () {
-            return this.tl.xpx;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Box.prototype, "xe", {
-        get: function () {
-            return this.br.xpx;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Box.prototype, "ys", {
-        get: function () {
-            return this.tl.ypx;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Box.prototype, "ye", {
-        get: function () {
-            return this.br.ypx;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Box.prototype, "pxW", {
-        get: function () {
-            return this.xe - this.xs;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Box.prototype, "pxH", {
-        get: function () {
-            return this.ye - this.ys;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Box.prototype.isHover = function (coord) {
-        coord = coord.convert(Units_1.xPx, Units_1.yPx);
-        return (coord.x.geq(this.tl.x) &&
-            coord.x.leq(this.br.x) &&
-            coord.y.geq(this.tl.y) &&
-            coord.y.leq(this.br.y));
-    };
-    Box.prototype.isHoverPx = function (x, y) {
-        return this.isHover(new Coord_1.Coord2D(x, y, Units_1.xPx, Units_1.yPx));
-    };
-    Box.prototype.isHoverStrict = function (coord) {
-        coord = coord.convert(Units_1.xPx, Units_1.yPx);
-        return (coord.x.ge(this.tl.x) &&
-            coord.x.le(this.br.x) &&
-            coord.y.ge(this.tl.y) &&
-            coord.y.le(this.br.y));
-    };
-    Box.prototype.isHoverStrictPx = function (x, y) {
-        return this.isHoverStrict(new Coord_1.Coord2D(x, y, Units_1.xPx, Units_1.yPx));
-    };
-    return Box;
-}());
-exports.Box = Box;
-var DrawableBox = /** @class */ (function (_super) {
-    __extends(DrawableBox, _super);
-    function DrawableBox(ctx, tl, br) {
-        var _this = _super.call(this, tl, br) || this;
-        _this.ctx = ctx;
-        return _this;
+    get tl() {
+        return this.tl_;
     }
-    DrawableBox.prototype.updatetf = function () { };
-    DrawableBox.prototype.clear = function () {
-        this.ctx.clearRect(this.tl.x.convert(Units_1.xPx).val, this.tl.y.convert(Units_1.yPx).val);
-    };
-    return DrawableBox;
-}(Box));
-exports.DrawableBox = DrawableBox;
+    get br() {
+        return this.br_;
+    }
+    get tr() {
+        return new xyCoord(this.br.x, this.tl.y);
+    }
+    get lb() {
+        return new xyCoord(this.tl.x, this.br.y);
+    }
+    width(xunit) {
+        return this.br_.x[xunit] - this.tl_.x[xunit];
+    }
+    height(yunit) {
+        return this.br_.y[yunit] - this.tl_.y[yunit];
+    }
+    isHover(p, xunit, yunit, strict = false) {
+        let check = (a, b, op) => {
+            return op(a, b) || (!strict && a == b);
+        };
+        let gt = (a, b) => a > b;
+        let lt = (a, b) => a < b;
+        return (check(p.x[xunit], this.tl_.x[xunit], gt) &&
+            check(p.x[xunit], this.br_.x[xunit], lt) &&
+            check(p.y[yunit], this.tl_.y[yunit], gt) &&
+            check(p.y[yunit], this.br_.y[yunit], lt));
+    }
+    isHoverPx(x, y, strict = false) {
+        return this.isHover(pxCoord(x, y), "px", "px", strict);
+    }
+}
+export class DrawableBox extends Box {
+    constructor(ctx, tl, br) {
+        super(tl, br);
+        this.ctx = ctx;
+    }
+    get xl() {
+        return this.tl_.x.px;
+    }
+    get yt() {
+        return this.tl_.y.px;
+    }
+    get w() {
+        return this.width("px");
+    }
+    get h() {
+        return this.height("px");
+    }
+    get dur() {
+        return this.width("s");
+    }
+    get dfreq() {
+        return this.height("hz");
+    }
+    clear() {
+        this.ctx.clearRect(this.xl, this.yt, this.w, this.h);
+    }
+    drawOnCanvas() {
+        this.ctx.beginPath();
+        this.ctx.rect(this.xl, this.yt, this.w, this.h);
+        this.ctx.stroke();
+    }
+}
+export class EditableBox extends DrawableBox {
+    constructor(ctx, tl, br) {
+        super(ctx, tl, br);
+    }
+    get resizing_x() {
+        return !(this.resize_x === undefined);
+    }
+    get resizing_y() {
+        return !(this.resize_y === undefined);
+    }
+    set tl(tl) {
+        this.t = tl.y;
+        this.l = tl.x;
+    }
+    set br(br) {
+        this.r = br.x;
+        this.b = br.y;
+    }
+    set tr(tr) {
+        this.t = tr.y;
+        this.r = tr.x;
+    }
+    set bl(bl) {
+        this.l = bl.x;
+        this.b = bl.y;
+    }
+    set l(x) {
+        if (x.px > this.br.x.px) {
+            this.tl.x.px = this.br.x.px;
+            this.br.x.px = x.px;
+            if (this.resizing_x)
+                this.resize_x = "r";
+        }
+        else
+            this.tl.x.px = x.px;
+    }
+    set r(x) {
+        if (x.px < this.tl.x.px) {
+            this.br.x.px = this.tl.x.px;
+            this.tl.x.px = x.px;
+            if (this.resizing_x)
+                this.resize_x = "l";
+        }
+        else
+            this.br.x.px = x.px;
+    }
+    set t(y) {
+        if (y.px > this.br.y.px) {
+            this.tl.y.px = this.br.y.px;
+            this.br.y.px = y.px;
+            if (this.resizing_y)
+                this.resize_y = "b";
+        }
+        else
+            this.tl.y.px = y.px;
+    }
+    set b(y) {
+        if (y.px < this.tl.y.px) {
+            this.br.y.px = this.tl.y.px;
+            this.tl.y.px = y.px;
+            if (this.resizing_y)
+                this.resize_y = "t";
+        }
+        else
+            this.br.y.px = y.px;
+    }
+    resize(p) {
+        if (this.resize_x !== undefined) {
+            this[this.resize_x] = p.x;
+        }
+        if (this.resize_y !== undefined) {
+            this[this.resize_y] = p.y;
+        }
+    }
+    stopResize(p) {
+        this.resize(p);
+        this.resize_x = undefined;
+        this.resize_y = undefined;
+    }
+}

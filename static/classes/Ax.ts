@@ -1,8 +1,12 @@
 import { Axes } from "./Axes";
+import { DrawableBox } from "./Box";
 import { Track } from "./Track";
 import { View } from "./View";
 
-export abstract class Ax {
+
+
+
+export abstract class Ax extends DrawableBox {
   view: View;
   abstract unit: string;
   first: number = 0;

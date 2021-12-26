@@ -6,9 +6,11 @@ import {
   uList,
   Unit,
   Units,
-} from "./Units";
+} from "./Units.js";
 
 export type xyGenCoord = xyCoord<uList<"x">, uList<"y">>;
+export type TFCoord = xyCoord<"s" | "date","hz">
+export type PXCoord = xyCoord<"px","px">
 
 export class Coord2D<
   X extends AxT,
@@ -97,14 +99,14 @@ export let pxCoord = (
   y: Units["y"]["px"],
   ex?: boolean,
   ey?: boolean
-) => xy(x, y, "px", "px", ex, ey);
+): PXCoord => xy(x, y, "px", "px", ex, ey);
 
 export let tfCoord = (
   x: Units["x"]["s"] | Units["x"]["date"],
   y: Units["y"]["hz"],
   ex?: boolean,
   ey?: boolean
-) => {
+): TFCoord => {
   if (x instanceof Date) return xy(x, y, "date", "hz", ex, ey);
   else return xy(x, y, "s", "hz", ex, ey);
 };

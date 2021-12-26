@@ -6,6 +6,8 @@ Type definitions
 
 */
 
+export type xTUnit = xUnit<"s" | "date">;
+
 export type xGenUnit = xUnit<keyof Units["x"]>
 export type yGenUnit = yUnit<keyof Units["y"]>
 
@@ -130,7 +132,7 @@ export class Conv {
           return Conv.fq_end - v / Conv.px_hz;
         }
         else {
-          return (v - Conv.fq_end) * Conv.px_hz;
+          return (Conv.fq_end - v) * Conv.px_hz;
         }
       }
     }

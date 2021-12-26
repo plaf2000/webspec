@@ -1,5 +1,5 @@
-import { xy, pxCoord, tfCoord, xyCoord, xyGenCoord } from "./Coord";
-import { yUnit, xUnit, nUnit, Units, xGenUnit, yGenUnit } from "./Units";
+import { xy, pxCoord, tfCoord, xyCoord, xyGenCoord } from "./Coord.js";
+import { yUnit, xUnit, nUnit, Units, xGenUnit, yGenUnit } from "./Units.js";
 import { Values } from "./Values";
 import { View } from "./View";
 
@@ -110,7 +110,7 @@ export class DrawableBox<
   }
 }
 
-type Edges = {
+export type Edges = {
   x: {
     l: xGenUnit;
     r: xGenUnit;
@@ -120,8 +120,6 @@ type Edges = {
     b: yGenUnit;
   }
 };
-
-interface CornerEdges extends Edges {}
 
 export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
   extends DrawableBox<TL, BR>
@@ -191,11 +189,6 @@ export class EditableBox<TL extends xyGenCoord, BR extends xyGenCoord>
       this.tl.y.px = y.px;
       if(this.resizing_y) this.resize_y = "t"
     } else this.br.y.px = y.px;
-  }
-
-  setResEdge(x?: keyof Edges["x"], y?: keyof Edges["y"]): void {
-    if(x) this.resize_x = x;
-    if(y) this.resize_y = y;
   }
 
   resize(p: xyGenCoord): void {

@@ -1,53 +1,58 @@
-"use strict";
-exports.__esModule = true;
-exports.Coord2D = void 0;
-var Coord2D = /** @class */ (function () {
-    function Coord2D(x, y, constrx, constry) {
-        this.xval = new constrx(x);
-        this.yval = new constry(y);
+import { xUnit, yUnit, } from "./Units.js";
+export class Coord2D {
+    constructor(x, y) {
+        this.x_ = x;
+        this.y_ = y;
     }
-    Coord2D.prototype.convertx = function (constr) {
-        return new constr(this.x);
-    };
-    Coord2D.prototype.converty = function (constr) {
-        return new constr(this.y);
-    };
-    Coord2D.prototype.convert = function (constrx, constry) {
-        return new Coord2D(this.x, this.y, constrx, constry);
-    };
-    Coord2D.prototype.distance = function (coord) {
-        var dx = coord.x.distance(this.x);
-        var dy = coord.y.distance(this.y);
+    get editable() {
+        return this.x.editable && this.y.editable;
+    }
+    get x() {
+        return this.x_;
+    }
+    get y() {
+        return this.y_;
+    }
+    set x(x) {
+        if (this.x.editable)
+            this.x_ = x;
+    }
+    set y(y) {
+        if (this.y.editable)
+            this.y_ = y;
+    }
+}
+export class xyCoord extends Coord2D {
+    get x() {
+        return super.x;
+    }
+    get y() {
+        return super.y;
+    }
+    set x(x) {
+        super.x = x;
+    }
+    set y(y) {
+        super.y = y;
+    }
+    distance(p, xunit, yunit) {
+        let dx = this.x[xunit] - p.x[xunit];
+        let dy = this.y[yunit] - p.y[yunit];
         return Math.sqrt(dx * dx + dy * dy);
-    };
-    Object.defineProperty(Coord2D.prototype, "x", {
-        get: function () {
-            return this.xval;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Coord2D.prototype, "y", {
-        get: function () {
-            return this.yval;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Coord2D.prototype, "xpx", {
-        get: function () {
-            return this.x.px;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    Object.defineProperty(Coord2D.prototype, "ypx", {
-        get: function () {
-            return this.y.px;
-        },
-        enumerable: false,
-        configurable: true
-    });
-    return Coord2D;
-}());
-exports.Coord2D = Coord2D;
+    }
+    midPoint(p, xunit, yunit, ex, ey) {
+        let x = p.x[xunit] + this.x[xunit];
+        let y = p.y[yunit] + this.y[yunit];
+        return xy(x / 2, y / 2, xunit, yunit, ex, ey);
+    }
+}
+export function xy(x, y, xunit, yunit, ex, ey) {
+    return new xyCoord(new xUnit(x, xunit, ex), new yUnit(y, yunit, ey));
+}
+export let pxCoord = (x, y, ex, ey) => xy(x, y, "px", "px", ex, ey);
+export let tfCoord = (x, y, ex, ey) => {
+    if (x instanceof Date)
+        return xy(x, y, "date", "hz", ex, ey);
+    else
+        return xy(x, y, "s", "hz", ex, ey);
+};
