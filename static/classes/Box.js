@@ -54,30 +54,6 @@ export class DrawableBox extends Box {
         super(tl, br);
         this.ctx = ctx;
     }
-    get tl() {
-        return super.tl;
-    }
-    get br() {
-        return super.br;
-    }
-    get tr() {
-        return super.tr;
-    }
-    get bl() {
-        return super.bl;
-    }
-    get l() {
-        return super.l;
-    }
-    get r() {
-        return super.r;
-    }
-    get t() {
-        return super.t;
-    }
-    get b() {
-        return super.b;
-    }
     get xl() {
         return this.l.px;
     }
@@ -106,9 +82,6 @@ export class DrawableBox extends Box {
     }
 }
 export class EditableBox extends DrawableBox {
-    constructor(ctx, tl, br) {
-        super(ctx, tl, br);
-    }
     get tl() {
         return super.tl;
     }
@@ -133,30 +106,6 @@ export class EditableBox extends DrawableBox {
     get b() {
         return super.b;
     }
-    get xl() {
-        return super.xl;
-    }
-    get yt() {
-        return super.yt;
-    }
-    get w() {
-        return super.w;
-    }
-    get h() {
-        return super.h;
-    }
-    get dur() {
-        return super.dur;
-    }
-    get dfreq() {
-        return super.dfreq;
-    }
-    get resizing_x() {
-        return !(this.resize_x === undefined);
-    }
-    get resizing_y() {
-        return !(this.resize_y === undefined);
-    }
     set tl(tl) {
         this.t = tl.y;
         this.l = tl.x;
@@ -177,7 +126,7 @@ export class EditableBox extends DrawableBox {
         if (x.px > this.br.x.px) {
             this.tl.x.px = this.br.x.px;
             this.br.x.px = x.px;
-            if (this.resizing_x)
+            if (this.resize_x)
                 this.resize_x = "r";
         }
         else
@@ -187,7 +136,7 @@ export class EditableBox extends DrawableBox {
         if (x.px < this.tl.x.px) {
             this.br.x.px = this.tl.x.px;
             this.tl.x.px = x.px;
-            if (this.resizing_x)
+            if (this.resize_x)
                 this.resize_x = "l";
         }
         else
@@ -197,7 +146,7 @@ export class EditableBox extends DrawableBox {
         if (y.px > this.br.y.px) {
             this.tl.y.px = this.br.y.px;
             this.br.y.px = y.px;
-            if (this.resizing_y)
+            if (this.resize_y)
                 this.resize_y = "b";
         }
         else
@@ -207,23 +156,35 @@ export class EditableBox extends DrawableBox {
         if (y.px < this.tl.y.px) {
             this.br.y.px = this.tl.y.px;
             this.tl.y.px = y.px;
-            if (this.resizing_y)
+            if (this.resize_y)
                 this.resize_y = "t";
         }
         else
             this.br.y.px = y.px;
     }
     resize(p) {
-        if (this.resize_x !== undefined) {
+        if (this.resize_x)
             this[this.resize_x] = p.x;
-        }
-        if (this.resize_y !== undefined) {
+        if (this.resize_y)
             this[this.resize_y] = p.y;
-        }
     }
     stopResize(p) {
         this.resize(p);
         this.resize_x = undefined;
         this.resize_y = undefined;
+    }
+    move(p) {
+        if (this.start_move_coord) {
+            let dx = this.start_move_coord.distanceX(p, "px");
+            let dy = this.start_move_coord.distanceY(p, "px");
+            this.l.px += dx;
+            this.r.px += dx;
+            this.t.px += dy;
+            this.b.px += dy;
+            this.start_move_coord = p;
+        }
+    }
+    stopMoving() {
+        this.start_move_coord = undefined;
     }
 }

@@ -16,7 +16,7 @@ export class Canvas {
         }
         this.ctx = ctx;
         ctx.resetTransform();
-        this.det = new Detection(this.ctx, tfCoord(Conv.conv(100, "px", "s", "x"), Conv.conv(100, "px", "hz", "y"), false, true), tfCoord(Conv.conv(200, "px", "s", "x"), Conv.conv(200, "px", "hz", "y"), true, true));
+        this.det = new Detection(this.ctx, tfCoord(Conv.conv(100, "px", "s", "x"), Conv.conv(100, "px", "hz", "y"), true, true), tfCoord(Conv.conv(200, "px", "s", "x"), Conv.conv(200, "px", "hz", "y"), true, true));
         this.mouse_pos_ = pxCoord(0, 0);
         this.drawCanvas();
     }
@@ -41,12 +41,14 @@ export class Canvas {
     }
     onMouseDown(e) {
         this.det.startResize(this.mouse_pos);
+        this.det.startMoving(this.mouse_pos);
         this.md = true;
     }
     onMouseMove(e) {
         this.setMousePos(e);
         if (this.md) {
             this.det.resize(this.mouse_pos);
+            this.det.move(this.mouse_pos);
             this.drawCanvas();
         }
         else {
@@ -56,6 +58,7 @@ export class Canvas {
     onMouseUp(e) {
         this.md = false;
         this.det.stopResize(this.mouse_pos_);
+        this.det.stopMoving();
     }
     drawCanvas() {
         this.clear();

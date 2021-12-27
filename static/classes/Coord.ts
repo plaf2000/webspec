@@ -44,6 +44,10 @@ export class Coord2D<
   set y(y: Unit<Y, yU>) {
     if (this.y.editable) this.y_ = y;
   }
+
+
+
+
 }
 
 export class xyCoord<
@@ -63,9 +67,19 @@ export class xyCoord<
   set y(y: yUnit<yU>) {
     super.y = y;
   }
-  distance(p: xyGenCoord, xunit: nUnit["x"], yunit: nUnit["y"]): number {
-    let dx = this.x[xunit] - p.x[xunit];
-    let dy = this.y[yunit] - p.y[yunit];
+
+  distanceX(p: xyGenCoord, unit: nUnit["x"]) {
+    return p["x"][unit]-this.x[unit];
+  }
+
+  distanceY(p: xyGenCoord, unit: nUnit["y"]) {
+    return p["y"][unit]-this.y[unit];
+  }
+
+
+  euclDistance(p: xyGenCoord, xunit: nUnit["x"], yunit: nUnit["y"]): number {
+    let dx = this.distanceX(p,xunit);
+    let dy = this.distanceY(p,yunit);
     return Math.sqrt(dx * dx + dy * dy);
   }
 

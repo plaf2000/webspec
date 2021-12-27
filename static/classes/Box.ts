@@ -86,38 +86,6 @@ export class DrawableBox<
 > extends Box<TL, BR> {
   ctx: CanvasRenderingContext2D;
 
-  get tl(): xyGenCoord {
-    return super.tl;
-  }
-
-  get br(): xyGenCoord {
-    return super.br;
-  }
-
-  get tr(): xyGenCoord {
-    return super.tr;
-  }
-
-  get bl(): xyGenCoord {
-    return super.bl;
-  }
-
-  get l() {
-    return super.l;
-  }
-
-  get r() {
-    return super.r;
-  }
-
-  get t() {
-    return super.t;
-  }
-
-  get b() {
-    return super.b;
-  }
-
   get xl(): number {
     return this.l.px;
   }
@@ -176,6 +144,7 @@ export class EditableBox<
   protected resize_x: keyof Edges["x"] | undefined;
   protected resize_y: keyof Edges["y"] | undefined;
 
+  start_move_coord: xyGenCoord | undefined;
   get tl(): xyGenCoord {
     return super.tl;
   }
@@ -208,42 +177,6 @@ export class EditableBox<
     return super.b;
   }
 
-  get xl(): number {
-    return super.xl;
-  }
-
-  get yt(): number {
-    return super.yt;
-  }
-
-  get w(): number {
-    return super.w;
-  }
-
-  get h(): number {
-    return super.h;
-  }
-
-  get dur(): number {
-    return super.dur;
-  }
-
-  get dfreq(): number {
-    return super.dfreq;
-  }
-
-  constructor(ctx: CanvasRenderingContext2D, tl: TL, br: BR) {
-    super(ctx, tl, br);
-  }
-
-  get resizing_x(): boolean {
-    return !(this.resize_x === undefined);
-  }
-
-  get resizing_y(): boolean {
-    return !(this.resize_y === undefined);
-  }
-
   set tl(tl: xyGenCoord) {
     this.t = tl.y;
     this.l = tl.x;
@@ -268,7 +201,7 @@ export class EditableBox<
     if (x.px > this.br.x.px) {
       this.tl.x.px = this.br.x.px;
       this.br.x.px = x.px;
-      if (this.resizing_x) this.resize_x = "r";
+      if (this.resize_x) this.resize_x = "r";
     } else this.tl.x.px = x.px;
   }
 
@@ -276,7 +209,7 @@ export class EditableBox<
     if (x.px < this.tl.x.px) {
       this.br.x.px = this.tl.x.px;
       this.tl.x.px = x.px;
-      if (this.resizing_x) this.resize_x = "l";
+      if (this.resize_x) this.resize_x = "l";
     } else this.br.x.px = x.px;
   }
 
@@ -284,7 +217,7 @@ export class EditableBox<
     if (y.px > this.br.y.px) {
       this.tl.y.px = this.br.y.px;
       this.br.y.px = y.px;
-      if (this.resizing_y) this.resize_y = "b";
+      if (this.resize_y) this.resize_y = "b";
     } else this.tl.y.px = y.px;
   }
 
@@ -292,22 +225,36 @@ export class EditableBox<
     if (y.px < this.tl.y.px) {
       this.br.y.px = this.tl.y.px;
       this.tl.y.px = y.px;
-      if (this.resizing_y) this.resize_y = "t";
+      if (this.resize_y) this.resize_y = "t";
     } else this.br.y.px = y.px;
   }
 
   resize(p: xyGenCoord): void {
-    if (this.resize_x !== undefined) 
-      this[this.resize_x] = p.x;
-    
-    if (this.resize_y !== undefined) 
-      this[this.resize_y] = p.y;
-    
+    if (this.resize_x) this[this.resize_x] = p.x;
+    if (this.resize_y) this[this.resize_y] = p.y;
   }
 
   stopResize(p: xyGenCoord): void {
     this.resize(p);
     this.resize_x = undefined;
     this.resize_y = undefined;
+  }
+
+  move(p: xyGenCoord): void {
+    if(this.start_move_coord) {
+      let dx = this.start_move_coord.distanceX(p,"px");
+      let dy = this.start_move_coord.distanceY(p,"px");
+      this.l.px+=dx;
+      this.r.px+=dx;
+      this.t.px+=dy;
+      this.b.px+=dy;
+      this.start_move_coord = p;
+    }
+  }
+
+
+
+  stopMoving() {
+    this.start_move_coord = undefined;
   }
 }

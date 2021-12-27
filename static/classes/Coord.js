@@ -35,9 +35,15 @@ export class xyCoord extends Coord2D {
     set y(y) {
         super.y = y;
     }
-    distance(p, xunit, yunit) {
-        let dx = this.x[xunit] - p.x[xunit];
-        let dy = this.y[yunit] - p.y[yunit];
+    distanceX(p, unit) {
+        return p["x"][unit] - this.x[unit];
+    }
+    distanceY(p, unit) {
+        return p["y"][unit] - this.y[unit];
+    }
+    euclDistance(p, xunit, yunit) {
+        let dx = this.distanceX(p, xunit);
+        let dy = this.distanceY(p, yunit);
         return Math.sqrt(dx * dx + dy * dy);
     }
     midPoint(p, xunit, yunit, ex, ey) {
