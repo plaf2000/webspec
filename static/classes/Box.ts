@@ -39,6 +39,14 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     return this.br_.y;
   }
 
+  get y_editable() {
+    return this.t.editable && this.b.editable;
+  }
+
+  get x_editable() {
+    return this.l.editable && this.r.editable;
+  }
+
   width(xunit: nUnit["x"]): number {
     return this.br_.x[xunit] - this.tl_.x[xunit];
   }
@@ -241,19 +249,16 @@ export class EditableBox<
   }
 
   move(p: xyGenCoord): void {
-    if(this.start_move_coord) {
-      let dx = this.start_move_coord.distanceX(p,"px");
-      let dy = this.start_move_coord.distanceY(p,"px");
-      this.l.px+=dx;
-      this.r.px+=dx;
-      this.t.px+=dy;
-      this.b.px+=dy;
+    if (this.start_move_coord) {
+      let dx = this.x_editable ? this.start_move_coord.distanceX(p, "px") : 0;
+      let dy = this.y_editable ? this.start_move_coord.distanceY(p, "px") : 0;
+      this.l.px += dx;
+      this.r.px += dx;
+      this.t.px += dy;
+      this.b.px += dy;
       this.start_move_coord = p;
     }
   }
-
-
-
   stopMoving() {
     this.start_move_coord = undefined;
   }

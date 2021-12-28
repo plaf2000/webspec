@@ -1,34 +1,28 @@
 import { Axes } from "./Axes";
 import { DrawableBox } from "./Box";
+import { xyGenCoord } from "./Coord";
 import { Track } from "./Track";
 import { View } from "./View";
+import { AxT, uList } from "./Units";
+import { PXCoord } from "./Coord";
 
 
 
 
-export abstract class Ax extends DrawableBox {
-  view: View;
-  abstract unit: string;
+export class Ax<A extends AxT, U extends uList<A>> extends DrawableBox<xyGenCoord,xyGenCoord> {
+  ax: A;
+  unit: U;
   first: number = 0;
   delta: number = 0;
   deltas: number[];
 
-  abstract rConv: number;
-  abstract r: number;
-  abstract l: number;
-  abstract unitStart: number;
-  abstract unitEnd: number;
-
-  abstract w: number;
-  abstract h: number;
-
-  abstract ctxAx: CanvasRenderingContext2D;
-
-  constructor(parent: Axes) {
-    this.deltas = parent.deltas;
-    this.view = view;
-    this.updateDelta();
+  constructor(ctx: CanvasRenderingContext2D, tl: PXCoord, br: PXCoord) {
+    super(ctx, tl, br);
+    this.ctx = ctx;
   }
+
+  get start(): number
+  get end(): number;
 
   updateDelta(): void {
     let i: number = 0;
@@ -53,15 +47,6 @@ export abstract class Ax extends DrawableBox {
     this.delta = Math.pow(10, j) * this.deltas[i];
   }
 
-  updatePos(): void {
-    this.first = Math.ceil(this.unitStart / this.delta - 1) * this.delta;
-    if (this.first < 0) this.first = 0;
-  }
-
-  updateAll(): void {
-    this.updateDelta();
-    this.updatePos();
-  }
 
   drawOnCanvas(): void {
     this.ctxAx.clearRect(0, 0, this.w, this.h);
@@ -204,8 +189,7 @@ class xAx extends DrawableBox {
       }
       
 
-      var sub=1/4;
-
+      var sub=1abstract
       for (var k = 1; k*sub < 1; k++) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;

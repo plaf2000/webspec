@@ -8,6 +8,7 @@ export class Detection extends EditableBox {
         this.frame_size = 6;
     }
     checkResize(p) {
+        let mt;
         if (this.isHover(p, "px", "px")) {
             if (inBound(this.l.px, p.x.px, this.l.px + this.frame_size)) {
                 this.triggered_x = "l";
@@ -27,7 +28,18 @@ export class Detection extends EditableBox {
             else {
                 this.triggered_y = undefined;
             }
+            if (!this.triggered_x && !this.triggered_y)
+                mt = "auto";
+            else
+                mt =
+                    (this.triggered_y ? Detection.mouse_type[this.triggered_y] : "") +
+                        (this.triggered_x ? Detection.mouse_type[this.triggered_x] : "") +
+                        "-resize";
         }
+        else {
+            mt = undefined;
+        }
+        return mt;
     }
     startResize(p) {
         this.checkResize(p);
@@ -40,3 +52,9 @@ export class Detection extends EditableBox {
         }
     }
 }
+Detection.mouse_type = {
+    l: "w",
+    r: "e",
+    t: "n",
+    b: "s",
+};

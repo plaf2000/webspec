@@ -11,7 +11,15 @@ export class Detection extends EditableBox<TFCoord, TFCoord> {
   protected triggered_x: keyof Edges["x"] | undefined;
   protected triggered_y: keyof Edges["y"] | undefined;
 
-  checkResize(p: PXCoord) {
+  static mouse_type = {
+    l: "w",
+    r: "e",
+    t: "n",
+    b: "s",
+  };
+
+  checkResize(p: PXCoord): string | undefined {
+    let mt: string | undefined;
     if (this.isHover(p, "px", "px")) {
       if (inBound(this.l.px, p.x.px, this.l.px + this.frame_size)) {
         this.triggered_x = "l";
@@ -28,7 +36,16 @@ export class Detection extends EditableBox<TFCoord, TFCoord> {
       } else {
         this.triggered_y = undefined;
       }
+      if (!this.triggered_x && !this.triggered_y) mt = "auto";
+      else
+        mt =
+          (this.triggered_y ? Detection.mouse_type[this.triggered_y] : "") +
+          (this.triggered_x ? Detection.mouse_type[this.triggered_x] : "") +
+          "-resize";
+    } else {
+      mt = undefined;
     }
+    return mt;
   }
 
   startResize(p: PXCoord): void {
@@ -38,7 +55,7 @@ export class Detection extends EditableBox<TFCoord, TFCoord> {
   }
 
   startMoving(p: xyGenCoord) {
-    if(!this.resize_x && !this.resize_y && this.isHover(p,"px","px")) {
+    if (!this.resize_x && !this.resize_y && this.isHover(p, "px", "px")) {
       this.start_move_coord = p;
     }
   }

@@ -1,13 +1,14 @@
 import { DrawableBox } from "./Box";
 import { Track } from "./Track";
 export class Ax extends DrawableBox {
-    constructor(parent) {
+    constructor(ctx, tl, br) {
+        super(ctx, tl, br);
         this.first = 0;
         this.delta = 0;
-        this.deltas = parent.deltas;
-        this.view = view;
-        this.updateDelta();
+        this.ctx = ctx;
     }
+    get start() { }
+    get end() { }
     updateDelta() {
         let i = 0;
         let j = -2;
@@ -27,15 +28,6 @@ export class Ax extends DrawableBox {
             i--;
         }
         this.delta = Math.pow(10, j) * this.deltas[i];
-    }
-    updatePos() {
-        this.first = Math.ceil(this.unitStart / this.delta - 1) * this.delta;
-        if (this.first < 0)
-            this.first = 0;
-    }
-    updateAll() {
-        this.updateDelta();
-        this.updatePos();
     }
     drawOnCanvas() {
         this.ctxAx.clearRect(0, 0, this.w, this.h);
@@ -141,7 +133,7 @@ class xAx extends DrawableBox {
                 ctx.textBaseline = 'middle';
                 ctx.strokeText(timeStr, pos, this.y + 30);
             }
-            var sub = 1 / 4;
+            var sub = 1, abstract;
             for (var k = 1; k * sub < 1; k++) {
                 var frac = Math.round(sub * k * 10000) / 10000;
                 var halfValue = Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;

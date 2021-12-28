@@ -1,28 +1,57 @@
 import { pxCoord, tfCoord, xy } from "./Coord.js";
 import { Detection } from "./Detection.js";
-import { Conv } from "./Units.js";
+import { Spec } from "./Spec.js";
 function mouseCoord(e) {
     return xy(e.offsetX, e.offsetY, "px", "px");
 }
 export class Canvas {
-    constructor(cvs, w, h) {
+    constructor(cvs, w, h, iffx) {
+        this.mouse_type_ = "auto";
         this.md = false;
         this.cvs = cvs;
         this.w = w;
         this.h = h;
+        this.is_ffox = iffx;
         let ctx = cvs.getContext("2d");
         if (ctx == null) {
             throw new Error("Context is null!");
         }
         this.ctx = ctx;
-        ctx.resetTransform();
-        this.det = new Detection(this.ctx, tfCoord(Conv.conv(100, "px", "s", "x"), Conv.conv(100, "px", "hz", "y"), true, true), tfCoord(Conv.conv(200, "px", "s", "x"), Conv.conv(200, "px", "hz", "y"), true, true));
+        this.spec = new Spec(this.ctx, {
+            x: {
+                px: 100,
+                s: 0,
+                date: new Date(10),
+            },
+            y: {
+                px: 10,
+                hz: 22000
+            }
+        }, {
+            x: {
+                px: 800,
+                s: 50,
+                date: new Date(50),
+            },
+            y: {
+                px: 600,
+                hz: 0
+            }
+        }, 10800);
+        this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true));
         this.mouse_pos_ = pxCoord(0, 0);
         this.drawCanvas();
     }
     // view : View;
     setMousePos(e) {
         this.mouse_pos_ = xy(e.offsetX, e.offsetY, "px", "px");
+    }
+    set mouse_type(type) {
+        this.cvs.style.cursor = type;
+        this.mouse_type_ = type;
+    }
+    get mouse_type() {
+        return this.mouse_type_;
     }
     get mouse_pos() {
         return this.mouse_pos_;
@@ -52,7 +81,9 @@ export class Canvas {
             this.drawCanvas();
         }
         else {
-            this.det.checkResize(this.mouse_pos);
+            let res = this.det.checkResize(this.mouse_pos);
+            if (res)
+                this.mouse_type = res;
         }
     }
     onMouseUp(e) {
@@ -60,8 +91,15 @@ export class Canvas {
         this.det.stopResize(this.mouse_pos_);
         this.det.stopMoving();
     }
+    onWheel(e) {
+        if (this.spec.box.isHover(this.mouse_pos, "px", "px")) {
+            this.spec.zoom(this.mouse_pos, Math.sign(e.deltaY), e.shiftKey);
+            this.drawCanvas();
+        }
+    }
     drawCanvas() {
         this.clear();
+        this.spec.box.drawOnCanvas();
         this.det.drawOnCanvas();
     }
     clear() {
