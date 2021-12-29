@@ -48,11 +48,11 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
   static spec: Spec;
   readonly spec: Spec;
   readonly editable: boolean;
-  private val_: Units[A][U];
+  private val_: number;
   readonly unit: U;
   readonly ax: A;
 
-  constructor(val: Units[A][U], ax: A, unit: U, e = false, spec = Unit.spec) {
+  constructor(val: number, ax: A, unit: U, e = false, spec = Unit.spec) {
     this.spec = spec;
     if (spec != Unit.spec) Unit.spec = spec;
     this.val_ = val;
@@ -61,11 +61,11 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     this.ax = ax;
   }
 
-  protected set val(v: Units[A][U]) {
+  protected set val(v: number) {
     if (this.editable) this.val_ = v;
   }
 
-  get val(): Units[A][U] {
+  get val(): number {
     return this.val_;
   }
 
@@ -84,7 +84,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
-  constructor(val: Units["x"][U], unit: U, e = false) {
+  constructor(val: number, unit: U, e = false) {
     super(val, "x", unit, e);
   }
 
@@ -110,7 +110,7 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
 }
 
 export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
-  constructor(val: Units["y"][U], unit: U, e = false) {
+  constructor(val:number, unit: U, e = false) {
     super(val, "y", unit, e);
   }
 

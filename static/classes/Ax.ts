@@ -3,52 +3,75 @@ import { DrawableBox } from "./Box";
 import { xyGenCoord } from "./Coord";
 import { Track } from "./Track";
 import { View } from "./View";
-import { AxT, uList } from "./Units";
+import { AxT, uList, xUnit, yUnit } from "./Units";
 import { PXCoord } from "./Coord";
+import { Spec } from "./Spec";
 
 
-
-
-export class Ax<A extends AxT, U extends uList<A>> extends DrawableBox<xyGenCoord,xyGenCoord> {
+export abstract class Ax<A extends AxT, U extends uList<A>> extends DrawableBox<xyGenCoord,xyGenCoord> {
   ax: A;
   unit: U;
   first: number = 0;
   delta: number = 0;
   deltas: number[];
+  multiples: Set<Number>[];
 
-  constructor(ctx: CanvasRenderingContext2D, tl: PXCoord, br: PXCoord) {
+  constructor(ctx: CanvasRenderingContext2D, tl: PXCoord, br: PXCoord, ax: A, unit: U, deltas = [1,1/2,1/4]) {
     super(ctx, tl, br);
     this.ctx = ctx;
+    this.unit = unit;
+    this.ax = ax;
+    this.deltas = deltas.sort();
+    this.multiples = [];
+    for(const k of this.deltas.keys()) {
+      this.multiples.push(new Set());
+      const delta = this.deltas[k];
+        for(let m=1; m<Math.ceil(1/delta); m++) {
+          let ok = true;
+          for(let i=0; i<delta; i++) {
+            if(delta*m%i==0) {
+              ok = false;
+              break;
+            }
+          }
+          if(ok) this.multiples[k].add(m);
+        }
+    }
   }
 
-  get start(): number
-  get end(): number;
-
-  updateDelta(): void {
-    let i: number = 0;
-    let j: number = -2;
-    while (
-      ((Math.pow(10, j) * this.deltas[i]) / this.rConv) * this.r <
-      this.l / 6
-    ) {
-      i++;
-      if (i == this.deltas.length) {
-        i = 0;
-        j++;
-      }
-    }
-
-    if (i == 0) {
-      j--;
-      i = this.deltas.length - 1;
-    } else {
-      i--;
-    }
-    this.delta = Math.pow(10, j) * this.deltas[i];
+  get start(): number {
+    return Math.min(+this.tl[this.ax][this.unit],+this.br[this.ax][this.unit])
+  }
+  get end(): number{
+    return Math.max(+this.tl[this.ax][this.unit],+this.br[this.ax][this.unit])
   }
 
+  abstract drawTick(val: number, size: number): void;
 
   drawOnCanvas(): void {
+    
+    let dec = Math.log10(this.end-this.start);
+    let u = Math.pow(10,dec)
+    let s = Math.floor(this.start/u);
+    let e = Math.ceil(this.end/u);
+
+    while(s<=e) {
+      this.drawTick(s,1);
+      for(let k of this.deltas.keys()) {
+        const delta = this.deltas[k];
+        for(const m of this.multiples[k]) {
+          const val = s+ m.valueOf()*delta*u
+          if(val>this.end) break;
+          this.drawTick(val, delta);
+        }
+      }
+      s+=u;
+    }
+    
+
+
+
+
     this.ctxAx.clearRect(0, 0, this.w, this.h);
     this.ctxAx.beginPath();
 
@@ -111,54 +134,22 @@ export class Ax<A extends AxT, U extends uList<A>> extends DrawableBox<xyGenCoor
   }
 }
 
-class xAx extends DrawableBox {
+class xAx<U extends uList<"x">> extends Ax<"x",U> {
 
-  constructor(parent) {
-    let y = tinfocvsheight+fqheight;
+  len = 30;
 
-    super(fqwidth,fqwidth+cvswidth,y,y);
-    this.y = y;
-    this.unit= "s";
-
-    this.deltas = parent.deltas;
-  }
-  
-  updateDelta() {
-      var i = 0;
-      var j =-2;
-      while(Math.pow(10,j)*this.deltas[i]/sPx*view.rx<cvswidth/6) {
-        i++;
-        if(i==this.deltas.length) {
-          i=0;
-          j++;
-        }
-      }
-
-      if(i==0) {
-        j--;
-        i=this.deltas.length-1;
-      }
-      else {
-        i--;
-      }
-      this.delta = Math.pow(10,j)*this.deltas[i];
-  };
-
-  updatePos() {
-      this.first = Math.ceil(view.tx/this.delta-1)*this.delta;
-      if (this.first<0) this.first=0;
-  };
-
-  updateAll() {
-    this.updateDelta();
-    this.updatePos();
+  constructor(ctx: CanvasRenderingContext2D, tl: PXCoord, br: PXCoord, unit: U, deltas = [1,1/2,1/4]) {
+    super(ctx, tl, br, "x", unit, deltas);
   }
 
+  drawTick(val: number,size: number) {
+    const x = new xUnit(val,this.unit);
+    this.ctx.moveTo(x.px,this.t.px);
+    this.ctx.lineTo(x.px,this.t.px+this.len*size);
+    if(this.unit=="date") {
 
-  clear() {
-    ctx.clearRect(0,this.y, timelinewidth+fqwidth+10, timelineheight+10);
+    }
   }
-
   drawOnCanvas() {
     
     ctx.beginPath();

@@ -104,7 +104,7 @@ export class Spec {
   }
 
   conv<A extends AxT, F extends keyof Units[A], T extends keyof Units[A]>(
-    v: Units[A][F],
+    v: Units[A][F] | number,
     f: F,
     t: T,
     a: A
@@ -113,6 +113,10 @@ export class Spec {
       (+v - +this.tl_[a][f]) * this.ratio(a, t, f) + +this.tl_[a][t];
     if (t == "date") return new Date(res);
     return res;
+  }
+
+  drawOnCanvas() {
+      
   }
 
 }
