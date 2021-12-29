@@ -1,4 +1,4 @@
-import { pxCoord, xyCoord } from "./Coord.js";
+import { xyCoord } from "./Coord.js";
 export class Box {
     constructor(tl, br) {
         this.tl_ = tl;
@@ -51,8 +51,8 @@ export class Box {
             check(p.y[yunit], this.tl_.y[yunit], gt) &&
             check(p.y[yunit], this.br_.y[yunit], lt));
     }
-    isHoverPx(x, y, strict = false) {
-        return this.isHover(pxCoord(x, y), "px", "px", strict);
+    isHoverPx(p, strict = false) {
+        return this.isHover(p, "px", "px", strict);
     }
 }
 export class DrawableBox extends Box {
@@ -184,13 +184,80 @@ export class EditableBox extends DrawableBox {
             let dx = this.x_editable ? this.start_move_coord.distanceX(p, "px") : 0;
             let dy = this.y_editable ? this.start_move_coord.distanceY(p, "px") : 0;
             this.l.px += dx;
-            this.r.px += dx;
             this.t.px += dy;
+            this.r.px += dx;
             this.b.px += dy;
+            console.log(this.w, this.h);
             this.start_move_coord = p;
         }
     }
     stopMoving() {
         this.start_move_coord = undefined;
+    }
+}
+export class BoundedBox extends EditableBox {
+    constructor(ctx, tl, br, bound_box, bounds) {
+        super(ctx, tl, br);
+        this.bounds = bounds;
+        this.bound_box = bound_box;
+    }
+    get l() {
+        return super.l;
+    }
+    get r() {
+        return super.r;
+    }
+    get t() {
+        return super.t;
+    }
+    get b() {
+        return super.b;
+    }
+    set l(x) {
+        super.l = this.bounds.x.l
+            ? x.px < this.bound_box.l.px
+                ? this.bound_box.l
+                : x
+            : x;
+    }
+    set r(x) {
+        super.r = this.bounds.x.r
+            ? x.px > this.bound_box.r.px
+                ? this.bound_box.r
+                : x
+            : x;
+    }
+    set t(y) {
+        super.t = this.bounds.y.t
+            ? y.px < this.bound_box.t.px
+                ? this.bound_box.t
+                : y
+            : y;
+    }
+    set b(y) {
+        super.b = this.bounds.y.b
+            ? y.px > this.bound_box.b.px
+                ? this.bound_box.b
+                : y
+            : y;
+    }
+    move(p) {
+        if (this.start_move_coord) {
+            let dx = this.x_editable ? this.start_move_coord.distanceX(p, "px") : 0;
+            let dy = this.y_editable ? this.start_move_coord.distanceY(p, "px") : 0;
+            if (this.bounds.x.l)
+                dx = Math.max(this.bound_box.l.px - this.l.px, dx);
+            if (this.bounds.x.r)
+                dx = Math.min(this.bound_box.r.px - this.r.px, dx);
+            if (this.bounds.y.t)
+                dy = Math.max(this.bound_box.t.px - this.t.px, dy);
+            if (this.bounds.y.b)
+                dy = Math.min(this.bound_box.b.px - this.b.px, dy);
+            this.l.px += dx;
+            this.t.px += dy;
+            this.r.px += dx;
+            this.b.px += dy;
+            this.start_move_coord = p;
+        }
     }
 }

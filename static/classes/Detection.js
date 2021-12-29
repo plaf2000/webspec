@@ -1,15 +1,18 @@
-import { EditableBox } from "./Box.js";
+import { BoundedBox } from "./Box.js";
 function inBound(a, x, b) {
     return a <= x && x <= b;
 }
-export class Detection extends EditableBox {
+export class Detection extends BoundedBox {
     constructor() {
         super(...arguments);
         this.frame_size = 6;
     }
+    get resizing() {
+        return (this.triggered_x != undefined) || (this.triggered_y != undefined);
+    }
     checkResize(p) {
         let mt;
-        if (this.isHover(p, "px", "px")) {
+        if (this.isHoverPx(p)) {
             if (inBound(this.l.px, p.x.px, this.l.px + this.frame_size)) {
                 this.triggered_x = "l";
             }
@@ -37,7 +40,9 @@ export class Detection extends EditableBox {
                         "-resize";
         }
         else {
-            mt = undefined;
+            this.triggered_x = undefined;
+            this.triggered_y = undefined;
+            mt = "auto";
         }
         return mt;
     }

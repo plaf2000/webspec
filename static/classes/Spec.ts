@@ -1,5 +1,5 @@
 import { Box, DrawableBox } from "./Box.js";
-import { pxCoord, PXCoord } from "./Coord.js";
+import { pxCoord, PXCoord, xyGenCoord } from "./Coord.js";
 import { AxT, Unit, Units } from "./Units.js";
 
 export class Spec {
@@ -91,7 +91,6 @@ export class Spec {
 
   boundX(tl: number, br: number): boolean {
     if (br - tl < this.bound.dx) {
-        console.log(br-tl, this.bound.dx);
       this.tl_.x.s = tl;
       this.br_.x.s = br;
       return true;
@@ -115,4 +114,5 @@ export class Spec {
     if (t == "date") return new Date(res);
     return res;
   }
+
 }

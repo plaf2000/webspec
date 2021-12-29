@@ -58,7 +58,6 @@ export class Spec {
     }
     boundX(tl, br) {
         if (br - tl < this.bound.dx) {
-            console.log(br - tl, this.bound.dx);
             this.tl_.x.s = tl;
             this.br_.x.s = br;
             return true;

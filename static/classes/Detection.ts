@@ -1,15 +1,19 @@
-import { Edges, EditableBox, Box, DrawableBox } from "./Box.js";
+import { Edges, EditableBox, Box, DrawableBox, BoundedBox } from "./Box.js";
 import { pxCoord, PXCoord, TFCoord, xyGenCoord } from "./Coord.js";
 import { xUnit, yUnit } from "./Units";
 
 function inBound(a: number, x: number, b: number): boolean {
   return a <= x && x <= b;
 }
-export class Detection extends EditableBox<TFCoord, TFCoord> {
+export class Detection extends BoundedBox<TFCoord, TFCoord> {
   private frame_size = 6;
 
   protected triggered_x: keyof Edges["x"] | undefined;
   protected triggered_y: keyof Edges["y"] | undefined;
+
+  get resizing(): boolean {
+    return (this.triggered_x!=undefined) || (this.triggered_y!=undefined);
+  }
 
   static mouse_type = {
     l: "w",
@@ -20,7 +24,7 @@ export class Detection extends EditableBox<TFCoord, TFCoord> {
 
   checkResize(p: PXCoord): string | undefined {
     let mt: string | undefined;
-    if (this.isHover(p, "px", "px")) {
+    if (this.isHoverPx(p)) {
       if (inBound(this.l.px, p.x.px, this.l.px + this.frame_size)) {
         this.triggered_x = "l";
       } else if (inBound(this.r.px - this.frame_size, p.x.px, this.r.px)) {
@@ -43,7 +47,9 @@ export class Detection extends EditableBox<TFCoord, TFCoord> {
           (this.triggered_x ? Detection.mouse_type[this.triggered_x] : "") +
           "-resize";
     } else {
-      mt = undefined;
+      this.triggered_x = undefined;
+      this.triggered_y = undefined;
+      mt = "auto";
     }
     return mt;
   }

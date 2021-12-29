@@ -1,3 +1,4 @@
+import { Box } from "./Box.js";
 import { pxCoord, tfCoord, xy } from "./Coord.js";
 import { Detection } from "./Detection.js";
 import { Spec } from "./Spec.js";
@@ -25,8 +26,8 @@ export class Canvas {
             },
             y: {
                 px: 10,
-                hz: 22000
-            }
+                hz: 22000,
+            },
         }, {
             x: {
                 px: 800,
@@ -35,16 +36,26 @@ export class Canvas {
             },
             y: {
                 px: 600,
-                hz: 0
-            }
+                hz: 0,
+            },
         }, 10800);
-        this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true));
+        this.bound_rect = this.cvs.getBoundingClientRect();
+        this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
+            x: {
+                l: true,
+                r: true,
+            },
+            y: {
+                t: true,
+                b: true,
+            },
+        });
         this.mouse_pos_ = pxCoord(0, 0);
         this.drawCanvas();
     }
     // view : View;
     setMousePos(e) {
-        this.mouse_pos_ = xy(e.offsetX, e.offsetY, "px", "px");
+        this.mouse_pos_ = pxCoord(e.clientX - this.bound_rect.x, e.clientY - this.bound_rect.y);
     }
     set mouse_type(type) {
         this.cvs.style.cursor = type;
@@ -76,8 +87,10 @@ export class Canvas {
     onMouseMove(e) {
         this.setMousePos(e);
         if (this.md) {
-            this.det.resize(this.mouse_pos);
-            this.det.move(this.mouse_pos);
+            if (this.det.resizing)
+                this.det.resize(this.mouse_pos);
+            else
+                this.det.move(this.mouse_pos);
             this.drawCanvas();
         }
         else {
