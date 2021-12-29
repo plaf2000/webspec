@@ -1,16 +1,8 @@
-import {
-  xUnit,
-  yUnit,
-  nUnit,
-  AxT,
-  uList,
-  Unit,
-  Units,
-} from "./Units.js";
+import { xUnit, yUnit, AxT, uList, Unit, Units } from "./Units.js";
 
 export type xyGenCoord = xyCoord<uList<"x">, uList<"y">>;
-export type TFCoord = xyCoord<"s" | "date","hz">
-export type PXCoord = xyCoord<"px","px">
+export type TFCoord = xyCoord<"s" | "date", "hz">;
+export type PXCoord = xyCoord<"px", "px">;
 
 export class Coord2D<
   X extends AxT,
@@ -44,10 +36,6 @@ export class Coord2D<
   set y(y: Unit<Y, yU>) {
     if (this.y.editable) this.y_ = y;
   }
-
-
-
-
 }
 
 export class xyCoord<
@@ -68,56 +56,55 @@ export class xyCoord<
     super.y = y;
   }
 
-  distanceX(p: xyGenCoord, unit: nUnit["x"]) {
-    return p["x"][unit]-this.x[unit];
+  distanceX(p: xyGenCoord, unit: uList<"x">) {
+    return +p.x[unit] - +this.x[unit];
   }
 
-  distanceY(p: xyGenCoord, unit: nUnit["y"]) {
-    return p["y"][unit]-this.y[unit];
+  distanceY(p: xyGenCoord, unit: uList<"y">) {
+    return +p.y[unit] - +this.y[unit];
   }
 
-
-  euclDistance(p: xyGenCoord, xunit: nUnit["x"], yunit: nUnit["y"]): number {
-    let dx = this.distanceX(p,xunit);
-    let dy = this.distanceY(p,yunit);
+  euclDistance(p: xyGenCoord, xunit: uList<"x">, yunit: uList<"y">): number {
+    let dx = this.distanceX(p, xunit);
+    let dy = this.distanceY(p, yunit);
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  midPoint<xR extends nUnit["x"], yR extends nUnit["y"]>(
+  midPoint<xR extends uList<"x">, yR extends uList<"y">>(
     p: xyGenCoord,
     xunit: xR,
     yunit: yR,
     ex?: boolean,
     ey?: boolean
   ): xyCoord<xR, yR> {
-    let x = p.x[xunit] + this.x[xunit];
-    let y = p.y[yunit] + this.y[yunit];
+    let x = +p.x[xunit] + +this.x[xunit];
+    let y = +p.y[yunit] + +this.y[yunit];
 
     return xy(x / 2, y / 2, xunit, yunit, ex, ey);
   }
 }
 
 export function xy<xU extends uList<"x">, yU extends uList<"y">>(
-  x: Units["x"][xU],
-  y: Units["y"][yU],
+  x: Units["x"][xU] | number,
+  y: Units["y"][yU] | number,
   xunit: xU,
   yunit: yU,
   ex?: boolean,
   ey?: boolean
 ): xyCoord<xU, yU> {
-  return new xyCoord(new xUnit<xU>(x, xunit, ex), new yUnit<yU>(y, yunit, ey));
+  return new xyCoord(new xUnit<xU>(+x, xunit, ex), new yUnit<yU>(+y, yunit, ey));
 }
 
 export let pxCoord = (
-  x: Units["x"]["px"],
-  y: Units["y"]["px"],
+  x: Units["x"]["px"] | number,
+  y: Units["y"]["px"] | number,
   ex?: boolean,
   ey?: boolean
 ): PXCoord => xy(x, y, "px", "px", ex, ey);
 
 export let tfCoord = (
-  x: Units["x"]["s"] | Units["x"]["date"],
-  y: Units["y"]["hz"],
+  x: Units["x"]["s"] | Units["x"]["date"] | number,
+  y: Units["y"]["hz"] | number,
   ex?: boolean,
   ey?: boolean
 ): TFCoord => {

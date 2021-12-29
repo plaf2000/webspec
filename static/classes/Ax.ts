@@ -55,6 +55,8 @@ export abstract class Ax<A extends AxT, U extends uList<A>> extends DrawableBox<
     let s = Math.floor(this.start/u);
     let e = Math.ceil(this.end/u);
 
+    this.ctx.strokeStyle = "black";
+
     while(s<=e) {
       this.drawTick(s,1);
       for(let k of this.deltas.keys()) {
@@ -143,11 +145,21 @@ class xAx<U extends uList<"x">> extends Ax<"x",U> {
   }
 
   drawTick(val: number,size: number) {
+    let l=this.len*size;
     const x = new xUnit(val,this.unit);
     this.ctx.moveTo(x.px,this.t.px);
-    this.ctx.lineTo(x.px,this.t.px+this.len*size);
-    if(this.unit=="date") {
-
+    this.ctx.lineTo(x.px,this.t.px+l);
+    if((size==this.deltas[0])){ 
+      let label: string;
+      if(this.unit=="date") {
+        label = x["date"].toTimeString();
+      }
+      else {
+        label = x[this.unit].toString();
+      }
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline="top";
+      this.ctx.strokeText(label,x.px,this.t.px+l)
     }
   }
   drawOnCanvas() {
@@ -180,7 +192,7 @@ class xAx<U extends uList<"x">> extends Ax<"x",U> {
       }
       
 
-      var sub=1abstract
+      var sub=labstract
       for (var k = 1; k*sub < 1; k++) {
         var frac = Math.round(sub*k*10000)/10000;
         var halfValue = Math.round((this.first+(i+frac)*this.delta)*100000)/100000;

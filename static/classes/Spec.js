@@ -15,7 +15,7 @@ export class Spec {
         this.ctx = ctx;
         this.tl_ = tl;
         this.br_ = br;
-        this.time_offset = tl.x.date.getMilliseconds() - tl.x.s * 1000;
+        this.time_offset = tl.x.date.getMilliseconds() - +tl.x.s * 1000;
         this.bound = {
             dx: dx_limit,
             y: {
@@ -41,14 +41,14 @@ export class Spec {
     }
     updateDate() {
         let getDate = (val) => new Date(this.time_offset + val * 1000);
-        this.tl_.x.date = getDate(this.tl_.x.s);
-        this.br_.x.date = getDate(this.br_.x.s);
+        this.tl_.x.date = getDate(+this.tl_.x.s);
+        this.br_.x.date = getDate(+this.br_.x.s);
     }
     zoom(p, dir, shift) {
         let rx = Math.pow(this.zoom_r.x, dir);
         let newU = (old, v, r) => v - (v - old) * r;
-        let newS = (old) => newU(old, p.x.s, rx);
-        if (this.boundX(newS(this.tl_.x.s), newS(this.br_.x.s)))
+        let newS = (old) => newU(old, +p.x.s, rx);
+        if (this.boundX(newS(+this.tl_.x.s), newS(+this.br_.x.s)))
             this.updateDate();
         if (!shift) {
             let ry = Math.pow(this.zoom_r.x, dir);
@@ -73,5 +73,7 @@ export class Spec {
         if (t == "date")
             return new Date(res);
         return res;
+    }
+    drawOnCanvas() {
     }
 }

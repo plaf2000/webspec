@@ -72,3 +72,19 @@ export class yUnit extends Unit {
         this.setv(v, "px");
     }
 }
+class Second extends Number {
+    toString() {
+        let time = new Date(this.valueOf() * 1000);
+        const [m, s, ms] = [
+            time.getMinutes(),
+            time.getSeconds(),
+            time.getMilliseconds(),
+        ];
+        const h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
+        let digit = (x, n) => x.toLocaleString("en-US", {
+            minimumIntegerDigits: n,
+            useGrouping: false,
+        });
+        return `${digit(h, 2)}:${digit(m, 2)}:${digit(s, 2)}.${digit(ms, 3)}`;
+    }
+}

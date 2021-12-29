@@ -60,7 +60,7 @@ export class Spec {
     this.ctx = ctx;
     this.tl_ = tl;
     this.br_ = br;
-    this.time_offset = tl.x.date.getMilliseconds() - tl.x.s * 1000;
+    this.time_offset = tl.x.date.getMilliseconds() - +tl.x.s * 1000;
     this.bound = {
       dx: dx_limit,
       y: {
@@ -72,15 +72,15 @@ export class Spec {
 
   updateDate() {
     let getDate = (val: number) => new Date(this.time_offset + val * 1000);
-    this.tl_.x.date = getDate(this.tl_.x.s);
-    this.br_.x.date = getDate(this.br_.x.s);
+    this.tl_.x.date = getDate(+this.tl_.x.s);
+    this.br_.x.date = getDate(+this.br_.x.s);
   }
 
   zoom(p: PXCoord, dir: number, shift: boolean) {
     let rx = Math.pow(this.zoom_r.x, dir);
     let newU = (old: number, v: number, r: number) => v - (v - old) * r;
-    let newS = (old: number) => newU(old, p.x.s, rx);
-    if (this.boundX(newS(this.tl_.x.s), newS(this.br_.x.s))) this.updateDate();
+    let newS = (old: number) => newU(old, +p.x.s, rx);
+    if (this.boundX(newS(+this.tl_.x.s), newS(+this.br_.x.s))) this.updateDate();
 
     if (!shift) {
       let ry = Math.pow(this.zoom_r.x, dir);

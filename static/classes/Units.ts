@@ -13,14 +13,6 @@ export type xTUnit = xUnit<"s" | "date">;
 export type xGenUnit = xUnit<keyof Units["x"]>;
 export type yGenUnit = yUnit<keyof Units["y"]>;
 
-export type nUnit = {
-  [A in keyof Units]: nUnit_[A] & keyof Units[A];
-};
-
-export type nUnit_ = {
-  x: "px" | "s";
-  y: "px" | "hz";
-};
 
 export type uList<A extends AxT> = keyof Units[A];
 export type AxT = keyof Units;
@@ -28,15 +20,14 @@ export type AxT = keyof Units;
 export type Units = {
   x: {
     px: number;
-    s: number;
-    date: Date;
+    s: Second;
+    date: DateTime;
   };
   y: {
     px: number;
     hz: number;
   };
 };
-
 
 /*
 
@@ -110,7 +101,7 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
 }
 
 export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
-  constructor(val:number, unit: U, e = false) {
+  constructor(val: number, unit: U, e = false) {
     super(val, "y", unit, e);
   }
 
@@ -126,5 +117,48 @@ export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
   }
   set px(v: Units["y"]["px"]) {
     this.setv(v, "px");
+  }
+}
+
+
+let digit = (x: number, n: number) =>
+x.toLocaleString("en-US", {
+  minimumIntegerDigits: n,
+  useGrouping: false,
+});
+
+let decimal = (x: number, n: number) =>
+x.toLocaleString("en-US", {
+  minimumFractionDigits: n,
+  maximumFractionDigits: n,
+  useGrouping: false,
+});
+
+
+class Second extends Number {
+  toString(): string {
+    let time = new Date(this.valueOf() * 1000);
+    const [m, s, ms] = [
+      time.getMinutes(),
+      time.getSeconds(),
+      time.getMilliseconds(),
+    ];
+    const h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
+    return `${digit(h, 2)}:${digit(m, 2)}:${digit(s, 2)}.${decimal(ms, 3)}`;
+  }
+}
+
+
+class DateTime extends Date {
+  toDateString(): string {
+      return `${this.getFullYear}-${this.getMonth()}-${this.getDate()}`
+  }
+
+  toTimeString(): string {
+      return `${super.toTimeString()}.${decimal(this.getMilliseconds(),3)}`
+  }
+
+  toString() :string {
+    return `${this.toDateString()} ${this.toTimeString()}`;
   }
 }

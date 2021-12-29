@@ -1,5 +1,5 @@
 import { xy, pxCoord, tfCoord, xyCoord, xyGenCoord, PXCoord } from "./Coord.js";
-import { yUnit, xUnit, nUnit, Units, xGenUnit, yGenUnit } from "./Units.js";
+import { yUnit, xUnit, Units, xGenUnit, yGenUnit, uList } from "./Units.js";
 import { Values } from "./Values";
 import { View } from "./View";
 
@@ -47,12 +47,12 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     return this.l.editable && this.r.editable;
   }
 
-  width(xunit: nUnit["x"]): number {
-    return this.br_.x[xunit] - this.tl_.x[xunit];
+  width(xunit: uList<"x">): number {
+    return +this.br_.x[xunit] - +this.tl_.x[xunit];
   }
 
-  height(yunit: nUnit["y"]): number {
-    return this.br_.y[yunit] - this.tl_.y[yunit];
+  height(yunit: uList<"y">): number {
+    return +this.br_.y[yunit] - +this.tl_.y[yunit];
   }
 
   constructor(tl: TL, br: BR) {
@@ -62,8 +62,8 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
 
   isHover(
     p: xyGenCoord,
-    xunit: nUnit["x"],
-    yunit: nUnit["y"],
+    xunit: uList<"x">,
+    yunit: uList<"y">,
     strict = false
   ): boolean {
     let check: (
@@ -76,10 +76,10 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     let gt = (a: number, b: number) => a > b;
     let lt = (a: number, b: number) => a < b;
     return (
-      check(p.x[xunit], this.tl_.x[xunit], gt) &&
-      check(p.x[xunit], this.br_.x[xunit], lt) &&
-      check(p.y[yunit], this.tl_.y[yunit], gt) &&
-      check(p.y[yunit], this.br_.y[yunit], lt)
+      check(+p.x[xunit], +this.tl_.x[xunit], gt) &&
+      check(+p.x[xunit], +this.br_.x[xunit], lt) &&
+      check(+p.y[yunit], +this.tl_.y[yunit], gt) &&
+      check(+p.y[yunit], +this.br_.y[yunit], lt)
     );
   }
 
