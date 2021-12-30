@@ -94,7 +94,7 @@ class Second extends Number {
         return `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`;
     }
 }
-class DateTime extends Date {
+export class DateTime extends Date {
     toDateString() {
         return `${this.getFullYear}-${this.getMonth()}-${this.getDate()}`;
     }
@@ -104,4 +104,9 @@ class DateTime extends Date {
     toString() {
         return `${this.toDateString()} ${this.toTimeString()}`;
     }
+}
+export function convertDist(val, ax, f, t) {
+    let zero = new Unit(0, ax, f);
+    let uval = new Unit(val, ax, f);
+    return +uval.getv(t) - +zero.getv(t);
 }

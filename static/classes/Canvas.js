@@ -44,7 +44,7 @@ export class Canvas {
                 hz: 0,
             },
         }, 10800);
-        this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "s");
+        this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
         this.bound_rect = this.cvs.getBoundingClientRect();
         this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
             x: {

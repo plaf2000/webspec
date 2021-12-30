@@ -18,7 +18,7 @@ export class Canvas {
   private mouse_pos_: PXCoord;
   private mouse_type_: string = "auto";
   md = false;
-  private xax: xAx<"s">;
+  private xax: xAx<"date">;
   // view : View;
 
   setMousePos(e: MouseEvent) {
@@ -104,7 +104,7 @@ export class Canvas {
       this.ctx,
       this.spec.box.bl,
       pxCoord(grid.x[2], grid.y[3]),
-      "s"
+      "date"
     );
     this.bound_rect = this.cvs.getBoundingClientRect();
 
