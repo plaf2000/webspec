@@ -40,7 +40,7 @@ export class xUnit extends Unit {
         return this.getv("date");
     }
     get s() {
-        return this.getv("s");
+        return new Second(this.getv("s"));
     }
     get px() {
         return this.getv("px");
@@ -72,19 +72,36 @@ export class yUnit extends Unit {
         this.setv(v, "px");
     }
 }
+let digit = (x, n) => x.toLocaleString("en-US", {
+    minimumIntegerDigits: n,
+    useGrouping: false,
+});
+let decimal = (x, n) => x.toLocaleString("en-US", {
+    minimumFractionDigits: n,
+    maximumFractionDigits: n,
+    useGrouping: false,
+});
+let round = (x, n) => Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
 class Second extends Number {
     toString() {
-        let time = new Date(this.valueOf() * 1000);
+        let time = new Date(Math.round(this.valueOf() * 1000));
         const [m, s, ms] = [
             time.getMinutes(),
             time.getSeconds(),
             time.getMilliseconds(),
         ];
         const h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
-        let digit = (x, n) => x.toLocaleString("en-US", {
-            minimumIntegerDigits: n,
-            useGrouping: false,
-        });
-        return `${digit(h, 2)}:${digit(m, 2)}:${digit(s, 2)}.${digit(ms, 3)}`;
+        return `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`;
+    }
+}
+class DateTime extends Date {
+    toDateString() {
+        return `${this.getFullYear}-${this.getMonth()}-${this.getDate()}`;
+    }
+    toTimeString() {
+        return `${super.toTimeString()}.${decimal(this.getMilliseconds(), 3)}`;
+    }
+    toString() {
+        return `${this.toDateString()} ${this.toTimeString()}`;
     }
 }

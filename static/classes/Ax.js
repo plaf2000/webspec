@@ -1,31 +1,29 @@
-import { DrawableBox } from "./Box";
-import { Track } from "./Track";
-import { xUnit } from "./Units";
-export class Ax extends DrawableBox {
-    constructor(ctx, tl, br, ax, unit, deltas = [1, 1 / 2, 1 / 4]) {
+import { DrawablePXBox } from "./Box.js";
+import { xUnit } from "./Units.js";
+export class Ax extends DrawablePXBox {
+    constructor(ctx, tl, br, ax, unit, deltas = [1, 1 / 2, 1 / 4, 1 / 8]) {
         super(ctx, tl, br);
         this.first = 0;
         this.delta = 0;
         this.ctx = ctx;
         this.unit = unit;
         this.ax = ax;
-        this.deltas = deltas.sort();
-        this.multiples = [];
-        for (const k of this.deltas.keys()) {
-            this.multiples.push(new Set());
-            const delta = this.deltas[k];
-            for (let m = 1; m < Math.ceil(1 / delta); m++) {
+        this.deltas = deltas.sort().reverse();
+        this.multiples = this.deltas.map((delta, k, deltas) => {
+            let set = new Set().add(1);
+            for (let m = 2; m < Math.ceil(1 / delta); m++) {
                 let ok = true;
-                for (let i = 0; i < delta; i++) {
-                    if (delta * m % i == 0) {
+                for (let i = 0; i < k; i++) {
+                    if ((delta * m) % deltas[i] == 0) {
                         ok = false;
                         break;
                     }
                 }
                 if (ok)
-                    this.multiples[k].add(m);
+                    set.add(m);
             }
-        }
+            return set;
+        });
     }
     get start() {
         return Math.min(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
@@ -34,16 +32,18 @@ export class Ax extends DrawableBox {
         return Math.max(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
     }
     drawOnCanvas() {
-        let dec = Math.log10(this.end - this.start);
+        let dec = Math.floor(Math.log10(this.end - this.start));
         let u = Math.pow(10, dec);
-        let s = Math.floor(this.start / u);
-        let e = Math.ceil(this.end / u);
+        let s = Math.floor(this.start / u) * u;
+        let e = Math.ceil(this.end / u) * u;
+        // console.log(s,e);
+        this.ctx.strokeStyle = "black";
         while (s <= e) {
-            this.drawTick(s, 1);
+            // this.drawTick(s,1);
             for (let k of this.deltas.keys()) {
                 const delta = this.deltas[k];
                 for (const m of this.multiples[k]) {
-                    const val = s + m.valueOf() * delta * u;
+                    const val = s + +m * delta * u;
                     if (val > this.end)
                         break;
                     this.drawTick(val, delta);
@@ -51,176 +51,31 @@ export class Ax extends DrawableBox {
             }
             s += u;
         }
-        this.ctxAx.clearRect(0, 0, this.w, this.h);
-        this.ctxAx.beginPath();
-        for (let i = 0; this.first + i * this.delta <= this.unitEnd &&
-            this.first + i * this.delta <= Track.audio.duration; i++) {
-            let value = Math.round((this.first + i * this.delta) * 1000) / 1000;
-            let pos = ((value - this.unitStart) / this.rConv) * this.r;
-            let time = new Date(0, 0, 0, 0, 0, 0, 0);
-            let timeStr = timeToStr(time, value);
-            this.ctxAx.strokeStyle = "black";
-            this.ctxAx.moveTo(pos, 0);
-            this.ctxAx.lineTo(pos, 10);
-            let sub = 1 / 4;
-            for (let k = 1; k * sub < 1; k++) {
-                let frac = Math.round(sub * k * 10000) / 10000;
-                let halfValue = Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;
-                if (halfValue <= Track.audio.duration) {
-                    let halfPos = ((halfValue - this.unitStart) / this.rConv) * this.r;
-                    this.ctxAx.strokeStyle = "black";
-                    this.ctxAx.moveTo(halfPos, 0);
-                    let len = 6;
-                    if (frac == 0.5) {
-                        len = 8;
-                    }
-                    this.ctxAx.lineTo(halfPos, len);
-                }
-            }
-            this.ctxAx.font = fontSize + "px Roboto";
-            if (this.unitEnd - value <= this.delta / 6) {
-                this.ctxAx.textAlign = "right";
-            }
-            else if (value - this.unitStart <= this.delta / 6) {
-                this.ctxAx.textAlign = "left";
-            }
-            else {
-                this.ctxAx.textAlign = "center";
-            }
-            this.ctxAx.strokeText(timeStr, pos, 30);
-            this.ctxAx.lineWidth = 1;
-        }
-        this.ctxAx.moveTo(0, 0);
-        this.ctxAx.lineTo(this.w, 0);
-        this.ctxAx.stroke();
+        this.ctx.stroke();
     }
 }
-class xAx extends Ax {
-    constructor(ctx, tl, br, unit, deltas = [1, 1 / 2, 1 / 4]) {
+export class xAx extends Ax {
+    constructor(ctx, tl, br, unit, deltas) {
         super(ctx, tl, br, "x", unit, deltas);
-        this.len = 30;
+        this.len = 15;
+        this.txt_top_margin = 2;
     }
     drawTick(val, size) {
+        let l = this.len * size;
         const x = new xUnit(val, this.unit);
         this.ctx.moveTo(x.px, this.t.px);
-        this.ctx.lineTo(x.px, this.t.px + this.len * size);
-        if (this.unit == "date") {
-        }
-    }
-    drawOnCanvas() {
-        ctx.beginPath();
-        // console.log(audio.duration)
-        for (var i = 0; this.first + i * this.delta <= view.txend && (isNaN(audio.duration) || this.first + i * this.delta <= audio.duration); i++) {
-            var value = Math.round((this.first + i * this.delta) * 1000) / 1000;
-            var pos = this.stoPx(value);
-            var time = new Date(0, 0, 0, 0, 0, 0, 0);
-            var timeStr = timeToStr(time, value);
-            ctx.strokeStyle = "black";
-            if (value >= view.tx) {
-                ctx.moveTo(pos, this.y);
-                ctx.lineTo(pos, this.y + 10);
-                ctx.font = fontSize + "px Roboto";
-                ctx.textAlign = "center";
-                ctx.lineWidth = "1";
-                ctx.textBaseline = 'middle';
-                ctx.strokeText(timeStr, pos, this.y + 30);
+        this.ctx.lineTo(x.px, this.t.px + l);
+        if ((size == this.deltas[0])) {
+            let label;
+            if (this.unit == "date") {
+                label = x["date"].toTimeString();
             }
-            var sub = 1, abstract;
-            for (var k = 1; k * sub < 1; k++) {
-                var frac = Math.round(sub * k * 10000) / 10000;
-                var halfValue = Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;
-                if ((isNaN(audio.duration) || halfValue <= audio.duration)) {
-                    var halfPos = this.stoPx(halfValue);
-                    ctx.strokeStyle = "black";
-                    ctx.moveTo(halfPos, this.y);
-                    var len = 6;
-                    if (frac == .5) {
-                        len = 8;
-                    }
-                    if (halfValue >= view.tx) {
-                        ctx.lineTo(halfPos, this.y + len);
-                    }
-                }
+            else {
+                label = x[this.unit].toString();
             }
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "top";
+            this.ctx.strokeText(label, x.px, this.t.px + l + this.txt_top_margin);
         }
-        ctx.moveTo(this.xstart, this.y);
-        ctx.lineTo(this.xend, this.y);
-        ctx.stroke();
-    }
-    ;
-}
-class yAx extends Ax {
-    constructor(parent) {
-        let x = fqwidth;
-        super(x, x, tinfocvsheight, tinfocvsheight + fqheight);
-        this.unit = "Hz";
-        this.x = x;
-        this.deltas = parent.deltas;
-    }
-    updateDelta() {
-        var i = 0;
-        var j = -1;
-        while (((Math.pow(10, j) * this.deltas[i]) / HzPx) * view.ry <
-            cvsheight / 4) {
-            i++;
-            if (i == this.deltas.length) {
-                i = 0;
-                j++;
-            }
-        }
-        if (i == 0) {
-            j--;
-            i = this.deltas.length - 1;
-        }
-        else {
-            i--;
-        }
-        this.delta = Math.pow(10, j) * this.deltas[i];
-    }
-    updatePos() {
-        this.first = Math.ceil(view.fyend / this.delta - 1) * this.delta;
-        if (this.first < 0)
-            this.first = 0;
-    }
-    updateAll() {
-        this.updateDelta();
-        this.updatePos();
-    }
-    clear() {
-        ctx.clearRect(0, 0, fqwidth, fqheight + tinfocvsheight + timelineheight);
-    }
-    inside(val) {
-        return val <= view.fy && val >= view.fyend;
-    }
-    drawOnCanvas() {
-        ctx.beginPath();
-        for (var i = 0; this.first + i * this.delta <= view.fy; i++) {
-            var value = Math.round((this.first + i * this.delta) * 1000) / 1000;
-            var pos = this.HztoPx(value);
-            if (this.inside(value)) {
-                ctx.strokeStyle = "black";
-                ctx.moveTo(this.x, pos);
-                ctx.lineTo(this.x - 10, pos);
-                ctx.font = fontSize + "px Roboto";
-                ctx.textAlign = "right";
-                ctx.textBaseline = "middle";
-                ctx.strokeText(value, this.x - 15, pos);
-            }
-            var sub = 1 / 4;
-            for (var k = 1; k * sub < 1; k++) {
-                var frac = Math.round(sub * k * 10000) / 10000;
-                var halfValue = Math.round((this.first + (i + frac) * this.delta) * 100000) / 100000;
-                var halfPos = this.HztoPx(halfValue);
-                if (this.inside(halfValue)) {
-                    ctx.moveTo(this.x, halfPos);
-                    var len = 6;
-                    if (frac == 0.5) {
-                        len = 8;
-                    }
-                    ctx.lineTo(this.x - len, halfPos);
-                }
-            }
-        }
-        ctx.stroke();
     }
 }

@@ -1,4 +1,4 @@
-import { Box, DrawableBox } from "./Box.js";
+import { Box, DrawableBox, DrawablePXBox } from "./Box.js";
 import { pxCoord, PXCoord, xyGenCoord } from "./Coord.js";
 import { AxT, Unit, Units } from "./Units.js";
 
@@ -34,7 +34,7 @@ export class Spec {
     return pxCoord(this.br_.x.px, this.br_.y.px);
   }
 
-  get box(): DrawableBox<PXCoord, PXCoord> {
+  get box(): DrawablePXBox {
     return new DrawableBox(this.ctx, this.tl, this.br);
   }
 

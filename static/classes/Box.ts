@@ -1,41 +1,44 @@
-import { xy, pxCoord, tfCoord, xyCoord, xyGenCoord, PXCoord } from "./Coord.js";
-import { yUnit, xUnit, Units, xGenUnit, yGenUnit, uList } from "./Units.js";
-import { Values } from "./Values";
-import { View } from "./View";
+import { xyCoord, xyGenCoord, PXCoord } from "./Coord.js";
+import { yUnit, xUnit, xGenUnit, yGenUnit, uList } from "./Units.js";
 
-export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
-  protected tl_: TL;
-  protected br_: BR;
+export class Box<
+  T extends uList<"y">,
+  L extends uList<"x">,
+  B extends uList<"y">,
+  R extends uList<"x">
+> {
+  protected tl_: xyCoord<L, T>;
+  protected br_: xyCoord<R, B>;
 
-  get tl(): xyGenCoord {
+  get tl(): xyCoord<L, T> {
     return this.tl_;
   }
 
-  get br(): xyGenCoord {
+  get br(): xyCoord<R, B> {
     return this.br_;
   }
 
-  get tr(): xyGenCoord {
+  get tr(): xyCoord<R, T> {
     return new xyCoord(this.br.x, this.tl.y);
   }
 
-  get bl(): xyGenCoord {
+  get bl(): xyCoord<L, B> {
     return new xyCoord(this.tl.x, this.br.y);
   }
 
-  get l() {
+  get l(): xUnit<L> {
     return this.tl_.x;
   }
 
-  get r() {
+  get r(): xUnit<R> {
     return this.br_.x;
   }
 
-  get t() {
+  get t(): yUnit<T> {
     return this.tl_.y;
   }
 
-  get b() {
+  get b(): yUnit<B> {
     return this.br_.y;
   }
 
@@ -55,7 +58,7 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
     return +this.br_.y[yunit] - +this.tl_.y[yunit];
   }
 
-  constructor(tl: TL, br: BR) {
+  constructor(tl: xyCoord<L, T>, br: xyCoord<R, B>) {
     this.tl_ = tl;
     this.br_ = br;
   }
@@ -88,10 +91,14 @@ export class Box<TL extends xyGenCoord, BR extends xyGenCoord> {
   }
 }
 
+export class PXBox extends Box<"px","px","px","px">{};
+
 export class DrawableBox<
-  TL extends xyGenCoord,
-  BR extends xyGenCoord
-> extends Box<TL, BR> {
+T extends uList<"y">,
+L extends uList<"x">,
+B extends uList<"y">,
+R extends uList<"x">
+> extends Box<T,L,B,R> {
   ctx: CanvasRenderingContext2D;
 
   get xl(): number {
@@ -118,7 +125,7 @@ export class DrawableBox<
     return this.height("hz");
   }
 
-  constructor(ctx: CanvasRenderingContext2D, tl: TL, br: BR) {
+  constructor(ctx: CanvasRenderingContext2D, tl: xyCoord<L,T>, br: xyCoord<R,B>) {
     super(tl, br);
     this.ctx = ctx;
   }
@@ -135,53 +142,49 @@ export class DrawableBox<
 }
 
 export type Edges = {
-  x: {
-    l: xGenUnit;
-    r: xGenUnit;
-  };
-  y: {
-    t: yGenUnit;
-    b: yGenUnit;
-  };
+  x: "l" | "r";
+  y: "t" | "b";
 };
 
 export class EditableBox<
-  TL extends xyGenCoord,
-  BR extends xyGenCoord
-> extends DrawableBox<TL, BR> {
-  protected resize_x: keyof Edges["x"] | undefined;
-  protected resize_y: keyof Edges["y"] | undefined;
+T extends uList<"y">,
+L extends uList<"x">,
+B extends uList<"y">,
+R extends uList<"x">
+> extends DrawableBox<T,L,B,R>  {
+  protected resize_x: Edges["x"] | undefined;
+  protected resize_y: Edges["y"] | undefined;
 
   start_move_coord: xyGenCoord | undefined;
-  get tl(): xyGenCoord {
+  get tl(): xyCoord<L, T> {
     return super.tl;
   }
 
-  get br(): xyGenCoord {
+  get br(): xyCoord<R, B> {
     return super.br;
   }
 
-  get tr(): xyGenCoord {
+  get tr(): xyCoord<R, T> {
     return super.tr;
   }
 
-  get bl(): xyGenCoord {
+  get bl(): xyCoord<L, B> {
     return super.bl;
   }
 
-  get l() {
+  get l(): xUnit<L> {
     return super.l;
   }
 
-  get r() {
+  get r(): xUnit<R> {
     return super.r;
   }
 
-  get t() {
+  get t(): yUnit<T> {
     return super.t;
   }
 
-  get b() {
+  get b(): yUnit<B> {
     return super.b;
   }
 
@@ -205,7 +208,7 @@ export class EditableBox<
     this.b = bl.y;
   }
 
-  set l(x: Edges["x"]["l"]) {
+  set l(x: xGenUnit) {
     if (x.px > this.br.x.px) {
       this.tl.x.px = this.br.x.px;
       this.br.x.px = x.px;
@@ -213,7 +216,7 @@ export class EditableBox<
     } else this.tl.x.px = x.px;
   }
 
-  set r(x: Edges["x"]["r"]) {
+  set r(x: xGenUnit) {
     if (x.px < this.tl.x.px) {
       this.br.x.px = this.tl.x.px;
       this.tl.x.px = x.px;
@@ -221,7 +224,7 @@ export class EditableBox<
     } else this.br.x.px = x.px;
   }
 
-  set t(y: Edges["y"]["t"]) {
+  set t(y: yGenUnit) {
     if (y.px > this.br.y.px) {
       this.tl.y.px = this.br.y.px;
       this.br.y.px = y.px;
@@ -229,7 +232,7 @@ export class EditableBox<
     } else this.tl.y.px = y.px;
   }
 
-  set b(y: Edges["y"]["b"]) {
+  set b(y: yGenUnit) {
     if (y.px < this.tl.y.px) {
       this.br.y.px = this.tl.y.px;
       this.tl.y.px = y.px;
@@ -238,8 +241,8 @@ export class EditableBox<
   }
 
   resize(p: xyGenCoord): void {
-    if (this.resize_x) this[this.resize_x] = p.x;
-    if (this.resize_y) this[this.resize_y] = p.y;
+    if (this.resize_x) this[this.resize_x].px = p.x.px;
+    if (this.resize_y) this[this.resize_y].px = p.y.px;
   }
 
   stopResize(p: xyGenCoord): void {
@@ -252,10 +255,10 @@ export class EditableBox<
     if (this.start_move_coord) {
       let dx = this.x_editable ? this.start_move_coord.distanceX(p, "px") : 0;
       let dy = this.y_editable ? this.start_move_coord.distanceY(p, "px") : 0;
-      this.l.px+=dx
-      this.t.px+=dy;
-      this.r.px+=dx
-      this.b.px+=dy;
+      this.l.px += dx;
+      this.t.px += dy;
+      this.r.px += dx;
+      this.b.px += dy;
       console.log(this.w, this.h);
       this.start_move_coord = p;
     }
@@ -266,32 +269,38 @@ export class EditableBox<
   }
 }
 
+export class DrawablePXBox extends DrawableBox<"px","px","px","px">{};
+
+
 type IsBounded = {
   [A in keyof Edges]: {
-    [E in keyof Edges[A]]: boolean;
+    [E in Edges[A]]: boolean;
   };
 };
+
 export class BoundedBox<
-  TL extends xyGenCoord,
-  BR extends xyGenCoord
-> extends EditableBox<TL, BR> {
-  get l() {
+T extends uList<"y">,
+L extends uList<"x">,
+B extends uList<"y">,
+R extends uList<"x">
+> extends EditableBox<T,L,B,R> {
+  get l(): xUnit<L> {
     return super.l;
   }
 
-  get r() {
+  get r(): xUnit<R> {
     return super.r;
   }
 
-  get t() {
+  get t(): yUnit<T> {
     return super.t;
   }
 
-  get b() {
+  get b(): yUnit<B> {
     return super.b;
   }
 
-  set l(x: Edges["x"]["l"]) {
+  set l(x: xGenUnit) {
     super.l = this.bounds.x.l
       ? x.px < this.bound_box.l.px
         ? this.bound_box.l
@@ -299,7 +308,7 @@ export class BoundedBox<
       : x;
   }
 
-  set r(x: Edges["x"]["r"]) {
+  set r(x: xGenUnit) {
     super.r = this.bounds.x.r
       ? x.px > this.bound_box.r.px
         ? this.bound_box.r
@@ -307,7 +316,7 @@ export class BoundedBox<
       : x;
   }
 
-  set t(y: Edges["y"]["t"]) {
+  set t(y: yGenUnit) {
     super.t = this.bounds.y.t
       ? y.px < this.bound_box.t.px
         ? this.bound_box.t
@@ -315,7 +324,7 @@ export class BoundedBox<
       : y;
   }
 
-  set b(y: Edges["y"]["b"]) {
+  set b(y: yGenUnit) {
     super.b = this.bounds.y.b
       ? y.px > this.bound_box.b.px
         ? this.bound_box.b
@@ -324,13 +333,13 @@ export class BoundedBox<
   }
 
   bounds: IsBounded;
-  bound_box: Box<xyGenCoord, xyGenCoord>;
+  bound_box: Box<uList<"y">,uList<"x">,uList<"y">,uList<"x">>;
 
   constructor(
     ctx: CanvasRenderingContext2D,
-    tl: TL,
-    br: BR,
-    bound_box: Box<xyGenCoord, xyGenCoord>,
+    tl: xyCoord<L,T>,
+    br: xyCoord<R,B>,
+    bound_box: Box<uList<"y">,uList<"x">,uList<"y">,uList<"x">>,
     bounds: IsBounded
   ) {
     super(ctx, tl, br);
@@ -342,17 +351,17 @@ export class BoundedBox<
     if (this.start_move_coord) {
       let dx = this.x_editable ? this.start_move_coord.distanceX(p, "px") : 0;
       let dy = this.y_editable ? this.start_move_coord.distanceY(p, "px") : 0;
-      if(this.bounds.x.l) dx = Math.max(this.bound_box.l.px - this.l.px,dx);
-      if(this.bounds.x.r) dx = Math.min(this.bound_box.r.px - this.r.px, dx);
-      if(this.bounds.y.t) dy = Math.max(this.bound_box.t.px - this.t.px, dy);
-      if(this.bounds.y.b) dy = Math.min(this.bound_box.b.px - this.b.px, dy);
-      this.l.px+=dx
-      this.t.px+=dy;
-      this.r.px+=dx
-      this.b.px+=dy;
+      if (this.bounds.x.l) dx = Math.max(this.bound_box.l.px - this.l.px, dx);
+      if (this.bounds.x.r) dx = Math.min(this.bound_box.r.px - this.r.px, dx);
+      if (this.bounds.y.t) dy = Math.max(this.bound_box.t.px - this.t.px, dy);
+      if (this.bounds.y.b) dy = Math.min(this.bound_box.b.px - this.b.px, dy);
+      this.l.px += dx;
+      this.t.px += dy;
+      this.r.px += dx;
+      this.b.px += dy;
       this.start_move_coord = p;
     }
   }
-
-
 }
+
+

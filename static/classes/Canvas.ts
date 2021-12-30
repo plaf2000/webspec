@@ -1,12 +1,12 @@
+import { xAx } from "./Ax.js";
 import { Box } from "./Box.js";
 import { pxCoord, PXCoord, tfCoord, TFCoord, xy, xyCoord } from "./Coord.js";
 import { Detection } from "./Detection.js";
 import { Spec } from "./Spec.js";
 import { Unit, xUnit, yUnit } from "./Units.js";
-import { View } from "./View";
 
 function mouseCoord(e: MouseEvent) {
-  return xy(e.offsetX, e.offsetY, "px", "px");
+  return pxCoord(e.offsetX, e.offsetY);
 }
 export class Canvas {
   is_ffox: boolean;
@@ -18,6 +18,7 @@ export class Canvas {
   private mouse_pos_: PXCoord;
   private mouse_type_: string = "auto";
   md = false;
+  private xax: xAx<"s">;
   // view : View;
 
   setMousePos(e: MouseEvent) {
@@ -67,31 +68,43 @@ export class Canvas {
     }
     this.ctx = ctx;
 
+    let grid = {
+      x: [0, 100, 800, this.cvs.width],
+      y: [0, 10, 600, this.cvs.height],
+    };
+
     this.spec = new Spec(
       this.ctx,
       {
         x: {
-          px: 100,
+          px: grid.x[1],
           s: 0,
           date: new Date(10),
         },
         y: {
-          px: 10,
+          px: grid.y[1],
           hz: 22000,
         },
       },
       {
         x: {
-          px: 800,
+          px: grid.x[2],
           s: 50,
           date: new Date(50),
         },
         y: {
-          px: 600,
+          px: grid.y[2],
           hz: 0,
         },
       },
       10800
+    );
+
+    this.xax = new xAx(
+      this.ctx,
+      this.spec.box.bl,
+      pxCoord(grid.x[2], grid.y[3]),
+      "s"
     );
     this.bound_rect = this.cvs.getBoundingClientRect();
 
@@ -99,10 +112,7 @@ export class Canvas {
       this.ctx,
       tfCoord(5, 8000, true, true),
       tfCoord(25, 500, true, true),
-      new Box(
-          tfCoord(0,22000),
-          tfCoord(50,0)
-      ),
+      new Box(tfCoord(0, 22000), tfCoord(50, 0)),
       {
         x: {
           l: true,
@@ -114,6 +124,8 @@ export class Canvas {
         },
       }
     );
+
+    // this.xax = new xAx(this.ctx,this.box.bl)
 
     this.mouse_pos_ = pxCoord(0, 0);
     this.drawCanvas();
@@ -128,7 +140,7 @@ export class Canvas {
   onMouseMove(e: MouseEvent) {
     this.setMousePos(e);
     if (this.md) {
-      if(this.det.resizing) this.det.resize(this.mouse_pos);
+      if (this.det.resizing) this.det.resize(this.mouse_pos);
       else this.det.move(this.mouse_pos);
       this.drawCanvas();
     } else {
@@ -154,6 +166,7 @@ export class Canvas {
     this.clear();
     this.spec.box.drawOnCanvas();
     this.det.drawOnCanvas();
+    this.xax.drawOnCanvas();
   }
 
   clear() {

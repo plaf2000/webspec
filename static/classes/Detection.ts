@@ -5,11 +5,11 @@ import { xUnit, yUnit } from "./Units";
 function inBound(a: number, x: number, b: number): boolean {
   return a <= x && x <= b;
 }
-export class Detection extends BoundedBox<TFCoord, TFCoord> {
+export class Detection extends BoundedBox<"hz","s" | "date","hz","s"|"date"> {
   private frame_size = 6;
 
-  protected triggered_x: keyof Edges["x"] | undefined;
-  protected triggered_y: keyof Edges["y"] | undefined;
+  protected triggered_x: Edges["x"] | undefined;
+  protected triggered_y: Edges["y"] | undefined;
 
   get resizing(): boolean {
     return (this.triggered_x!=undefined) || (this.triggered_y!=undefined);

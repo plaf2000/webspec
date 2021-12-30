@@ -35,10 +35,10 @@ export class Box {
         return this.l.editable && this.r.editable;
     }
     width(xunit) {
-        return this.br_.x[xunit] - this.tl_.x[xunit];
+        return +this.br_.x[xunit] - +this.tl_.x[xunit];
     }
     height(yunit) {
-        return this.br_.y[yunit] - this.tl_.y[yunit];
+        return +this.br_.y[yunit] - +this.tl_.y[yunit];
     }
     isHover(p, xunit, yunit, strict = false) {
         let check = (a, b, op) => {
@@ -46,15 +46,18 @@ export class Box {
         };
         let gt = (a, b) => a > b;
         let lt = (a, b) => a < b;
-        return (check(p.x[xunit], this.tl_.x[xunit], gt) &&
-            check(p.x[xunit], this.br_.x[xunit], lt) &&
-            check(p.y[yunit], this.tl_.y[yunit], gt) &&
-            check(p.y[yunit], this.br_.y[yunit], lt));
+        return (check(+p.x[xunit], +this.tl_.x[xunit], gt) &&
+            check(+p.x[xunit], +this.br_.x[xunit], lt) &&
+            check(+p.y[yunit], +this.tl_.y[yunit], gt) &&
+            check(+p.y[yunit], +this.br_.y[yunit], lt));
     }
     isHoverPx(p, strict = false) {
         return this.isHover(p, "px", "px", strict);
     }
 }
+export class PXBox extends Box {
+}
+;
 export class DrawableBox extends Box {
     constructor(ctx, tl, br) {
         super(tl, br);
@@ -170,9 +173,9 @@ export class EditableBox extends DrawableBox {
     }
     resize(p) {
         if (this.resize_x)
-            this[this.resize_x] = p.x;
+            this[this.resize_x].px = p.x.px;
         if (this.resize_y)
-            this[this.resize_y] = p.y;
+            this[this.resize_y].px = p.y.px;
     }
     stopResize(p) {
         this.resize(p);
@@ -195,6 +198,9 @@ export class EditableBox extends DrawableBox {
         this.start_move_coord = undefined;
     }
 }
+export class DrawablePXBox extends DrawableBox {
+}
+;
 export class BoundedBox extends EditableBox {
     constructor(ctx, tl, br, bound_box, bounds) {
         super(ctx, tl, br);
