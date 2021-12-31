@@ -23,6 +23,9 @@ export class Unit {
     get prim_type() {
         return typeof this.val_;
     }
+    midPoint(u) {
+        return new Unit((this.val + +u) / 2, this.ax, this.unit);
+    }
     getv(t) {
         return this.spec.conv(this.val, this.unit, t, this.ax);
     }

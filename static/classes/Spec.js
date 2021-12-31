@@ -56,12 +56,7 @@ export class Spec {
             this.boundY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
         }
     }
-    //   pan(x:number, y:number) {
-    //       this.moveTo
-    //   }
-    //   moveTo(p: xyGenCoord) {
-    //       this.boundX()
-    //   }
+    //   pan()
     boundX(tl, br) {
         if (this.bound.dx && br - tl >= this.bound.dx)
             return false;
@@ -79,4 +74,5 @@ export class Spec {
             return new Date(res);
         return res;
     }
+    drawOnCanvas() { }
 }

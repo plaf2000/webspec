@@ -63,6 +63,10 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return typeof this.val_;
   }
 
+  midPoint(u: Unit<A,U>) {
+    return new Unit((this.val + +u )/2,this.ax,this.unit);
+  }
+
   getv<T extends keyof Units[A]>(t: T): Units[A][T] {
     return this.spec.conv(this.val, this.unit, t, this.ax);
   }

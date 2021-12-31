@@ -28,7 +28,7 @@ export class Canvas {
             x: {
                 px: grid.x[1],
                 s: 0,
-                date: new DateTime(2021, 11, 31, 23, 40),
+                date: new DateTime(2021, 11, 31, 23, 59, 40),
             },
             y: {
                 px: grid.y[1],
@@ -39,7 +39,7 @@ export class Canvas {
             x: {
                 px: grid.x[2],
                 s: 50,
-                date: new DateTime(2022, 0, 1, 0, 25),
+                date: new DateTime(2022, 0, 1, 0, 0, 25),
             },
             y: {
                 px: grid.y[2],

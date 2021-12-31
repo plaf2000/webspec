@@ -1,24 +1,25 @@
 import { DrawablePXBox } from "./Box.js";
 import { convertDist, DateTime, xUnit, } from "./Units.js";
 export class Ax extends DrawablePXBox {
-    constructor(ctx, tl, br, ax, unit, deltas = [1, 1 / 2, 1 / 4, 1 / 8]) {
+    constructor(ctx, tl, br, ax, unit, deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8], deltas_unit) {
         super(ctx, tl, br);
         this.first = 0;
         this.delta = 0;
         this.ctx = ctx;
         this.unit = unit;
         this.ax = ax;
-        this.deltas = deltas.sort().reverse();
+        this.deltas_ticks = deltas_ticks.sort().reverse();
+        this.deltas_unit = (deltas_unit) ? deltas_unit.sort().reverse() : this.deltas_ticks;
         // Compute all the multiples so that ticks don't get overwritten
-        // Example: deltas = [1,1/2,1/4,1/8] => multiples = [{1},{1},{1,3 (not 2!)}, {1,3,5,7}]
-        this.multiples = this.deltas.map((delta, k, deltas) => {
-            let set = new Set().add(1); // Assume al deltas are different
+        // Example: deltas_ticks = [1,1/2,1/4,1/8] => multiples = [{1},{1},{1,3 (not 2!)}, {1,3,5,7}]
+        this.multiples = this.deltas_ticks.map((delta, k, deltas_ticks) => {
+            let set = new Set().add(1); // Assume al deltas_ticks are different
             for (let m = 2; m < Math.ceil(1 / delta); m++) {
                 let ok = true;
                 // Check that this delta multiplied by m is not a multiple of any larger delta
                 for (let i = 0; i < k; i++) {
-                    // Assumes this.deltas is sorted!
-                    if ((delta * m) % this.deltas[i] == 0) {
+                    // Assumes this.deltas_ticks is sorted!
+                    if ((delta * m) % this.deltas_ticks[i] == 0) {
                         ok = false;
                         break;
                     }
@@ -47,18 +48,21 @@ export class Ax extends DrawablePXBox {
         // If distance is too large, use delta values to shrink it
         let u = u_1;
         let k = 0;
-        while (u_1 * this.deltas[k] > this.label_dist && k < this.deltas.length)
-            u = u_1 * this.deltas[k++];
-        let mid = Math.floor((this.start + this.end) / 2 / u / this.deltas[0]) *
+        let du = this.deltas_unit;
+        if (dec <= 3)
+            du = this.deltas_ticks;
+        while (u_1 * du[k] > this.label_dist && k < du.length)
+            u = u_1 * du[k++];
+        let mid = Math.floor((this.start + this.end) / 2 / u / du[0]) *
             u *
-            this.deltas[0];
+            du[0];
         let pos = mid;
         this.ctx.strokeStyle = "black";
         // Draw all the ticks between one unit and the other
         // Ex: interval: (1,2), deltas: [1,.5,.25] => draws 1.25,1.5,1.75,2
         let draw = (pt, u) => {
-            for (let k of this.deltas.keys()) {
-                const delta = this.deltas[k];
+            for (let k of this.deltas_ticks.keys()) {
+                const delta = this.deltas_ticks[k];
                 for (const m of this.multiples[k]) {
                     const val = pt + m * delta * u;
                     if (val > this.end || val < this.start)
@@ -68,7 +72,7 @@ export class Ax extends DrawablePXBox {
             }
         };
         // Starts drawing the tick on the midpoint (because of floor)
-        this.drawTick(mid, this.deltas[0]);
+        this.drawTick(mid, this.deltas_ticks[0]);
         // Fills with ticks on the left
         while (pos >= this.start) {
             draw(pos, -u);
@@ -85,7 +89,7 @@ export class Ax extends DrawablePXBox {
 }
 export class xAx extends Ax {
     constructor(ctx, tl, br, unit, deltas) {
-        super(ctx, tl, br, "x", unit, deltas);
+        super(ctx, tl, br, "x", unit, deltas, (unit == "date" || unit == "s") ? [1, 1 / 2, 1 / 4, 1 / 6, 1 / 12, 1 / 60] : undefined);
         this.len = 5;
         this.dyn_len = 12;
         this.txt_top_margin = 2;
@@ -97,7 +101,7 @@ export class xAx extends Ax {
         const x = new xUnit(val, this.unit);
         this.ctx.moveTo(x.px, this.t.px);
         this.ctx.lineTo(x.px, this.t.px + l);
-        if (size == this.deltas[0]) {
+        if (size == this.deltas_ticks[0]) {
             let label;
             if (this.unit == "date") {
                 let date_time = x["date"];
@@ -119,12 +123,38 @@ export class xAx extends Ax {
             let midnight = new Date(l.getFullYear(), l.getMonth(), l.getDate());
             let s_dt = new DateTime(this.start);
             let e_dt = new DateTime(this.end);
-            if (+s_dt.midnight < +e_dt.midnight) {
+            let sm = +s_dt.midnight;
+            let em = +e_dt.midnight;
+            let day = 86400000;
+            let k = 1;
+            for (; day * k < this.label_dist; k++)
+                ;
+            day = day * k;
+            let bar_margin = 6;
+            let date_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_top_margin;
+            let bar_len = 31;
+            let bar_pos = date_pos - 10;
+            if (sm < em) {
+                sm += day;
+                this.ctx.textAlign = "right";
+                this.ctx.textBaseline = "top";
+                let midnight = new xUnit(sm, "date");
+                this.ctx.strokeText(s_dt.toDateString(), midnight.px - bar_margin, date_pos);
+                while (sm <= em) {
+                    this.ctx.textAlign = "left";
+                    this.ctx.textBaseline = "top";
+                    let midnight = new xUnit(sm, "date");
+                    this.ctx.moveTo(midnight.px, bar_pos);
+                    this.ctx.lineTo(midnight.px, bar_pos + bar_len);
+                    this.ctx.stroke();
+                    this.ctx.strokeText(midnight.date.toDateString(), midnight.px + bar_margin, date_pos);
+                    sm += day;
+                }
             }
             else {
                 this.ctx.textAlign = "center";
                 this.ctx.textBaseline = "top";
-                this.ctx.strokeText(s_dt.toDateString(), this.l.px, 25 + this.t.px + this.len + this.dyn_len + this.txt_top_margin);
+                this.ctx.strokeText(s_dt.toDateString(), (this.l.px + this.r.px) / 2, date_pos);
             }
         }
     }

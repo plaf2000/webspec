@@ -14,7 +14,7 @@ export class Spec {
   };
 
   bound: {
-    dx: number | undefined;
+    dx?: number;
     y: {
       min: number;
       max: number;
@@ -90,13 +90,7 @@ export class Spec {
     }
   }
 
-  //   pan(x:number, y:number) {
-  //       this.moveTo
-  //   }
-
-  //   moveTo(p: xyGenCoord) {
-  //       this.boundX()
-  //   }
+  //   pan()
 
   boundX(tl: number, br: number): boolean {
     if (this.bound.dx && br - tl >= this.bound.dx) return false;
@@ -121,4 +115,6 @@ export class Spec {
     if (t == "date") return new Date(res);
     return res;
   }
+
+  drawOnCanvas() {}
 }
