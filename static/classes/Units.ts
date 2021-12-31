@@ -71,7 +71,6 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     if (v instanceof Unit) v = v.getv(f);
     this.val = this.spec.conv(v, f, this.unit, this.ax);
   }
-
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
@@ -154,7 +153,10 @@ class Second extends Number {
 
 export class DateTime extends Date {
   toDateString(): string {
-    return `${this.getFullYear()}-${digit(this.getMonth()+1,2)}-${digit(this.getDate(),2)}`;
+    return `${this.getFullYear()}-${digit(this.getMonth() + 1, 2)}-${digit(
+      this.getDate(),
+      2
+    )}`;
   }
 
   toTimeString(): string {
@@ -173,10 +175,18 @@ export class DateTime extends Date {
   toString(): string {
     return `${this.toDateString()} ${this.toTimeString()}`;
   }
+
+  get midnight(): DateTime {
+    return new DateTime(this.getFullYear(),this.getMonth(),this.getDate());
+  }
 }
 
-export function convertDist<A extends AxT,F extends uList<A>, T extends uList<A>>(val:number,ax:A,f:F,t:T): number {
-  let zero = new Unit(0,ax,f);
-  let uval = new Unit(val,ax,f);
+export function convertDist<
+  A extends AxT,
+  F extends uList<A>,
+  T extends uList<A>
+>(val: number, ax: A, f: F, t: T): number {
+  let zero = new Unit(0, ax, f);
+  let uval = new Unit(val, ax, f);
   return +uval.getv(t) - +zero.getv(t);
 }

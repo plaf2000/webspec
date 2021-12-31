@@ -3,7 +3,7 @@ import { Box } from "./Box.js";
 import { pxCoord, PXCoord, tfCoord, TFCoord, xy, xyCoord } from "./Coord.js";
 import { Detection } from "./Detection.js";
 import { Spec } from "./Spec.js";
-import { Unit, xUnit, yUnit } from "./Units.js";
+import { DateTime, Unit, xUnit, yUnit } from "./Units.js";
 
 function mouseCoord(e: MouseEvent) {
   return pxCoord(e.offsetX, e.offsetY);
@@ -77,7 +77,7 @@ export class Canvas {
       x: {
         px: grid.x[1],
         s: 0,
-        date: new Date(2021, 11, 31, 23, 40),
+        date: new DateTime(2021, 11, 31, 23, 40),
       },
       y: {
         px: grid.y[1],
@@ -90,7 +90,7 @@ export class Canvas {
       x: {
         px: grid.x[2],
         s: 50,
-        date: new Date(2022, 0, 1, 0, 25),
+        date: new DateTime(2022, 0, 1, 0, 25),
       },
       y: {
         px: grid.y[2],
@@ -98,7 +98,7 @@ export class Canvas {
       },
     };
 
-    this.spec = new Spec(this.ctx, tl, br, 10800);
+    this.spec = new Spec(this.ctx, tl, br);
 
 
     this.xax = new xAx(

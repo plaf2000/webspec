@@ -110,6 +110,9 @@ export class DateTime extends Date {
     toString() {
         return `${this.toDateString()} ${this.toTimeString()}`;
     }
+    get midnight() {
+        return new DateTime(this.getFullYear(), this.getMonth(), this.getDate());
+    }
 }
 export function convertDist(val, ax, f, t) {
     let zero = new Unit(0, ax, f);

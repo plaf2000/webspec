@@ -1,6 +1,6 @@
 import { DrawableBox } from "./Box.js";
 import { pxCoord } from "./Coord.js";
-import { Unit } from "./Units.js";
+import { DateTime, Unit } from "./Units.js";
 export class Spec {
     constructor(ctx, tl, br, dx_limit) {
         this.zoommed_r = {
@@ -15,7 +15,7 @@ export class Spec {
         this.ctx = ctx;
         this.tl_ = tl;
         this.br_ = br;
-        this.time_offset = +tl.x.date - (+tl.x.s * 1000);
+        this.time_offset = +tl.x.date - +tl.x.s * 1000;
         this.bound = {
             dx: dx_limit,
             y: {
@@ -40,7 +40,7 @@ export class Spec {
         return this.delta(ax, u) / this.delta(ax, v);
     }
     updateDate() {
-        let getDate = (val) => new Date(this.time_offset + val * 1000);
+        let getDate = (val) => new DateTime(this.time_offset + val * 1000);
         this.tl_.x.date = getDate(+this.tl_.x.s);
         this.br_.x.date = getDate(+this.br_.x.s);
     }
@@ -56,13 +56,18 @@ export class Spec {
             this.boundY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
         }
     }
+    //   pan(x:number, y:number) {
+    //       this.moveTo
+    //   }
+    //   moveTo(p: xyGenCoord) {
+    //       this.boundX()
+    //   }
     boundX(tl, br) {
-        if (br - tl < this.bound.dx) {
-            this.tl_.x.s = tl;
-            this.br_.x.s = br;
-            return true;
-        }
-        return false;
+        if (this.bound.dx && br - tl >= this.bound.dx)
+            return false;
+        this.tl_.x.s = tl;
+        this.br_.x.s = br;
+        return true;
     }
     boundY(tl, br) {
         this.tl_.y.hz = Math.min(tl, this.bound.y.max);
@@ -73,7 +78,5 @@ export class Spec {
         if (t == "date")
             return new Date(res);
         return res;
-    }
-    drawOnCanvas() {
     }
 }

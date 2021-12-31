@@ -1,5 +1,5 @@
 import { DrawablePXBox } from "./Box.js";
-import { convertDist, xUnit, } from "./Units.js";
+import { convertDist, DateTime, xUnit, } from "./Units.js";
 export class Ax extends DrawablePXBox {
     constructor(ctx, tl, br, ax, unit, deltas = [1, 1 / 2, 1 / 4, 1 / 8]) {
         super(ctx, tl, br);
@@ -102,19 +102,6 @@ export class xAx extends Ax {
             if (this.unit == "date") {
                 let date_time = x["date"];
                 label = date_time.toTimeString();
-                let midnight = new Date(date_time.getFullYear(), date_time.getMonth(), date_time.getDate());
-                //   new xUnit(
-                //   ,
-                //   "date"
-                // );
-                if (+midnight < this.start) {
-                    if (!this.date_written) {
-                        this.ctx.textAlign = "left";
-                        this.ctx.textBaseline = "top";
-                        this.ctx.strokeText(date_time.toDateString(), this.l.px, 25 + this.t.px + l + this.txt_top_margin);
-                        this.date_written = true;
-                    }
-                }
             }
             else {
                 label = x[this.unit].toString();
@@ -127,5 +114,18 @@ export class xAx extends Ax {
     drawOnCanvas() {
         this.date_written = false;
         super.drawOnCanvas();
+        if (this.unit == "date") {
+            let l = this.br.x.date;
+            let midnight = new Date(l.getFullYear(), l.getMonth(), l.getDate());
+            let s_dt = new DateTime(this.start);
+            let e_dt = new DateTime(this.end);
+            if (+s_dt.midnight < +e_dt.midnight) {
+            }
+            else {
+                this.ctx.textAlign = "center";
+                this.ctx.textBaseline = "top";
+                this.ctx.strokeText(s_dt.toDateString(), this.l.px, 25 + this.t.px + this.len + this.dyn_len + this.txt_top_margin);
+            }
+        }
     }
 }
