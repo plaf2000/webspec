@@ -1,7 +1,7 @@
 import { DrawablePXBox } from "./Box.js";
 import { convertDist, DateTime, xUnit, } from "./Units.js";
 export class Ax extends DrawablePXBox {
-    constructor(ctx, tl, br, ax, unit, deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8], deltas_unit) {
+    constructor(ctx, tl, br, ax, unit, deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8]) {
         super(ctx, tl, br);
         this.first = 0;
         this.delta = 0;
@@ -9,7 +9,6 @@ export class Ax extends DrawablePXBox {
         this.unit = unit;
         this.ax = ax;
         this.deltas_ticks = deltas_ticks.sort().reverse();
-        this.deltas_unit = (deltas_unit) ? deltas_unit.sort().reverse() : this.deltas_ticks;
         // Compute all the multiples so that ticks don't get overwritten
         // Example: deltas_ticks = [1,1/2,1/4,1/8] => multiples = [{1},{1},{1,3 (not 2!)}, {1,3,5,7}]
         this.multiples = this.deltas_ticks.map((delta, k, deltas_ticks) => {
@@ -33,13 +32,16 @@ export class Ax extends DrawablePXBox {
     get label_dist() {
         return convertDist(this.label_dist_px, this.ax, "px", this.unit);
     }
+    get deltas_unit() {
+        return this.deltas_ticks;
+    }
     get start() {
         return Math.min(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
     }
     get end() {
         return Math.max(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
     }
-    drawOnCanvas() {
+    getUnit() {
         // Compute the base-ten order to express a single unit, while keeping the specified distance
         let dec = Math.floor(Math.log10(this.end - this.start));
         let u_1 = Math.pow(10, dec);
@@ -49,13 +51,15 @@ export class Ax extends DrawablePXBox {
         let u = u_1;
         let k = 0;
         let du = this.deltas_unit;
-        if (dec <= 3)
-            du = this.deltas_ticks;
         while (u_1 * du[k] > this.label_dist && k < du.length)
             u = u_1 * du[k++];
-        let mid = Math.floor((this.start + this.end) / 2 / u / du[0]) *
+        return u;
+    }
+    drawOnCanvas() {
+        let u = this.getUnit();
+        let mid = Math.floor((this.start + this.end) / 2 / u / this.deltas_unit[0]) *
             u *
-            du[0];
+            this.deltas_unit[0];
         let pos = mid;
         this.ctx.strokeStyle = "black";
         // Draw all the ticks between one unit and the other
@@ -89,12 +93,29 @@ export class Ax extends DrawablePXBox {
 }
 export class xAx extends Ax {
     constructor(ctx, tl, br, unit, deltas) {
-        super(ctx, tl, br, "x", unit, deltas, (unit == "date" || unit == "s") ? [1, 1 / 2, 1 / 4, 1 / 6, 1 / 12, 1 / 60] : undefined);
+        super(ctx, tl, br, "x", unit, deltas);
         this.len = 5;
         this.dyn_len = 12;
         this.txt_top_margin = 2;
         this.label_dist_px = 100;
         this.date_written = false;
+    }
+    get deltas_unit() {
+        return this.deltas_ticks;
+    }
+    getUnit() {
+        let delta = this.end - this.start;
+        let dec = Math.log10(delta);
+        if (dec < )
+            let u_1 = Math.pow(10, dec);
+        while (u_1 < this.label_dist)
+            u_1 = Math.pow(10, ++dec);
+        let u = u_1;
+        let k = 0;
+        let du = this.deltas_unit;
+        while (u_1 * du[k] > this.label_dist && k < du.length)
+            u = u_1 * du[k++];
+        return u;
     }
     drawTick(val, size) {
         let l = this.len + this.dyn_len * size;

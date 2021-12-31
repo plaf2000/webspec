@@ -14,6 +14,7 @@ import {
 } from "./Units.js";
 import { PXCoord } from "./Coord.js";
 import { Spec } from "./Spec.js";
+import { timers } from "jquery";
 
 export abstract class Ax<
   A extends AxT,
@@ -38,15 +39,14 @@ export abstract class Ax<
     br: PXCoord,
     ax: A,
     unit: U,
-    deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8],
-    deltas_unit?: number[]
+    deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8]
   ) {
     super(ctx, tl, br);
     this.ctx = ctx;
     this.unit = unit;
     this.ax = ax;
     this.deltas_ticks = deltas_ticks.sort().reverse();
-    this.deltas_unit = (deltas_unit) ? deltas_unit.sort().reverse() : this.deltas_ticks;
+    this.deltas_unit = deltas_ticks;
     // Compute all the multiples so that ticks don't get overwritten
     // Example: deltas_ticks = [1,1/2,1/4,1/8] => multiples = [{1},{1},{1,3 (not 2!)}, {1,3,5,7}]
     this.multiples = this.deltas_ticks.map((delta, k, deltas_ticks) => {
@@ -76,7 +76,7 @@ export abstract class Ax<
 
   abstract drawTick(val: number, size: number): void;
 
-  drawOnCanvas(): void {
+  getUnit(): number {
     // Compute the base-ten order to express a single unit, while keeping the specified distance
     let dec = Math.floor(Math.log10(this.end - this.start));
     let u_1 = Math.pow(10, dec);
@@ -86,12 +86,16 @@ export abstract class Ax<
     let u = u_1;
     let k = 0;
     let du = this.deltas_unit;
-    while (u_1 * du[k] > this.label_dist && k < du.length)
-      u = u_1 * du[k++];
+    while (u_1 * du[k] > this.label_dist && k < du.length) u = u_1 * du[k++];
+    return u;
+  }
+
+  drawOnCanvas(): void {
+    let u = this.getUnit();
     let mid =
-      Math.floor((this.start + this.end) / 2 / u / du[0]) *
+      Math.floor((this.start + this.end) / 2 / u / this.deltas_unit[0]) *
       u *
-      du[0];
+      this.deltas_unit[0];
     let pos = mid;
 
     this.ctx.strokeStyle = "black";
@@ -139,6 +143,10 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
 
   date_written = false;
 
+  get deltas_unit(): number[] {
+    return this.deltas_ticks; 
+  }
+
   constructor(
     ctx: CanvasRenderingContext2D,
     tl: PXCoord,
@@ -146,7 +154,23 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
     unit: U,
     deltas?: number[]
   ) {
-    super(ctx, tl, br, "x", unit, deltas, (unit =="date" || unit=="s")? [1,1/2,1/4,1/6,1/12,1/60] : undefined);
+    super(ctx, tl, br, "x", unit, deltas);
+  }
+  getUnit(): number {
+    let delta = this.end - this.start
+    let dec = Math.log10(delta);
+    let ses = (dec-3)/Math.log10(60);
+    if(ses>0) {
+      
+    }
+    let u_1 = Math.pow(10, dec);
+    while (u_1 < this.label_dist) u_1 = Math.pow(10, ++dec);
+
+    let u = u_1;
+    let k = 0;
+    let du = this.deltas_unit;
+    while (u_1 * du[k] > this.label_dist && k < du.length) u = u_1 * du[k++];
+    return u;
   }
 
   drawTick(val: number, size: number) {
@@ -171,13 +195,9 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
   drawOnCanvas(): void {
     this.date_written = false;
     super.drawOnCanvas();
-    if(this.unit=="date") {
-      let l = this.br.x.date
-      let midnight = new Date(
-        l.getFullYear(),
-        l.getMonth(),
-        l.getDate()
-      );
+    if (this.unit == "date") {
+      let l = this.br.x.date;
+      let midnight = new Date(l.getFullYear(), l.getMonth(), l.getDate());
 
       let s_dt = new DateTime(this.start);
       let e_dt = new DateTime(this.end);
@@ -187,51 +207,50 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
 
       let day = 86400000;
 
-      let k=1;
-      for(;day*k<this.label_dist; k++);
-      
-      day = day*k;
+      let k = 1;
+      for (; day * k < this.label_dist; k++);
+
+      day = day * k;
 
       let bar_margin = 6;
 
-      let date_pos =25 + this.t.px + this.len+this.dyn_len + this.txt_top_margin;
+      let date_pos =
+        25 + this.t.px + this.len + this.dyn_len + this.txt_top_margin;
 
       let bar_len = 31;
       let bar_pos = date_pos - 10;
 
-      if(sm<em) {
-        sm+=day;
+      if (sm < em) {
+        sm += day;
         this.ctx.textAlign = "right";
         this.ctx.textBaseline = "top";
-        let midnight = new xUnit(sm,"date");
+        let midnight = new xUnit(sm, "date");
         this.ctx.strokeText(
           s_dt.toDateString(),
-          midnight.px-bar_margin,
+          midnight.px - bar_margin,
           date_pos
         );
-        while(sm<=em) {
-
+        while (sm <= em) {
           this.ctx.textAlign = "left";
           this.ctx.textBaseline = "top";
-          let midnight = new xUnit(sm,"date");
+          let midnight = new xUnit(sm, "date");
           this.ctx.moveTo(midnight.px, bar_pos);
           this.ctx.lineTo(midnight.px, bar_pos + bar_len);
           this.ctx.stroke();
           this.ctx.strokeText(
             midnight.date.toDateString(),
-            midnight.px+bar_margin,
+            midnight.px + bar_margin,
             date_pos
           );
-          sm+=day;
+          sm += day;
         }
-      }
-      else {
+      } else {
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "top";
         this.ctx.strokeText(
           s_dt.toDateString(),
-          (this.l.px + this.r.px)/2,
-         date_pos
+          (this.l.px + this.r.px) / 2,
+          date_pos
         );
       }
     }

@@ -268,7 +268,6 @@ export class EditableBox<
     this.resize_x = undefined;
     this.resize_y = undefined;
 
-    console.log(this.tl.x.px, this.tl.y.px, this.br.x.px, this.br.y.px);
   }
 
   move(p: xyGenCoord): void {
@@ -279,7 +278,6 @@ export class EditableBox<
       this.t.px += dy;
       this.r.px += dx;
       this.b.px += dy;
-      console.log(this.w, this.h);
       this.start_move_coord = p;
     }
   }
