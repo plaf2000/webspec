@@ -252,7 +252,7 @@ export class BoundedBox extends EditableBox {
                     : x;
                 break;
         }
-        super.setEdge(x, edge);
+        super.setEdge(arg, edge);
     }
     move(p) {
         if (this.start_move_coord) {

@@ -335,7 +335,7 @@ export class BoundedBox<
           : x;
         break;
     }
-    super.setEdge(x,edge);
+    super.setEdge(arg,edge);
   }
   bounds: IsBounded;
   bound_box: Box<uList<"y">, uList<"x">, uList<"y">, uList<"x">>;
