@@ -3,7 +3,15 @@ import { DrawablePXBox, PXBox } from "./Box.js";
 import { xyGenCoord } from "./Coord.js";
 import { Track } from "./Track.js";
 import { View } from "./View.js";
-import { AxT, convertDist, DateTime, uList, Unit, xUnit, yUnit } from "./Units.js";
+import {
+  AxT,
+  convertDist,
+  DateTime,
+  uList,
+  Unit,
+  xUnit,
+  yUnit,
+} from "./Units.js";
 import { PXCoord } from "./Coord.js";
 import { Spec } from "./Spec.js";
 
@@ -119,9 +127,13 @@ export abstract class Ax<
 }
 
 export class xAx<U extends uList<"x">> extends Ax<"x", U> {
-  len = 15;
+  len = 5;
+  dyn_len = 12;
+
   txt_top_margin = 2;
   label_dist_px = 100;
+
+  date_written = false;
 
   constructor(
     ctx: CanvasRenderingContext2D,
@@ -134,15 +146,36 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
   }
 
   drawTick(val: number, size: number) {
-    let l = this.len * size;
+    let l = this.len + this.dyn_len * size;
     const x = new xUnit(val, this.unit);
     this.ctx.moveTo(x.px, this.t.px);
     this.ctx.lineTo(x.px, this.t.px + l);
     if (size == this.deltas[0]) {
       let label: string;
       if (this.unit == "date") {
-        console.log(x["date"] instanceof DateTime);
-        label = (x["date"] as DateTime).toTimeString();
+        let date_time = x["date"];
+        label = date_time.toTimeString();
+        let midnight = new Date(
+          date_time.getFullYear(),
+          date_time.getMonth(),
+          date_time.getDate()
+        );
+        //   new xUnit(
+        //   ,
+        //   "date"
+        // );
+        if (+midnight < this.start) {
+          if (!this.date_written) {
+            this.ctx.textAlign = "left";
+            this.ctx.textBaseline = "top";
+            this.ctx.strokeText(
+              date_time.toDateString(),
+              this.l.px,
+              25 + this.t.px + l + this.txt_top_margin
+            );
+            this.date_written = true;
+          }
+        }
       } else {
         label = x[this.unit].toString();
       }
@@ -150,5 +183,10 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
       this.ctx.textBaseline = "top";
       this.ctx.strokeText(label, x.px, this.t.px + l + this.txt_top_margin);
     }
+  }
+
+  drawOnCanvas(): void {
+    this.date_written = false;
+    super.drawOnCanvas();
   }
 }

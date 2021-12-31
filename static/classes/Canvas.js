@@ -23,27 +23,29 @@ export class Canvas {
             x: [0, 100, 800, this.cvs.width],
             y: [0, 10, 600, this.cvs.height],
         };
-        this.spec = new Spec(this.ctx, {
+        const tl = {
             x: {
                 px: grid.x[1],
                 s: 0,
-                date: new Date(10),
+                date: new Date(2021, 11, 31, 23, 40),
             },
             y: {
                 px: grid.y[1],
                 hz: 22000,
             },
-        }, {
+        };
+        const br = {
             x: {
                 px: grid.x[2],
                 s: 50,
-                date: new Date(50),
+                date: new Date(2022, 0, 1, 0, 25),
             },
             y: {
                 px: grid.y[2],
                 hz: 0,
             },
-        }, 10800);
+        };
+        this.spec = new Spec(this.ctx, tl, br, 10800);
         this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
         this.bound_rect = this.cvs.getBoundingClientRect();
         this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {

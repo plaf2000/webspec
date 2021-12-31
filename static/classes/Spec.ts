@@ -60,7 +60,7 @@ export class Spec {
     this.ctx = ctx;
     this.tl_ = tl;
     this.br_ = br;
-    this.time_offset = tl.x.date.getMilliseconds() - +tl.x.s * 1000;
+    this.time_offset = +tl.x.date - (+tl.x.s * 1000);
     this.bound = {
       dx: dx_limit,
       y: {
@@ -76,7 +76,7 @@ export class Spec {
     this.br_.x.date = getDate(+this.br_.x.s);
   }
 
-  zoom(p: PXCoord, dir: number, shift: boolean) {
+  zoom(p: xyGenCoord, dir: number, shift: boolean) {
     let rx = Math.pow(this.zoom_r.x, dir);
     let newU = (old: number, v: number, r: number) => v - (v - old) * r;
     let newS = (old: number) => newU(old, +p.x.s, rx);
@@ -88,6 +88,8 @@ export class Spec {
       this.boundY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
     }
   }
+
+  pan()
 
   boundX(tl: number, br: number): boolean {
     if (br - tl < this.bound.dx) {

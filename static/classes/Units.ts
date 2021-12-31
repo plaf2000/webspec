@@ -71,6 +71,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     if (v instanceof Unit) v = v.getv(f);
     this.val = this.spec.conv(v, f, this.unit, this.ax);
   }
+
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
@@ -79,7 +80,7 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
   }
 
   get date(): Units["x"]["date"] {
-    return this.getv("date");
+    return new DateTime(this.getv("date"));
   }
   get s(): Units["x"]["s"] {
     return new Second(this.getv("s"));
@@ -153,11 +154,20 @@ class Second extends Number {
 
 export class DateTime extends Date {
   toDateString(): string {
-    return `${this.getFullYear}-${this.getMonth()}-${this.getDate()}`;
+    return `${this.getFullYear()}-${digit(this.getMonth()+1,2)}-${digit(this.getDate(),2)}`;
   }
 
   toTimeString(): string {
-    return `${super.toTimeString()}.${decimal(this.getMilliseconds(), 3)}`;
+    const [h, m, s, ms] = [
+      this.getHours(),
+      this.getMinutes(),
+      this.getSeconds(),
+      this.getMilliseconds(),
+    ];
+    return `${digit(h, 2)}:${digit(m, 2)}:${digit(
+      s + Math.round(ms) / 1000,
+      2
+    )}`;
   }
 
   toString(): string {

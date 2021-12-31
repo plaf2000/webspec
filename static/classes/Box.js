@@ -57,7 +57,6 @@ export class Box {
 }
 export class PXBox extends Box {
 }
-;
 export class DrawableBox extends Box {
     constructor(ctx, tl, br) {
         super(tl, br);
@@ -116,12 +115,10 @@ export class EditableBox extends DrawableBox {
         return super.b;
     }
     set tl(tl) {
-        this.t = tl.y;
-        this.l = tl.x;
+        this.tl = tl;
     }
     set br(br) {
-        this.r = br.x;
-        this.b = br.y;
+        this.br = br;
     }
     set tr(tr) {
         this.t = tr.y;
@@ -132,55 +129,72 @@ export class EditableBox extends DrawableBox {
         this.b = bl.y;
     }
     set l(x) {
-        if (x.px > this.br.x.px) {
-            this.tl.x.px = this.br.x.px;
-            this.br.x.px = x.px;
-            if (this.resize_x)
-                this.resize_x = "r";
-        }
-        else
-            this.tl.x.px = x.px;
+        this.tl.x = x;
     }
     set r(x) {
-        if (x.px < this.tl.x.px) {
-            this.br.x.px = this.tl.x.px;
-            this.tl.x.px = x.px;
-            if (this.resize_x)
-                this.resize_x = "l";
-        }
-        else
-            this.br.x.px = x.px;
+        this.br.x = x;
     }
     set t(y) {
-        if (y.px > this.br.y.px) {
-            this.tl.y.px = this.br.y.px;
-            this.br.y.px = y.px;
-            if (this.resize_y)
-                this.resize_y = "b";
-        }
-        else
-            this.tl.y.px = y.px;
+        this.tl.y = y;
     }
     set b(y) {
-        if (y.px < this.tl.y.px) {
-            this.br.y.px = this.tl.y.px;
-            this.tl.y.px = y.px;
-            if (this.resize_y)
-                this.resize_y = "t";
+        this.br.y = y;
+    }
+    setEdge(x, edge) {
+        switch (edge) {
+            case "l":
+                if (x > this.br.x.px) {
+                    this.tl.x.px = this.br.x.px;
+                    this.br.x.px = x;
+                    if (this.resize_x)
+                        this.resize_x = "r";
+                }
+                else
+                    this.tl.x.px = x;
+                break;
+            case "r":
+                if (x < this.tl.x.px) {
+                    this.br.x.px = this.tl.x.px;
+                    this.tl.x.px = x;
+                    if (this.resize_x)
+                        this.resize_x = "l";
+                }
+                else
+                    this.br.x.px = x;
+                break;
+            case "t":
+                if (x > this.br.y.px) {
+                    this.tl.y.px = this.br.y.px;
+                    this.br.y.px = x;
+                    if (this.resize_y)
+                        this.resize_y = "b";
+                }
+                else
+                    this.tl.y.px = x;
+                break;
+            case "b":
+                if (x < this.tl.y.px) {
+                    this.br.y.px = this.tl.y.px;
+                    this.tl.y.px = x;
+                    if (this.resize_y)
+                        this.resize_y = "t";
+                }
+                else
+                    this.br.y.px = x;
+                break;
         }
-        else
-            this.br.y.px = y.px;
     }
     resize(p) {
         if (this.resize_x)
-            this[this.resize_x].px = p.x.px;
+            this.setEdge(p.x.px, this.resize_x);
         if (this.resize_y)
-            this[this.resize_y].px = p.y.px;
+            this.setEdge(p.y.px, this.resize_y);
     }
     stopResize(p) {
         this.resize(p);
         this.resize_x = undefined;
         this.resize_y = undefined;
+        console.log(this.tl.x.px, this.tl.y.px, this.br.x.px, this.br.y.px);
     }
     move(p) {
         if (this.start_move_coord) {
@@ -200,52 +214,45 @@ export class EditableBox extends DrawableBox {
 }
 export class DrawablePXBox extends DrawableBox {
 }
-;
 export class BoundedBox extends EditableBox {
     constructor(ctx, tl, br, bound_box, bounds) {
         super(ctx, tl, br);
         this.bounds = bounds;
         this.bound_box = bound_box;
     }
-    get l() {
-        return super.l;
-    }
-    get r() {
-        return super.r;
-    }
-    get t() {
-        return super.t;
-    }
-    get b() {
-        return super.b;
-    }
-    set l(x) {
-        super.l = this.bounds.x.l
-            ? x.px < this.bound_box.l.px
-                ? this.bound_box.l
-                : x
-            : x;
-    }
-    set r(x) {
-        super.r = this.bounds.x.r
-            ? x.px > this.bound_box.r.px
-                ? this.bound_box.r
-                : x
-            : x;
-    }
-    set t(y) {
-        super.t = this.bounds.y.t
-            ? y.px < this.bound_box.t.px
-                ? this.bound_box.t
-                : y
-            : y;
-    }
-    set b(y) {
-        super.b = this.bounds.y.b
-            ? y.px > this.bound_box.b.px
-                ? this.bound_box.b
-                : y
-            : y;
+    setEdge(x, edge) {
+        let arg = 0;
+        switch (edge) {
+            case "l":
+                arg = this.bounds.x.l
+                    ? x < this.bound_box.l.px
+                        ? this.bound_box.l.px
+                        : x
+                    : x;
+                break;
+            case "r":
+                arg = this.bounds.x.r
+                    ? x > this.bound_box.r.px
+                        ? this.bound_box.r.px
+                        : x
+                    : x;
+                break;
+            case "t":
+                arg = this.bounds.y.t
+                    ? x < this.bound_box.t.px
+                        ? this.bound_box.t.px
+                        : x
+                    : x;
+                break;
+            case "b":
+                arg = this.bounds.y.b
+                    ? x > this.bound_box.b.px
+                        ? this.bound_box.b.px
+                        : x
+                    : x;
+                break;
+        }
+        super.setEdge(x, edge);
     }
     move(p) {
         if (this.start_move_coord) {

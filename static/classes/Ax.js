@@ -1,5 +1,5 @@
 import { DrawablePXBox } from "./Box.js";
-import { convertDist, DateTime, xUnit } from "./Units.js";
+import { convertDist, xUnit, } from "./Units.js";
 export class Ax extends DrawablePXBox {
     constructor(ctx, tl, br, ax, unit, deltas = [1, 1 / 2, 1 / 4, 1 / 8]) {
         super(ctx, tl, br);
@@ -86,20 +86,35 @@ export class Ax extends DrawablePXBox {
 export class xAx extends Ax {
     constructor(ctx, tl, br, unit, deltas) {
         super(ctx, tl, br, "x", unit, deltas);
-        this.len = 15;
+        this.len = 5;
+        this.dyn_len = 12;
         this.txt_top_margin = 2;
         this.label_dist_px = 100;
+        this.date_written = false;
     }
     drawTick(val, size) {
-        let l = this.len * size;
+        let l = this.len + this.dyn_len * size;
         const x = new xUnit(val, this.unit);
         this.ctx.moveTo(x.px, this.t.px);
         this.ctx.lineTo(x.px, this.t.px + l);
         if (size == this.deltas[0]) {
             let label;
             if (this.unit == "date") {
-                console.log(x["date"] instanceof DateTime);
-                label = x["date"].toTimeString();
+                let date_time = x["date"];
+                label = date_time.toTimeString();
+                let midnight = new Date(date_time.getFullYear(), date_time.getMonth(), date_time.getDate());
+                //   new xUnit(
+                //   ,
+                //   "date"
+                // );
+                if (+midnight < this.start) {
+                    if (!this.date_written) {
+                        this.ctx.textAlign = "left";
+                        this.ctx.textBaseline = "top";
+                        this.ctx.strokeText(date_time.toDateString(), this.l.px, 25 + this.t.px + l + this.txt_top_margin);
+                        this.date_written = true;
+                    }
+                }
             }
             else {
                 label = x[this.unit].toString();
@@ -108,5 +123,9 @@ export class xAx extends Ax {
             this.ctx.textBaseline = "top";
             this.ctx.strokeText(label, x.px, this.t.px + l + this.txt_top_margin);
         }
+    }
+    drawOnCanvas() {
+        this.date_written = false;
+        super.drawOnCanvas();
     }
 }

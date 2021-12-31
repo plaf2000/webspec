@@ -15,7 +15,7 @@ export class Spec {
         this.ctx = ctx;
         this.tl_ = tl;
         this.br_ = br;
-        this.time_offset = tl.x.date.getMilliseconds() - +tl.x.s * 1000;
+        this.time_offset = +tl.x.date - (+tl.x.s * 1000);
         this.bound = {
             dx: dx_limit,
             y: {
