@@ -86,7 +86,6 @@ export abstract class Ax<
     let u = u_1;
     let k = 0;
     let du = this.deltas_unit;
-    if(dec<=3) du = this.deltas_ticks;
     while (u_1 * du[k] > this.label_dist && k < du.length)
       u = u_1 * du[k++];
     let mid =
