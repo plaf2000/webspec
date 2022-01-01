@@ -69,15 +69,6 @@ export class Spec {
       },
     };
   }
-
-
-
-
-
-
-
-
-
   
 
   updateDate() {
