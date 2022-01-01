@@ -70,6 +70,16 @@ export class Spec {
     };
   }
 
+
+
+
+
+
+
+
+
+  
+
   updateDate() {
     let getDate = (val: number) => new DateTime(this.time_offset + val * 1000);
     this.tl_.x.date = getDate(+this.tl_.x.s);
