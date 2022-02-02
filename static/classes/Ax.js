@@ -9,6 +9,7 @@ export class Ax extends DrawablePXBox {
         this.unit = unit;
         this.ax = ax;
         this.deltas_ticks = deltas_ticks.sort().reverse();
+        this.deltas_unit = deltas_ticks;
         // Compute all the multiples so that ticks don't get overwritten
         // Example: deltas_ticks = [1,1/2,1/4,1/8] => multiples = [{1},{1},{1,3 (not 2!)}, {1,3,5,7}]
         this.multiples = this.deltas_ticks.map((delta, k, deltas_ticks) => {
@@ -31,9 +32,6 @@ export class Ax extends DrawablePXBox {
     }
     get label_dist() {
         return convertDist(this.label_dist_px, this.ax, "px", this.unit);
-    }
-    get deltas_unit() {
-        return this.deltas_ticks;
     }
     get start() {
         return Math.min(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
@@ -106,8 +104,10 @@ export class xAx extends Ax {
     getUnit() {
         let delta = this.end - this.start;
         let dec = Math.log10(delta);
-        if (dec < )
-            let u_1 = Math.pow(10, dec);
+        let ses = (dec - 3) / Math.log10(60);
+        if (ses > 0) {
+        }
+        let u_1 = Math.pow(10, dec);
         while (u_1 < this.label_dist)
             u_1 = Math.pow(10, ++dec);
         let u = u_1;
