@@ -66,7 +66,7 @@ export class Ax extends DrawablePXBox {
         let u = this.getUnit();
         let mid = Math.floor((this.start + this.end) / 2 / u / this.deltas_unit[this.system][0]) *
             u *
-            this.deltas_unit[this.system][0] + this.offset;
+            this.deltas_unit[this.system][0];
         let pos = mid;
         this.ctx.strokeStyle = "black";
         this.ctx.font = `${this.font_size}px Arial`;
@@ -114,29 +114,24 @@ export class xAx extends Ax {
     getUnit() {
         // Compute the base-ten order to express a single unit, while keeping the specified distance
         let dist = this.end - this.start;
-        let dec = Math.floor(Math.log10(dist));
+        let dec = Math.ceil(Math.log10(this.label_dist));
         let u_1 = Math.pow(10, dec);
-        while (u_1 < this.label_dist)
-            u_1 = Math.pow(10, ++dec);
         let system = "dec";
-        console.log("a", u_1);
-        // console.log(this.system);
         let factor = 1;
         if (this.unit == "date")
             factor = 1000;
         if (this.system == "ses" && u_1 > 1 * factor) {
-            let ses = Math.floor(Math.log(dist) / factor / Math.log(60));
+            let ses = Math.ceil(Math.log(this.label_dist / factor) / Math.log(60));
             u_1 = factor * Math.pow(60, ses);
-            while (u_1 < this.label_dist)
-                u_1 = factor * Math.pow(60, ++ses);
+            // while (u_1 < this.label_dist) u_1 = factor * Math.pow(60, ++ses);
             if (this.unit == "date" && u_1 > 3600 * factor) {
                 u_1 = 86400 * factor;
+                u_1 *= Math.ceil(this.label_dist / u_1);
             }
             else {
                 system = "ses";
             }
         }
-        console.log(system, u_1);
         // If distance is too large, use delta values to shrink it
         let u = u_1;
         let k = 0;
@@ -176,31 +171,35 @@ export class xAx extends Ax {
             let e_dt = new DateTime(this.end);
             let sm = +s_dt.midnight;
             let em = +e_dt.midnight;
-            let day = 86400000;
-            let k = 1;
-            for (; day * k < this.label_dist; k++)
-                ;
-            day = day * k;
+            let one_day = 86400000;
+            let day = one_day;
+            day *= Math.ceil(this.label_dist / day);
+            let mid = +new DateTime(Math.floor((sm + em) / 2 / day) * day).midnight;
             let bar_margin = 6;
             let date_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_top_margin;
             let bar_len = 31;
             let bar_pos = date_pos - 10;
             if (sm < em) {
-                sm += day;
-                this.ctx.textAlign = "right";
-                this.ctx.textBaseline = "top";
-                let midnight = new xUnit(sm, "date");
-                this.ctx.strokeText(s_dt.toDateString(), midnight.px - bar_margin, date_pos);
-                while (sm <= em) {
+                let writeRightSide = (pos) => {
                     this.ctx.textAlign = "left";
                     this.ctx.textBaseline = "top";
-                    let midnight = new xUnit(sm, "date");
+                    let midnight = new xUnit(pos, "date");
                     this.ctx.moveTo(midnight.px, bar_pos);
                     this.ctx.lineTo(midnight.px, bar_pos + bar_len);
                     this.ctx.stroke();
                     this.ctx.strokeText(midnight.date.toDateString(), midnight.px + bar_margin, date_pos);
-                    sm += day;
-                }
+                };
+                let d;
+                for (d = mid; d >= +this.start; d -= day)
+                    writeRightSide(d);
+                d += day;
+                this.ctx.textAlign = "right";
+                this.ctx.textBaseline = "top";
+                let midnight_pos = new xUnit(d, "date");
+                let midnight = new xUnit(d - one_day, "date");
+                this.ctx.strokeText(midnight.date.toDateString(), midnight_pos.px - bar_margin, date_pos);
+                for (d = mid + day; d <= +this.end; d += day)
+                    writeRightSide(d);
             }
             else {
                 this.ctx.textAlign = "center";

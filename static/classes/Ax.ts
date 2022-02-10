@@ -134,18 +134,10 @@ export abstract class Ax<
     this.drawTick(mid, this.deltas_ticks.dec[0]);
 
     // Fills with ticks on the left
-    while (pos >= this.start) {
-      draw(pos, -u);
-      pos -= u;
-    }
-
-    pos = mid;
+    for (; pos >= this.start; pos -= u) draw(pos, -u);
 
     // Fills with ticks on the right
-    while (pos <= this.end) {
-      draw(pos, u);
-      pos += u;
-    }
+    for (pos = mid; pos <= this.end; pos += u) draw(pos, u);
 
     this.ctx.stroke();
   }
@@ -173,44 +165,37 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
     super(ctx, tl, br, "x", unit, deltas);
     this.system = unit == "s" || unit == "date" ? "ses" : "dec";
     // this.offset = (unit=="date")? new Date().getTimezoneOffset()*1000 : 0;
-    this.offset =  0;
+    this.offset = 0;
   }
 
   getUnit(): number {
     // Compute the base-ten order to express a single unit, while keeping the specified distance
     let dist = this.end - this.start;
-    let dec = Math.floor(Math.log10(dist));
+    let dec = Math.ceil(Math.log10(this.label_dist));
     let u_1 = Math.pow(10, dec);
-    while (u_1 < this.label_dist) u_1 = Math.pow(10, ++dec);
     let system: keyof Delta = "dec";
-
-    console.log("a", u_1);
-    // console.log(this.system);
 
     let factor = 1;
     if (this.unit == "date") factor = 1000;
 
     if (this.system == "ses" && u_1 > 1 * factor) {
-      let ses = Math.floor(Math.log(dist) / factor / Math.log(60));
+      let ses = Math.ceil(Math.log(this.label_dist / factor) / Math.log(60));
       u_1 = factor * Math.pow(60, ses);
-      while (u_1 < this.label_dist) u_1 = factor * Math.pow(60, ++ses);
+      // while (u_1 < this.label_dist) u_1 = factor * Math.pow(60, ++ses);
 
-      if(this.unit=="date" && u_1>3600*factor) {
+      if (this.unit == "date" && u_1 > 3600 * factor) {
         u_1 = 86400 * factor;
-      } 
-      else {
+        u_1 *= Math.ceil(this.label_dist / u_1);
+      } else {
         system = "ses";
       }
-
     }
-
-    console.log(system, u_1);
 
     // If distance is too large, use delta values to shrink it
     let u = u_1;
-    let k = 0;
     let du = this.deltas_unit[system];
-    while (u_1 * du[k] > this.label_dist && k < du.length) u = u_1 * du[k++];
+    for (let k = 0; u_1 * du[k] > this.label_dist && k < du.length; k++)
+      u = u_1 * du[k];
     return u;
   }
 
@@ -254,12 +239,12 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
       let sm = +s_dt.midnight;
       let em = +e_dt.midnight;
 
-      let day = 86400000;
+      let one_day = 86_400_000;
+      let day = one_day;
 
-      let k = 1;
-      for (; day * k < this.label_dist; k++);
+      day *= Math.ceil(this.label_dist / day);
 
-      day = day * k;
+      let mid = +new DateTime(Math.floor((sm + em) / 2 / day) * day).midnight;
 
       let bar_margin = 6;
 
@@ -270,19 +255,10 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
       let bar_pos = date_pos - 10;
 
       if (sm < em) {
-        sm += day;
-        this.ctx.textAlign = "right";
-        this.ctx.textBaseline = "top";
-        let midnight = new xUnit(sm, "date");
-        this.ctx.strokeText(
-          s_dt.toDateString(),
-          midnight.px - bar_margin,
-          date_pos
-        );
-        while (sm <= em) {
+        let writeRightSide = (pos: number) => {
           this.ctx.textAlign = "left";
           this.ctx.textBaseline = "top";
-          let midnight = new xUnit(sm, "date");
+          let midnight = new xUnit(pos, "date");
           this.ctx.moveTo(midnight.px, bar_pos);
           this.ctx.lineTo(midnight.px, bar_pos + bar_len);
           this.ctx.stroke();
@@ -291,8 +267,23 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
             midnight.px + bar_margin,
             date_pos
           );
-          sm += day;
-        }
+        };
+        let d;
+
+        for (d = mid; d >= +this.start; d -= day) writeRightSide(d);
+
+        d += day;
+        this.ctx.textAlign = "right";
+        this.ctx.textBaseline = "top";
+        let midnight_pos = new xUnit(d, "date");
+        let midnight = new xUnit(d - one_day, "date");
+        this.ctx.strokeText(
+          midnight.date.toDateString(),
+          midnight_pos.px - bar_margin,
+          date_pos
+        );
+
+        for (d = mid + day; d <= +this.end; d += day) writeRightSide(d);
       } else {
         this.ctx.textAlign = "center";
         this.ctx.textBaseline = "top";
