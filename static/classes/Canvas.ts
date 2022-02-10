@@ -3,7 +3,7 @@ import { Box } from "./Box.js";
 import { pxCoord, PXCoord, tfCoord, TFCoord, xy, xyCoord } from "./Coord.js";
 import { Detection } from "./Detection.js";
 import { Spec } from "./Spec.js";
-import { DateTime, Unit, xUnit, yUnit } from "./Units.js";
+import { DateTime, uList, Unit, xGenUnit, xUnit, yUnit } from "./Units.js";
 
 function mouseCoord(e: MouseEvent) {
   return pxCoord(e.offsetX, e.offsetY);
@@ -18,7 +18,7 @@ export class Canvas {
   private mouse_pos_: PXCoord;
   private mouse_type_: string = "auto";
   md = false;
-  private xax: xAx<"date">;
+  private xax: xAx<uList<"x">>;
   // view : View;
 
   setMousePos(e: MouseEvent) {

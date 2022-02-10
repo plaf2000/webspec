@@ -63,8 +63,8 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return typeof this.val_;
   }
 
-  midPoint(u: Unit<A,U>) {
-    return new Unit((this.val + +u )/2,this.ax,this.unit);
+  midPoint(u: Unit<A, U>) {
+    return new Unit((this.val + +u) / 2, this.ax, this.unit);
   }
 
   getv<T extends keyof Units[A]>(t: T): Units[A][T] {
@@ -141,14 +141,27 @@ let round = (x: number, n: number) =>
 
 class Second extends Number {
   toString(): string {
-    let time = new Date(Math.round(this.valueOf() * 1000));
+    let neg = (this.valueOf()<0);
+    let time = new Date(Math.round(Math.abs(this.valueOf()) * 1000));
     const [m, s, ms] = [
       time.getMinutes(),
       time.getSeconds(),
       time.getMilliseconds(),
     ];
-    const h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
-    return `${digit(h, 2)}:${digit(m, 2)}:${digit(
+    let h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
+    let d = Math.floor(h/24);
+    h=h-Math.sign(h)*d*24;
+    let w = Math.floor(d/7);
+    d=d-Math.sign(d)*w*7;
+    let str = "";
+    if(neg) str+="-";
+    if(w>0)str+=`${w} week${(w>1) ? "s":""}`;
+    if(d>0) {
+      if(w>0) str+=" ";
+      str+=`${d} day${(d>1) ? "s":""}`;
+    }
+    if(d>0||w>0) str+="\n";
+    return str+`${digit(h, 2)}:${digit(m, 2)}:${digit(
       s + Math.round(ms) / 1000,
       2
     )}`;
@@ -181,7 +194,7 @@ export class DateTime extends Date {
   }
 
   get midnight(): DateTime {
-    return new DateTime(this.getFullYear(),this.getMonth(),this.getDate());
+    return new DateTime(this.getFullYear(), this.getMonth(), this.getDate());
   }
 }
 

@@ -87,14 +87,31 @@ let decimal = (x, n) => x.toLocaleString("en-US", {
 let round = (x, n) => Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
 class Second extends Number {
     toString() {
-        let time = new Date(Math.round(this.valueOf() * 1000));
+        let neg = (this.valueOf() < 0);
+        let time = new Date(Math.round(Math.abs(this.valueOf()) * 1000));
         const [m, s, ms] = [
             time.getMinutes(),
             time.getSeconds(),
             time.getMilliseconds(),
         ];
-        const h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
-        return `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`;
+        let h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
+        let d = Math.floor(h / 24);
+        h = h - Math.sign(h) * d * 24;
+        let w = Math.floor(d / 7);
+        d = d - Math.sign(d) * w * 7;
+        let str = "";
+        if (neg)
+            str += "-";
+        if (w > 0)
+            str += `${w} week${(w > 1) ? "s" : ""}`;
+        if (d > 0) {
+            if (w > 0)
+                str += " ";
+            str += `${d} day${(d > 1) ? "s" : ""}`;
+        }
+        if (d > 0 || w > 0)
+            str += "\n";
+        return str + `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`;
     }
 }
 export class DateTime extends Date {
