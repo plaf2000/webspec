@@ -75,6 +75,13 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     if (v instanceof Unit) v = v.getv(f);
     this.val = this.spec.conv(v, f, this.unit, this.ax);
   }
+
+  toString(unit: keyof Units[A], digit: number, print_unit = false): string {
+    let roundval: number = Math.pow(10, digit);
+    return `${Math.round(+this.getv(unit) * roundval) / roundval}${
+      print_unit ? " " + unit : ""
+    }`;
+  }
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
@@ -129,19 +136,9 @@ let digit = (x: number, n: number) =>
     useGrouping: false,
   });
 
-let decimal = (x: number, n: number) =>
-  x.toLocaleString("en-US", {
-    minimumFractionDigits: n,
-    maximumFractionDigits: n,
-    useGrouping: false,
-  });
-
-let round = (x: number, n: number) =>
-  Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
-
 class Second extends Number {
   toString(): string {
-    let neg = (this.valueOf()<0);
+    let neg = this.valueOf() < 0;
     let time = new Date(Math.round(Math.abs(this.valueOf()) * 1000));
     const [m, s, ms] = [
       time.getMinutes(),
@@ -149,22 +146,22 @@ class Second extends Number {
       time.getMilliseconds(),
     ];
     let h = (+time - m * 60000 - s * 1000 - ms) / 3600000;
-    let d = Math.floor(h/24);
-    h=h-Math.sign(h)*d*24;
-    let w = Math.floor(d/7);
-    d=d-Math.sign(d)*w*7;
+    let d = Math.floor(h / 24);
+    h = h - Math.sign(h) * d * 24;
+    let w = Math.floor(d / 7);
+    d = d - Math.sign(d) * w * 7;
     let str = "";
-    if(neg) str+="-";
-    if(w>0)str+=`${w} week${(w>1) ? "s":""}`;
-    if(d>0) {
-      if(w>0) str+=" ";
-      str+=`${d} day${(d>1) ? "s":""}`;
+    if (neg) str += "-";
+    if (w > 0) str += `${w} week${w > 1 ? "s" : ""}`;
+    if (d > 0) {
+      if (w > 0) str += " ";
+      str += `${d} day${d > 1 ? "s" : ""}`;
     }
-    if(d>0||w>0) str+="\n";
-    return str+`${digit(h, 2)}:${digit(m, 2)}:${digit(
-      s + Math.round(ms) / 1000,
-      2
-    )}`;
+    if (d > 0 || w > 0) str += "\n";
+    return (
+      str +
+      `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`
+    );
   }
 }
 

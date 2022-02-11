@@ -31,7 +31,7 @@ export abstract class Ax<
   delta: number = 0;
   offset: number = 0;
   system: keyof Delta = "dec";
-  deltas_ticks: Delta;
+  deltas_ticks: number[];
   deltas_unit: Delta;
   multiples: Set<number>[];
   font_size = 11;
@@ -50,30 +50,31 @@ export abstract class Ax<
     br: PXCoord,
     ax: A,
     unit: U,
-    deltas_ticks = {
-      dec: [1, 1 / 2, 1 / 4, 1 / 8],
-      ses: [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 12, 1 / 30],
+    deltas_ticks =  [1, 1 / 2, 1 / 4, 1 / 8],
+    deltas_units = {
+      dec: [1, 1 / 2, 1 / 4, 1 / 5, 1 / 8],
+      ses: [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 12, 1/15, 1/20, 1 / 30],
     }
   ) {
     super(ctx, tl, br);
     this.ctx = ctx;
     this.unit = unit;
     this.ax = ax;
-    this.deltas_ticks = {
-      dec: deltas_ticks.dec.sort().reverse(),
-      ses: deltas_ticks.ses.sort().reverse(),
+    this.deltas_ticks = deltas_ticks.sort().reverse();
+    this.deltas_unit =  {
+      dec: deltas_units.dec.sort().reverse(),
+      ses: deltas_units.ses.sort().reverse(),
     };
-    this.deltas_unit = this.deltas_ticks;
     // Compute all the multiples so that ticks don't get overwritten
     // Example: deltas_ticks.dec = [1,1/2,1/4,1/8] => multiples = [{1},{1},{1,3 (not 2!)}, {1,3,5,7}]
-    this.multiples = this.deltas_ticks.dec.map((delta, k, deltas_ticks) => {
+    this.multiples = this.deltas_ticks.map((delta, k, deltas_ticks) => {
       let set = new Set<number>().add(1); // Assume al deltas_ticks.dec are different
       for (let m = 2; m < Math.ceil(1 / delta); m++) {
         let ok = true;
         // Check that this delta multiplied by m is not a multiple of any larger delta
         for (let i = 0; i < k; i++) {
           // Assumes this.deltas_ticks.dec is sorted!
-          if ((delta * m) % this.deltas_ticks.dec[i] == 0) {
+          if ((delta * m) % this.deltas_ticks[i] == 0) {
             ok = false;
             break;
           }
@@ -134,8 +135,8 @@ export abstract class Ax<
     // Draw all the ticks between one unit and the other
     // Ex: interval: (1,2), deltas: [1,.5,.25] => draws 1.25,1.5,1.75,2
     let draw = (pt: number, u: number) => {
-      for (let k of this.deltas_ticks.dec.keys()) {
-        const delta = this.deltas_ticks.dec[k];
+      for (let k of this.deltas_ticks.keys()) {
+        const delta = this.deltas_ticks[k];
         for (const m of this.multiples[k]) {
           const val = pt + m * delta * u;
           if (val > this.end || val < this.start) break;
@@ -145,7 +146,7 @@ export abstract class Ax<
     };
 
     // Starts drawing the tick on the midpoint (because of floor)
-    this.drawTick(mid, this.deltas_ticks.dec[0]);
+    this.drawTick(mid, this.deltas_ticks[0]);
 
     // Fills with ticks on the left
     for (; pos >= this.start; pos -= u) draw(pos, -u);
@@ -154,25 +155,25 @@ export abstract class Ax<
     for (pos = mid; pos <= this.end; pos += u) draw(pos, u);
 
     this.ctx.stroke();
+
+    this.drawUnit();
   }
+
+  abstract drawUnit(): void;
 }
 
 export class xAx<U extends uList<"x">> extends Ax<"x", U> {
-  label_dist_px = 100;
-
-  date_written = false;
+  label_dist_px = this.font_size * 7;
 
   constructor(
     ctx: CanvasRenderingContext2D,
     tl: PXCoord,
     br: PXCoord,
     unit: U,
-    deltas?: {
-      dec: number[];
-      ses: number[];
-    }
+    deltas_ticks?: number[],
+    deltas_units?: Delta
   ) {
-    super(ctx, tl, br, "x", unit, deltas);
+    super(ctx, tl, br, "x", unit, deltas_ticks, deltas_units);
     this.system = unit == "s" || unit == "date" ? "ses" : "dec";
     // this.offset = (unit=="date")? new Date().getTimezoneOffset()*1000 : 0;
     this.offset = 0;
@@ -207,7 +208,7 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
     const x = new xUnit(val, this.unit);
     this.ctx.moveTo(x.px, this.t.px);
     this.ctx.lineTo(x.px, this.t.px + l);
-    if (size == this.deltas_ticks.dec[0]) {
+    if (size == this.deltas_ticks[0]) {
       let label: string;
       if (this.unit == "date") {
         let date_time = x["date"];
@@ -229,9 +230,15 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
     }
   }
 
-  drawOnCanvas(): void {
-    this.date_written = false;
-    super.drawOnCanvas();
+  drawUnit() {
+    let unit_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_margin;
+
+    let writeUnit = (text: string) => {
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "top";
+      this.ctx.strokeText(text, (this.l.px + this.r.px) / 2, unit_pos);
+    };
+
     if (this.unit == "date") {
       let l = this.br.x.date;
       let midnight = new Date(l.getFullYear(), l.getMonth(), l.getDate());
@@ -251,10 +258,8 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
 
       let bar_margin = 6;
 
-      let date_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_margin;
-
       let bar_len = 31;
-      let bar_pos = date_pos - 10;
+      let bar_pos = unit_pos - 10;
 
       if (sm < em) {
         let writeRightSide = (pos: number) => {
@@ -267,7 +272,7 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
           this.ctx.strokeText(
             midnight.date.toDateString(),
             midnight.px + bar_margin,
-            date_pos
+            unit_pos
           );
         };
         let d;
@@ -282,37 +287,33 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
         this.ctx.strokeText(
           midnight.date.toDateString(),
           midnight_pos.px - bar_margin,
-          date_pos
+          unit_pos
         );
 
         for (d = mid + day; d <= +this.end; d += day) writeRightSide(d);
       } else {
-        this.ctx.textAlign = "center";
-        this.ctx.textBaseline = "top";
-        this.ctx.strokeText(
-          s_dt.toDateString(),
-          (this.l.px + this.r.px) / 2,
-          date_pos
-        );
+        writeUnit(s_dt.toDateString());
       }
+    } else if (this.unit == "s") {
+      writeUnit("time");
+    } else {
+      writeUnit(this.unit);
     }
   }
 }
 
 export class yAx<U extends uList<"y">> extends Ax<"y", U> {
-  label_dist_px = this.font_size*4;
+  label_dist_px = this.font_size * 4;
 
   constructor(
     ctx: CanvasRenderingContext2D,
     tl: PXCoord,
     br: PXCoord,
     unit: U,
-    deltas?: {
-      dec: number[];
-      ses: number[];
-    }
+    deltas_ticks?: number[],
+    deltas_units?: Delta
   ) {
-    super(ctx, tl, br, "y", unit, deltas);
+    super(ctx, tl, br, "y", unit, deltas_ticks, deltas_units);
   }
 
   drawTick(val: number, size: number): void {
@@ -320,11 +321,18 @@ export class yAx<U extends uList<"y">> extends Ax<"y", U> {
     const y = new yUnit(val, this.unit);
     this.ctx.moveTo(this.r.px, y.px);
     this.ctx.lineTo(this.r.px - l, y.px);
-    if (size == this.deltas_ticks.dec[0]) {
-      let label = y[this.unit].toString();
+    if (size == this.deltas_ticks[0]) {
+      let label = y.toString(this.unit,4);
       this.ctx.textAlign = "right";
       this.ctx.textBaseline = "middle";
       this.ctx.strokeText(label, this.r.px - l - this.txt_margin, y.px);
     }
+  }
+
+  drawUnit() {
+    let text = this.unit == "hz" ? "Hz" : this.unit;
+    this.ctx.textAlign = "left";
+    this.ctx.textBaseline = "middle";
+    this.ctx.strokeText(text, this.l.px + 20, (this.t.px + this.b.px) / 2);
   }
 }

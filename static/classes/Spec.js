@@ -53,10 +53,9 @@ export class Spec {
         if (!shift) {
             let ry = Math.pow(this.zoom_r.x, dir);
             let newHz = (old) => newU(old, p.y.hz, ry);
-            this.boundY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
+            this.boundZoomY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
         }
     }
-    //   pan()
     boundX(tl, br) {
         if (this.bound.dx && br - tl >= this.bound.dx)
             return false;
@@ -64,9 +63,29 @@ export class Spec {
         this.br_.x.s = br;
         return true;
     }
-    boundY(tl, br) {
+    boundZoomY(tl, br) {
         this.tl_.y.hz = Math.min(tl, this.bound.y.max);
         this.br_.y.hz = Math.max(this.bound.y.min, br);
+    }
+    boundPanX(dx) {
+        this.tl_.x.s = +this.tl_.x.s - dx;
+        this.br_.x.s = +this.br_.x.s - dx;
+    }
+    boundPanY(dy) {
+        if (+this.tl_.y.hz - dy > this.bound.y.max) {
+            dy = this.bound.y.max - this.tl_.y.hz;
+            this.tl_.y.hz = this.bound.y.max;
+            this.br_.y.hz -= dy;
+        }
+        else if (+this.br_.y.hz - dy < this.bound.y.min) {
+            dy = this.bound.y.min - this.br_.y.hz;
+            this.tl_.y.hz -= dy;
+            this.br_.y.hz = this.bound.y.min;
+        }
+        else {
+            this.tl_.y.hz = +this.tl_.y.hz - dy;
+            this.br_.y.hz = +this.br_.y.hz - dy;
+        }
     }
     conv(v, f, t, a) {
         let res = (+v - +this.tl_[a][f]) * this.ratio(a, t, f) + +this.tl_[a][t];
@@ -75,4 +94,20 @@ export class Spec {
         return res;
     }
     drawOnCanvas() { }
+    move(p) {
+        if (this.start_move_coord) {
+            let dx = +p.x.s - +this.start_move_coord.x.s;
+            let dy = p.y.hz - this.start_move_coord.y.hz;
+            this.boundPanX(dx);
+            this.boundPanY(dy);
+            this.updateDate();
+            this.start_move_coord = p;
+        }
+    }
+    startMoving(p) {
+        this.start_move_coord = p;
+    }
+    stopMoving() {
+        this.start_move_coord = undefined;
+    }
 }

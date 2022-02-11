@@ -7,6 +7,7 @@ export class Spec {
   private tl_: Units;
   private br_: Units;
   ctx: CanvasRenderingContext2D;
+  start_move_coord: xyGenCoord | undefined;
 
   zoommed_r = {
     x: 1,
@@ -69,7 +70,6 @@ export class Spec {
       },
     };
   }
-  
 
   updateDate() {
     let getDate = (val: number) => new DateTime(this.time_offset + val * 1000);
@@ -87,11 +87,9 @@ export class Spec {
     if (!shift) {
       let ry = Math.pow(this.zoom_r.x, dir);
       let newHz = (old: number) => newU(old, p.y.hz, ry);
-      this.boundY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
+      this.boundZoomY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
     }
   }
-
-  //   pan()
 
   boundX(tl: number, br: number): boolean {
     if (this.bound.dx && br - tl >= this.bound.dx) return false;
@@ -100,9 +98,33 @@ export class Spec {
     return true;
   }
 
-  boundY(tl: number, br: number) {
+  boundZoomY(tl: number, br: number) {
     this.tl_.y.hz = Math.min(tl, this.bound.y.max);
     this.br_.y.hz = Math.max(this.bound.y.min, br);
+  }
+
+  boundPanX(dx: number) {
+    this.tl_.x.s = +this.tl_.x.s - dx;
+    this.br_.x.s = +this.br_.x.s - dx;
+  }
+
+  boundPanY(dy: number) {
+    if(+this.tl_.y.hz - dy > this.bound.y.max) {
+      dy = this.bound.y.max- this.tl_.y.hz;
+      this.tl_.y.hz = this.bound.y.max;
+      this.br_.y.hz -= dy;
+    }
+    else if(+this.br_.y.hz - dy < this.bound.y.min) {
+      dy = this.bound.y.min - this.br_.y.hz;
+      this.tl_.y.hz-=dy;
+      this.br_.y.hz=this.bound.y.min;
+    }
+    else {
+      this.tl_.y.hz = +this.tl_.y.hz - dy;
+      this.br_.y.hz = +this.br_.y.hz - dy;
+    }
+
+    
   }
 
   conv<A extends AxT, F extends keyof Units[A], T extends keyof Units[A]>(
@@ -118,4 +140,24 @@ export class Spec {
   }
 
   drawOnCanvas() {}
+
+  move(p: xyGenCoord) {
+    if (this.start_move_coord) {
+      let dx = +p.x.s - +this.start_move_coord.x.s;
+      let dy = p.y.hz - this.start_move_coord.y.hz;
+
+      this.boundPanX(dx);
+      this.boundPanY(dy);
+      this.updateDate();
+      this.start_move_coord = p;
+    }
+  }
+
+  startMoving(p: xyGenCoord) {
+    this.start_move_coord = p;
+  }
+
+  stopMoving() : void {
+    this.start_move_coord = undefined;
+  }
 }

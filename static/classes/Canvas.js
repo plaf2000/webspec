@@ -47,7 +47,7 @@ export class Canvas {
             },
         };
         this.spec = new Spec(this.ctx, tl, br);
-        this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
+        this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "s");
         this.yax = new yAx(this.ctx, pxCoord(grid.x[0], grid.y[1]), this.spec.box.bl, "hz");
         this.bound_rect = this.cvs.getBoundingClientRect();
         this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
@@ -91,17 +91,28 @@ export class Canvas {
         this.cvs.height = height;
     }
     onMouseDown(e) {
-        this.det.startResize(this.mouse_pos);
-        this.det.startMoving(this.mouse_pos);
+        if (this.det.isHoverPx(this.mouse_pos)) {
+            this.det.startResize(this.mouse_pos);
+            this.det.startMoving(this.mouse_pos);
+        }
+        else {
+            this.spec.startMoving(this.mouse_pos);
+        }
         this.md = true;
     }
     onMouseMove(e) {
         this.setMousePos(e);
         if (this.md) {
-            if (this.det.resizing)
-                this.det.resize(this.mouse_pos);
-            else
-                this.det.move(this.mouse_pos);
+            if (!this.spec.start_move_coord) {
+                if (this.det.resizing)
+                    this.det.resize(this.mouse_pos);
+                else if (this.det.start_move_coord) {
+                    this.det.move(this.mouse_pos);
+                }
+            }
+            else {
+                this.spec.move(this.mouse_pos);
+            }
             this.drawCanvas();
         }
         else {
@@ -114,6 +125,10 @@ export class Canvas {
         this.md = false;
         this.det.stopResize(this.mouse_pos_);
         this.det.stopMoving();
+        this.spec.stopMoving();
+    }
+    onMouseLeave(e) {
+        this.onMouseUp(e);
     }
     onWheel(e) {
         if (this.spec.box.isHover(this.mouse_pos, "px", "px")) {

@@ -34,6 +34,10 @@ export class Unit {
             v = v.getv(f);
         this.val = this.spec.conv(v, f, this.unit, this.ax);
     }
+    toString(unit, digit, print_unit = false) {
+        let roundval = Math.pow(10, digit);
+        return `${Math.round(+this.getv(unit) * roundval) / roundval}${print_unit ? " " + unit : ""}`;
+    }
 }
 export class xUnit extends Unit {
     constructor(val, unit, e = false) {
@@ -79,15 +83,9 @@ let digit = (x, n) => x.toLocaleString("en-US", {
     minimumIntegerDigits: n,
     useGrouping: false,
 });
-let decimal = (x, n) => x.toLocaleString("en-US", {
-    minimumFractionDigits: n,
-    maximumFractionDigits: n,
-    useGrouping: false,
-});
-let round = (x, n) => Math.round(x * Math.pow(10, n)) / Math.pow(10, n);
 class Second extends Number {
     toString() {
-        let neg = (this.valueOf() < 0);
+        let neg = this.valueOf() < 0;
         let time = new Date(Math.round(Math.abs(this.valueOf()) * 1000));
         const [m, s, ms] = [
             time.getMinutes(),
@@ -103,15 +101,16 @@ class Second extends Number {
         if (neg)
             str += "-";
         if (w > 0)
-            str += `${w} week${(w > 1) ? "s" : ""}`;
+            str += `${w} week${w > 1 ? "s" : ""}`;
         if (d > 0) {
             if (w > 0)
                 str += " ";
-            str += `${d} day${(d > 1) ? "s" : ""}`;
+            str += `${d} day${d > 1 ? "s" : ""}`;
         }
         if (d > 0 || w > 0)
             str += "\n";
-        return str + `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`;
+        return (str +
+            `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`);
     }
 }
 export class DateTime extends Date {

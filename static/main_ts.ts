@@ -6,6 +6,7 @@ if(cvs) {
   document.addEventListener("mousemove",(e) => canvas.onMouseMove(e));
   cvs.addEventListener("mousedown",(e) => canvas.onMouseDown(e));
   document.addEventListener("mouseup",(e) => canvas.onMouseUp(e));
+  cvs.addEventListener("mouseleave",(e) => canvas.onMouseLeave(e));
   cvs.addEventListener("wheel",(e) => canvas.onWheel(e));
   canvas.drawCanvas();
 }

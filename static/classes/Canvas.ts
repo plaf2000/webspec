@@ -106,7 +106,7 @@ export class Canvas {
       this.ctx,
       this.spec.box.bl,
       pxCoord(grid.x[2], grid.y[3]),
-      "date"
+      "s"
     );
     this.yax = new yAx(
       this.ctx,
@@ -140,16 +140,28 @@ export class Canvas {
   }
 
   onMouseDown(e: MouseEvent) {
-    this.det.startResize(this.mouse_pos);
-    this.det.startMoving(this.mouse_pos);
+    if(this.det.isHoverPx(this.mouse_pos)) {
+      this.det.startResize(this.mouse_pos);
+      this.det.startMoving(this.mouse_pos);
+    }
+    else {
+      this.spec.startMoving(this.mouse_pos);
+    }
     this.md = true;
   }
 
   onMouseMove(e: MouseEvent) {
     this.setMousePos(e);
     if (this.md) {
-      if (this.det.resizing) this.det.resize(this.mouse_pos);
-      else this.det.move(this.mouse_pos);
+      if(!this.spec.start_move_coord) {
+        if (this.det.resizing) this.det.resize(this.mouse_pos);
+        else if(this.det.start_move_coord)  {
+          this.det.move(this.mouse_pos);
+        }
+      }
+      else {
+        this.spec.move(this.mouse_pos);
+      }
       this.drawCanvas();
     } else {
       let res = this.det.checkResize(this.mouse_pos);
@@ -161,6 +173,11 @@ export class Canvas {
     this.md = false;
     this.det.stopResize(this.mouse_pos_);
     this.det.stopMoving();
+    this.spec.stopMoving();
+  }
+
+  onMouseLeave(e: MouseEvent) {
+    this.onMouseUp(e);
   }
 
   onWheel(e: WheelEvent) {
