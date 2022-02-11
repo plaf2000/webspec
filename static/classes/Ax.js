@@ -1,5 +1,5 @@
 import { DrawablePXBox } from "./Box.js";
-import { convertDist, DateTime, xUnit, } from "./Units.js";
+import { convertDist, DateTime, xUnit, yUnit, } from "./Units.js";
 export class Ax extends DrawablePXBox {
     constructor(ctx, tl, br, ax, unit, deltas_ticks = {
         dec: [1, 1 / 2, 1 / 4, 1 / 8],
@@ -11,6 +11,9 @@ export class Ax extends DrawablePXBox {
         this.offset = 0;
         this.system = "dec";
         this.font_size = 11;
+        this.len = 5;
+        this.dyn_len = 12;
+        this.txt_margin = 2;
         this.ctx = ctx;
         this.unit = unit;
         this.ax = ax;
@@ -48,19 +51,25 @@ export class Ax extends DrawablePXBox {
     get end() {
         return Math.max(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
     }
+    getTickL(size) {
+        return this.len + this.dyn_len * size;
+    }
+    getDecUnit() {
+        let dec = Math.ceil(Math.log10(this.label_dist));
+        return Math.pow(10, dec);
+    }
+    shrinkUnit(inital, system = this.system) {
+        let u = inital;
+        let du = this.deltas_unit[system];
+        for (let k = 0; inital * du[k] > this.label_dist && k < du.length; k++)
+            u = inital * du[k];
+        return u;
+    }
     getUnit() {
         // Compute the base-ten order to express a single unit, while keeping the specified distance
-        let dec = Math.floor(Math.log10(this.end - this.start));
-        let u_1 = Math.pow(10, dec);
-        while (u_1 < this.label_dist)
-            u_1 = Math.pow(10, ++dec);
+        let u = this.getDecUnit();
         // If distance is too large, use delta values to shrink it
-        let u = u_1;
-        let k = 0;
-        let du = this.deltas_unit[this.system];
-        while (u_1 * du[k] > this.label_dist && k < du.length)
-            u = u_1 * du[k++];
-        return u;
+        return this.shrinkUnit(u);
     }
     drawOnCanvas() {
         let u = this.getUnit();
@@ -86,25 +95,17 @@ export class Ax extends DrawablePXBox {
         // Starts drawing the tick on the midpoint (because of floor)
         this.drawTick(mid, this.deltas_ticks.dec[0]);
         // Fills with ticks on the left
-        while (pos >= this.start) {
+        for (; pos >= this.start; pos -= u)
             draw(pos, -u);
-            pos -= u;
-        }
-        pos = mid;
         // Fills with ticks on the right
-        while (pos <= this.end) {
+        for (pos = mid; pos <= this.end; pos += u)
             draw(pos, u);
-            pos += u;
-        }
         this.ctx.stroke();
     }
 }
 export class xAx extends Ax {
     constructor(ctx, tl, br, unit, deltas) {
         super(ctx, tl, br, "x", unit, deltas);
-        this.len = 5;
-        this.dyn_len = 12;
-        this.txt_top_margin = 2;
         this.label_dist_px = 100;
         this.date_written = false;
         this.system = unit == "s" || unit == "date" ? "ses" : "dec";
@@ -113,35 +114,26 @@ export class xAx extends Ax {
     }
     getUnit() {
         // Compute the base-ten order to express a single unit, while keeping the specified distance
-        let dist = this.end - this.start;
-        let dec = Math.ceil(Math.log10(this.label_dist));
-        let u_1 = Math.pow(10, dec);
+        let u = this.getDecUnit();
         let system = "dec";
-        let factor = 1;
-        if (this.unit == "date")
-            factor = 1000;
-        if (this.system == "ses" && u_1 > 1 * factor) {
+        let factor = this.unit == "date" ? 1000 : 1;
+        if (this.system == "ses" && u > 1 * factor) {
             let ses = Math.ceil(Math.log(this.label_dist / factor) / Math.log(60));
-            u_1 = factor * Math.pow(60, ses);
-            // while (u_1 < this.label_dist) u_1 = factor * Math.pow(60, ++ses);
-            if (this.unit == "date" && u_1 > 3600 * factor) {
-                u_1 = 86400 * factor;
-                u_1 *= Math.ceil(this.label_dist / u_1);
+            u = factor * Math.pow(60, ses);
+            // while (u < this.label_dist) u = factor * Math.pow(60, ++ses);
+            if (this.unit == "date" && u > 3600 * factor) {
+                u = 86400 * factor;
+                u *= Math.ceil(this.label_dist / u);
             }
             else {
                 system = "ses";
             }
         }
         // If distance is too large, use delta values to shrink it
-        let u = u_1;
-        let k = 0;
-        let du = this.deltas_unit[system];
-        while (u_1 * du[k] > this.label_dist && k < du.length)
-            u = u_1 * du[k++];
-        return u;
+        return this.shrinkUnit(u, system);
     }
     drawTick(val, size) {
-        let l = this.len + this.dyn_len * size;
+        let l = this.getTickL(size);
         const x = new xUnit(val, this.unit);
         this.ctx.moveTo(x.px, this.t.px);
         this.ctx.lineTo(x.px, this.t.px + l);
@@ -158,7 +150,7 @@ export class xAx extends Ax {
             this.ctx.textBaseline = "top";
             label
                 .split("\n")
-                .map((txt, i) => this.ctx.strokeText(txt, x.px, this.t.px + l + this.txt_top_margin + (this.font_size + 2) * i));
+                .map((txt, i) => this.ctx.strokeText(txt, x.px, this.t.px + l + this.txt_margin + (this.font_size + 2) * i));
         }
     }
     drawOnCanvas() {
@@ -176,7 +168,7 @@ export class xAx extends Ax {
             day *= Math.ceil(this.label_dist / day);
             let mid = +new DateTime(Math.floor((sm + em) / 2 / day) * day).midnight;
             let bar_margin = 6;
-            let date_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_top_margin;
+            let date_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_margin;
             let bar_len = 31;
             let bar_pos = date_pos - 10;
             if (sm < em) {
@@ -206,6 +198,24 @@ export class xAx extends Ax {
                 this.ctx.textBaseline = "top";
                 this.ctx.strokeText(s_dt.toDateString(), (this.l.px + this.r.px) / 2, date_pos);
             }
+        }
+    }
+}
+export class yAx extends Ax {
+    constructor(ctx, tl, br, unit, deltas) {
+        super(ctx, tl, br, "y", unit, deltas);
+        this.label_dist_px = this.font_size * 4;
+    }
+    drawTick(val, size) {
+        let l = this.getTickL(size);
+        const y = new yUnit(val, this.unit);
+        this.ctx.moveTo(this.r.px, y.px);
+        this.ctx.lineTo(this.r.px - l, y.px);
+        if (size == this.deltas_ticks.dec[0]) {
+            let label = y[this.unit].toString();
+            this.ctx.textAlign = "right";
+            this.ctx.textBaseline = "middle";
+            this.ctx.strokeText(label, this.r.px - l - this.txt_margin, y.px);
         }
     }
 }

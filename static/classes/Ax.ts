@@ -35,6 +35,9 @@ export abstract class Ax<
   deltas_unit: Delta;
   multiples: Set<number>[];
   font_size = 11;
+  len = 5;
+  dyn_len = 12;
+  txt_margin = 2;
   abstract label_dist_px: number;
 
   get label_dist(): number {
@@ -88,20 +91,31 @@ export abstract class Ax<
     return Math.max(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
   }
 
+  getTickL(size: number): number {
+    return this.len + this.dyn_len * size;
+  }
+
   abstract drawTick(val: number, size: number): void;
+
+  getDecUnit(): number {
+    let dec = Math.ceil(Math.log10(this.label_dist));
+    return Math.pow(10, dec);
+  }
+
+  shrinkUnit(inital: number, system: keyof Delta = this.system): number {
+    let u = inital;
+    let du = this.deltas_unit[system];
+    for (let k = 0; inital * du[k] > this.label_dist && k < du.length; k++)
+      u = inital * du[k];
+    return u;
+  }
 
   getUnit(): number {
     // Compute the base-ten order to express a single unit, while keeping the specified distance
-    let dec = Math.floor(Math.log10(this.end - this.start));
-    let u_1 = Math.pow(10, dec);
-    while (u_1 < this.label_dist) u_1 = Math.pow(10, ++dec);
+    let u = this.getDecUnit();
 
     // If distance is too large, use delta values to shrink it
-    let u = u_1;
-    let k = 0;
-    let du = this.deltas_unit[this.system];
-    while (u_1 * du[k] > this.label_dist && k < du.length) u = u_1 * du[k++];
-    return u;
+    return this.shrinkUnit(u);
   }
 
   drawOnCanvas(): void {
@@ -144,10 +158,6 @@ export abstract class Ax<
 }
 
 export class xAx<U extends uList<"x">> extends Ax<"x", U> {
-  len = 5;
-  dyn_len = 12;
-
-  txt_top_margin = 2;
   label_dist_px = 100;
 
   date_written = false;
@@ -170,37 +180,30 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
 
   getUnit(): number {
     // Compute the base-ten order to express a single unit, while keeping the specified distance
-    let dist = this.end - this.start;
-    let dec = Math.ceil(Math.log10(this.label_dist));
-    let u_1 = Math.pow(10, dec);
+    let u = this.getDecUnit();
     let system: keyof Delta = "dec";
 
-    let factor = 1;
-    if (this.unit == "date") factor = 1000;
+    let factor = this.unit == "date" ? 1000 : 1;
 
-    if (this.system == "ses" && u_1 > 1 * factor) {
+    if (this.system == "ses" && u > 1 * factor) {
       let ses = Math.ceil(Math.log(this.label_dist / factor) / Math.log(60));
-      u_1 = factor * Math.pow(60, ses);
-      // while (u_1 < this.label_dist) u_1 = factor * Math.pow(60, ++ses);
+      u = factor * Math.pow(60, ses);
+      // while (u < this.label_dist) u = factor * Math.pow(60, ++ses);
 
-      if (this.unit == "date" && u_1 > 3600 * factor) {
-        u_1 = 86400 * factor;
-        u_1 *= Math.ceil(this.label_dist / u_1);
+      if (this.unit == "date" && u > 3600 * factor) {
+        u = 86400 * factor;
+        u *= Math.ceil(this.label_dist / u);
       } else {
         system = "ses";
       }
     }
 
     // If distance is too large, use delta values to shrink it
-    let u = u_1;
-    let du = this.deltas_unit[system];
-    for (let k = 0; u_1 * du[k] > this.label_dist && k < du.length; k++)
-      u = u_1 * du[k];
-    return u;
+    return this.shrinkUnit(u, system);
   }
 
   drawTick(val: number, size: number) {
-    let l = this.len + this.dyn_len * size;
+    let l = this.getTickL(size);
     const x = new xUnit(val, this.unit);
     this.ctx.moveTo(x.px, this.t.px);
     this.ctx.lineTo(x.px, this.t.px + l);
@@ -220,7 +223,7 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
           this.ctx.strokeText(
             txt,
             x.px,
-            this.t.px + l + this.txt_top_margin + (this.font_size + 2) * i
+            this.t.px + l + this.txt_margin + (this.font_size + 2) * i
           )
         );
     }
@@ -248,8 +251,7 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
 
       let bar_margin = 6;
 
-      let date_pos =
-        25 + this.t.px + this.len + this.dyn_len + this.txt_top_margin;
+      let date_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_margin;
 
       let bar_len = 31;
       let bar_pos = date_pos - 10;
@@ -293,6 +295,36 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
           date_pos
         );
       }
+    }
+  }
+}
+
+export class yAx<U extends uList<"y">> extends Ax<"y", U> {
+  label_dist_px = this.font_size*4;
+
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    tl: PXCoord,
+    br: PXCoord,
+    unit: U,
+    deltas?: {
+      dec: number[];
+      ses: number[];
+    }
+  ) {
+    super(ctx, tl, br, "y", unit, deltas);
+  }
+
+  drawTick(val: number, size: number): void {
+    let l = this.getTickL(size);
+    const y = new yUnit(val, this.unit);
+    this.ctx.moveTo(this.r.px, y.px);
+    this.ctx.lineTo(this.r.px - l, y.px);
+    if (size == this.deltas_ticks.dec[0]) {
+      let label = y[this.unit].toString();
+      this.ctx.textAlign = "right";
+      this.ctx.textBaseline = "middle";
+      this.ctx.strokeText(label, this.r.px - l - this.txt_margin, y.px);
     }
   }
 }

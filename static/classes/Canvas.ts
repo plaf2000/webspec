@@ -1,4 +1,4 @@
-import { xAx } from "./Ax.js";
+import { xAx, yAx } from "./Ax.js";
 import { Box } from "./Box.js";
 import { pxCoord, PXCoord, tfCoord, TFCoord, xy, xyCoord } from "./Coord.js";
 import { Detection } from "./Detection.js";
@@ -19,6 +19,7 @@ export class Canvas {
   private mouse_type_: string = "auto";
   md = false;
   private xax: xAx<uList<"x">>;
+  private yax: yAx<uList<"y">>;
   // view : View;
 
   setMousePos(e: MouseEvent) {
@@ -107,6 +108,12 @@ export class Canvas {
       pxCoord(grid.x[2], grid.y[3]),
       "date"
     );
+    this.yax = new yAx(
+      this.ctx,
+      pxCoord(grid.x[0],grid.y[1]),
+      this.spec.box.bl,
+      "hz"
+    )
     this.bound_rect = this.cvs.getBoundingClientRect();
 
     this.det = new Detection(
@@ -168,6 +175,7 @@ export class Canvas {
     this.spec.box.drawOnCanvas();
     this.det.drawOnCanvas();
     this.xax.drawOnCanvas();
+    this.yax.drawOnCanvas();
   }
 
   clear() {

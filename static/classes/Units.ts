@@ -205,5 +205,5 @@ export function convertDist<
 >(val: number, ax: A, f: F, t: T): number {
   let zero = new Unit(0, ax, f);
   let uval = new Unit(val, ax, f);
-  return +uval.getv(t) - +zero.getv(t);
+  return Math.abs(+uval.getv(t) - +zero.getv(t));
 }

@@ -137,5 +137,5 @@ export class DateTime extends Date {
 export function convertDist(val, ax, f, t) {
     let zero = new Unit(0, ax, f);
     let uval = new Unit(val, ax, f);
-    return +uval.getv(t) - +zero.getv(t);
+    return Math.abs(+uval.getv(t) - +zero.getv(t));
 }

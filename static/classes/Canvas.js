@@ -1,4 +1,4 @@
-import { xAx } from "./Ax.js";
+import { xAx, yAx } from "./Ax.js";
 import { Box } from "./Box.js";
 import { pxCoord, tfCoord } from "./Coord.js";
 import { Detection } from "./Detection.js";
@@ -48,6 +48,7 @@ export class Canvas {
         };
         this.spec = new Spec(this.ctx, tl, br);
         this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
+        this.yax = new yAx(this.ctx, pxCoord(grid.x[0], grid.y[1]), this.spec.box.bl, "hz");
         this.bound_rect = this.cvs.getBoundingClientRect();
         this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
             x: {
@@ -125,6 +126,7 @@ export class Canvas {
         this.spec.box.drawOnCanvas();
         this.det.drawOnCanvas();
         this.xax.drawOnCanvas();
+        this.yax.drawOnCanvas();
     }
     clear() {
         this.ctx.clearRect(0, 0, this.w, this.h);
