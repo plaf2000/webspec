@@ -136,7 +136,7 @@ export class Detection extends BoundedBox<
       } else {
         this.triggered_y = undefined;
       }
-      if (!this.triggered_x && !this.triggered_y) mt = "auto";
+      if (!this.triggered_x && !this.triggered_y) mt = "grab";
       else
         mt =
           (this.triggered_y
@@ -168,7 +168,9 @@ export class Detection extends BoundedBox<
   onMouseMove(p: xyGenCoord, md: boolean) {
     if (md) {
       if (this.resizing) this.resize(p);
-      else if (this.start_move_coord) this.move(p);
+      else if (this.start_move_coord) { 
+        this.move(p);
+      }
     } else {
       this.checkResize(p);
     }
@@ -178,11 +180,13 @@ export class Detection extends BoundedBox<
     if (this.isHoverPx(p)) {
       this.startResize(p);
       this.startMoving(p);
+      if(!this.resizing) this.mouse_type = "grabbing";
     }
   }
 
   onMouseUp(p: xyGenCoord) {
     this.stopResize(p);
     this.stopMoving();
+    this.onMouseMove(p,false);
   }
 }

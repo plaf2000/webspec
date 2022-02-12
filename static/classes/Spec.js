@@ -5,9 +5,9 @@ import { DateTime, Unit } from "./Units.js";
 export class Spec {
     constructor(ctx, tl, br, dx_limit) {
         this.mouse_type = "auto";
-        this.zoommed_r = {
-            x: 1,
-            y: 1,
+        this.zoommed = {
+            x: 0,
+            y: 0,
         };
         this.zoom_r = {
             x: 1.14,
@@ -49,15 +49,18 @@ export class Spec {
         this.br_.x.date = getDate(+this.br_.x.s);
     }
     zoom(p, dir, shift) {
+        shift || (shift = dir < 0 && this.zoommed.x > 0);
         let rx = Math.pow(this.zoom_r.x, dir);
         let newU = (old, v, r) => v - (v - old) * r;
         let newS = (old) => newU(old, +p.x.s, rx);
-        if (this.boundX(newS(+this.tl_.x.s), newS(+this.br_.x.s)))
+        if (this.boundX(newS(+this.tl_.x.s), newS(+this.br_.x.s))) {
             this.updateDate();
+            this.zoommed.x += dir;
+        }
         if (!shift) {
             let ry = Math.pow(this.zoom_r.x, dir);
             let newHz = (old) => newU(old, p.y.hz, ry);
-            this.boundZoomY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
+            this.boundZoomY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz), dir);
         }
     }
     boundX(tl, br) {
@@ -67,9 +70,43 @@ export class Spec {
         this.br_.x.s = br;
         return true;
     }
-    boundZoomY(tl, br) {
-        this.tl_.y.hz = Math.min(tl, this.bound.y.max);
-        this.br_.y.hz = Math.max(this.bound.y.min, br);
+    boundZoomY(t, b, dir) {
+        let reset = () => {
+            this.br_.y.hz = this.bound.y.min;
+            this.tl_.y.hz = this.bound.y.max;
+            this.zoommed.y = 0;
+        };
+        if (t >= this.bound.y.max && b <= this.bound.y.min) {
+            reset();
+        }
+        else {
+            if (t >= this.bound.y.max) {
+                b = this.br_.y.hz + this.bound.y.max - t;
+                if (b < this.bound.y.min) {
+                    reset();
+                }
+                else {
+                    this.tl_.y.hz = this.bound.y.max;
+                    this.br_.y.hz = b;
+                    this.zoommed.y += dir;
+                }
+            }
+            else if (b <= this.bound.y.min) {
+                t = this.tl_.y.hz + this.bound.y.min - b;
+                if (t > this.bound.y.max) {
+                    reset();
+                }
+                else {
+                    this.br_.y.hz = this.bound.y.min;
+                    this.tl_.y.hz = t;
+                }
+            }
+            else {
+                this.tl_.y.hz = t;
+                this.br_.y.hz = b;
+                this.zoommed.y += dir;
+            }
+        }
     }
     boundPanX(dx) {
         this.tl_.x.s = +this.tl_.x.s - dx;
@@ -126,13 +163,18 @@ export class Spec {
     }
     onMouseMove(p, md) {
         if (md)
-            if (!this.start_move_coord)
+            if (!this.start_move_coord) {
                 this.dets.onMouseMove(p, md);
-            else
+                this.mouse_type = this.dets.mouse_type;
+            }
+            else {
                 this.move(p);
-        else
+                this.mouse_type = "grabbing";
+            }
+        else {
             this.dets.onMouseMove(p, md);
-        this.mouse_type = this.dets.mouse_type;
+            this.mouse_type = this.dets.mouse_type;
+        }
     }
 }
 class SpecImgs {

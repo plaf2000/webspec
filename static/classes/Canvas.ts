@@ -69,7 +69,7 @@ export class Canvas {
     this.ctx = ctx;
 
     let grid = {
-      x: [0, 100, 800, this.cvs.width],
+      x: [0, 100, this.cvs.width - 30, this.cvs.width],
       y: [0, 10, 600, this.cvs.height],
     };
 
@@ -85,12 +85,13 @@ export class Canvas {
       },
     };
 
+    let ws = 50;
 
     const br = {
       x: {
         px: grid.x[2],
-        s: 50,
-        date: new DateTime(2022, 0, 1, 0, 0, 25),
+        s: ws,
+        date: new DateTime(+tl.x.date + ws * 1000),
       },
       y: {
         px: grid.y[2],
@@ -100,7 +101,6 @@ export class Canvas {
 
     this.spec = new Spec(this.ctx, tl, br);
 
-
     this.xax = new xAx(
       this.ctx,
       this.spec.box.bl,
@@ -109,10 +109,10 @@ export class Canvas {
     );
     this.yax = new yAx(
       this.ctx,
-      pxCoord(grid.x[0],grid.y[1]),
+      pxCoord(grid.x[0], grid.y[1]),
       this.spec.box.bl,
       "hz"
-    )
+    );
     this.bound_rect = this.cvs.getBoundingClientRect();
 
     // this.xax = new xAx(this.ctx,this.box.bl)
@@ -123,8 +123,9 @@ export class Canvas {
 
   onMouseDown(e: MouseEvent) {
     this.md = true;
-    if(this.spec.box.isHoverPx(this.mouse_pos)) {
+    if (this.spec.box.isHoverPx(this.mouse_pos)) {
       this.spec.onMouseDown(this.mouse_pos);
+      this.mouse_type = this.spec.mouse_type;
     }
   }
 
@@ -138,6 +139,8 @@ export class Canvas {
   onMouseUp(e: MouseEvent) {
     this.md = false;
     this.spec.onMouseUp(this.mouse_pos_);
+    if (this.spec.box.isHoverPx(this.mouse_pos_))
+      this.mouse_type = this.spec.mouse_type;
   }
 
   onMouseLeave(e: MouseEvent) {

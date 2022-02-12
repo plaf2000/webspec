@@ -13,9 +13,9 @@ export class Spec {
   dets: Detections;
   mouse_type: string = "auto";
 
-  zoommed_r = {
-    x: 1,
-    y: 1,
+  zoommed = {
+    x: 0,
+    y: 0,
   };
 
   bound: {
@@ -84,16 +84,20 @@ export class Spec {
   }
 
   zoom(p: xyGenCoord, dir: number, shift: boolean) {
+    shift ||= (dir<0 && this.zoommed.x>0);
+
     let rx = Math.pow(this.zoom_r.x, dir);
     let newU = (old: number, v: number, r: number) => v - (v - old) * r;
     let newS = (old: number) => newU(old, +p.x.s, rx);
-    if (this.boundX(newS(+this.tl_.x.s), newS(+this.br_.x.s)))
+    if (this.boundX(newS(+this.tl_.x.s), newS(+this.br_.x.s))) {
       this.updateDate();
+      this.zoommed.x += dir;
+    }
 
     if (!shift) {
       let ry = Math.pow(this.zoom_r.x, dir);
       let newHz = (old: number) => newU(old, p.y.hz, ry);
-      this.boundZoomY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz));
+      this.boundZoomY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz), dir);
     }
   }
 
@@ -104,9 +108,43 @@ export class Spec {
     return true;
   }
 
-  boundZoomY(tl: number, br: number) {
-    this.tl_.y.hz = Math.min(tl, this.bound.y.max);
-    this.br_.y.hz = Math.max(this.bound.y.min, br);
+  boundZoomY(t: number, b: number, dir: number) {
+    let reset = () => {
+      this.br_.y.hz = this.bound.y.min;
+      this.tl_.y.hz = this.bound.y.max;
+      this.zoommed.y = 0;
+    }
+    if(t>=this.bound.y.max  && b<=this.bound.y.min) {
+      reset();
+    }
+    else {
+      if(t>=this.bound.y.max) {
+        b = this.br_.y.hz + this.bound.y.max - t;
+        if(b<this.bound.y.min) {
+          reset();
+        }
+        else {
+          this.tl_.y.hz = this.bound.y.max;
+          this.br_.y.hz = b;
+          this.zoommed.y+=dir;
+        }
+      }
+      else if(b<=this.bound.y.min) {
+        t = this.tl_.y.hz + this.bound.y.min-b;
+        if(t>this.bound.y.max) {
+          reset();
+        }
+        else {
+          this.br_.y.hz = this.bound.y.min;
+          this.tl_.y.hz = t;
+        }
+      }
+      else {
+        this.tl_.y.hz = t;
+        this.br_.y.hz = b;
+        this.zoommed.y+=dir;
+      }
+    }
   }
 
   boundPanX(dx: number) {
@@ -165,6 +203,7 @@ export class Spec {
   onMouseDown(p: xyGenCoord) {
     if (this.dets.triggered) {
       this.dets.onMouseDown(p);
+      this.mouse_type = this.dets.mouse_type;
     } else {
       this.startMoving(p);
     }
@@ -173,15 +212,22 @@ export class Spec {
   onMouseUp(p: xyGenCoord) {
     this.dets.onMouseUp(p);
     this.stopMoving();
+    this.mouse_type = this.dets.mouse_type;
   }
 
   onMouseMove(p: xyGenCoord, md: boolean) {
     if (md)
-      if (!this.start_move_coord) this.dets.onMouseMove(p, md);
-      else this.move(p);
-    else this.dets.onMouseMove(p, md);
-
-    this.mouse_type = this.dets.mouse_type;
+      if (!this.start_move_coord) {
+        this.dets.onMouseMove(p, md);
+        this.mouse_type = this.dets.mouse_type;
+      } else {
+        this.move(p);
+        this.mouse_type = "grabbing";
+      }
+    else {
+      this.dets.onMouseMove(p, md);
+      this.mouse_type = this.dets.mouse_type;
+    }
   }
 }
 
