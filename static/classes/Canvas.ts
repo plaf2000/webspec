@@ -145,7 +145,7 @@ export class Canvas {
   }
 
   onWheel(e: WheelEvent) {
-    if (this.spec.box.isHover(this.mouse_pos, "px", "px")) {
+    if (this.spec.box.isHoverPx(this.mouse_pos)) {
       this.spec.zoom(this.mouse_pos, Math.sign(e.deltaY), e.shiftKey);
       this.drawCanvas();
     }

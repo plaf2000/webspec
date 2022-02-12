@@ -125,17 +125,13 @@ export class Spec {
         this.stopMoving();
     }
     onMouseMove(p, md) {
-        if (md) {
-            if (!this.start_move_coord) {
+        if (md)
+            if (!this.start_move_coord)
                 this.dets.onMouseMove(p, md);
-            }
-            else {
+            else
                 this.move(p);
-            }
-        }
-        else {
+        else
             this.dets.onMouseMove(p, md);
-        }
         this.mouse_type = this.dets.mouse_type;
     }
 }

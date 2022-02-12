@@ -86,7 +86,10 @@ export class Canvas {
     }
     onMouseMove(e) {
         this.setMousePos(e);
-        this.spec.onMouseMove(this.mouse_pos, this.md);
+        if (this.spec.box.isHoverPx(this.mouse_pos))
+            this.spec.onMouseMove(this.mouse_pos, this.md);
+        else
+            this.spec.onMouseUp(this.mouse_pos);
         this.mouse_type = this.spec.mouse_type;
         this.drawCanvas();
     }
