@@ -1,7 +1,5 @@
 import { xAx, yAx } from "./Ax.js";
-import { Box } from "./Box.js";
-import { pxCoord, tfCoord } from "./Coord.js";
-import { Detection } from "./Detection.js";
+import { pxCoord } from "./Coord.js";
 import { Spec } from "./Spec.js";
 import { DateTime } from "./Units.js";
 function mouseCoord(e) {
@@ -47,19 +45,9 @@ export class Canvas {
             },
         };
         this.spec = new Spec(this.ctx, tl, br);
-        this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "s");
+        this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
         this.yax = new yAx(this.ctx, pxCoord(grid.x[0], grid.y[1]), this.spec.box.bl, "hz");
         this.bound_rect = this.cvs.getBoundingClientRect();
-        this.det = new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
-            x: {
-                l: true,
-                r: true,
-            },
-            y: {
-                t: true,
-                b: true,
-            },
-        });
         // this.xax = new xAx(this.ctx,this.box.bl)
         this.mouse_pos_ = pxCoord(0, 0);
         this.drawCanvas();
@@ -91,41 +79,20 @@ export class Canvas {
         this.cvs.height = height;
     }
     onMouseDown(e) {
-        if (this.det.isHoverPx(this.mouse_pos)) {
-            this.det.startResize(this.mouse_pos);
-            this.det.startMoving(this.mouse_pos);
-        }
-        else {
-            this.spec.startMoving(this.mouse_pos);
-        }
         this.md = true;
+        if (this.spec.box.isHoverPx(this.mouse_pos)) {
+            this.spec.onMouseDown(this.mouse_pos);
+        }
     }
     onMouseMove(e) {
         this.setMousePos(e);
-        if (this.md) {
-            if (!this.spec.start_move_coord) {
-                if (this.det.resizing)
-                    this.det.resize(this.mouse_pos);
-                else if (this.det.start_move_coord) {
-                    this.det.move(this.mouse_pos);
-                }
-            }
-            else {
-                this.spec.move(this.mouse_pos);
-            }
-            this.drawCanvas();
-        }
-        else {
-            let res = this.det.checkResize(this.mouse_pos);
-            if (res)
-                this.mouse_type = res;
-        }
+        this.spec.onMouseMove(this.mouse_pos, this.md);
+        this.mouse_type = this.spec.mouse_type;
+        this.drawCanvas();
     }
     onMouseUp(e) {
         this.md = false;
-        this.det.stopResize(this.mouse_pos_);
-        this.det.stopMoving();
-        this.spec.stopMoving();
+        this.spec.onMouseUp(this.mouse_pos_);
     }
     onMouseLeave(e) {
         this.onMouseUp(e);
@@ -138,8 +105,7 @@ export class Canvas {
     }
     drawCanvas() {
         this.clear();
-        this.spec.box.drawOnCanvas();
-        this.det.drawOnCanvas();
+        this.spec.drawOnCanvas();
         this.xax.drawOnCanvas();
         this.yax.drawOnCanvas();
     }

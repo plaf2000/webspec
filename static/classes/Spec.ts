@@ -1,6 +1,7 @@
 import { Box, DrawableBox, DrawablePXBox } from "./Box.js";
 import { pxCoord, PXCoord, xyGenCoord } from "./Coord.js";
-import { AxT, DateTime, Unit, Units } from "./Units.js";
+import { Detection, Detections } from "./Detection.js";
+import { AxT, DateTime, Unit, Units, xGenUnit } from "./Units.js";
 
 export class Spec {
   time_offset: number;
@@ -8,6 +9,9 @@ export class Spec {
   private br_: Units;
   ctx: CanvasRenderingContext2D;
   start_move_coord: xyGenCoord | undefined;
+  spec_imgs: SpecImgs;
+  dets: Detections;
+  mouse_type: string = "auto";
 
   zoommed_r = {
     x: 1,
@@ -69,6 +73,8 @@ export class Spec {
         min: br.y.hz,
       },
     };
+    this.spec_imgs = new SpecImgs(this.ctx, this);
+    this.dets = new Detections(this.ctx, this);
   }
 
   updateDate() {
@@ -109,22 +115,13 @@ export class Spec {
   }
 
   boundPanY(dy: number) {
-    if(+this.tl_.y.hz - dy > this.bound.y.max) {
-      dy = this.bound.y.max- this.tl_.y.hz;
-      this.tl_.y.hz = this.bound.y.max;
-      this.br_.y.hz -= dy;
+    if (+this.tl_.y.hz - dy > this.bound.y.max) {
+      dy = this.tl_.y.hz - this.bound.y.max;
+    } else if (+this.br_.y.hz - dy < this.bound.y.min) {
+      dy = this.br_.y.hz - this.bound.y.min;
     }
-    else if(+this.br_.y.hz - dy < this.bound.y.min) {
-      dy = this.bound.y.min - this.br_.y.hz;
-      this.tl_.y.hz-=dy;
-      this.br_.y.hz=this.bound.y.min;
-    }
-    else {
-      this.tl_.y.hz = +this.tl_.y.hz - dy;
-      this.br_.y.hz = +this.br_.y.hz - dy;
-    }
-
-    
+    this.tl_.y.hz -= dy;
+    this.br_.y.hz -= dy;
   }
 
   conv<A extends AxT, F extends keyof Units[A], T extends keyof Units[A]>(
@@ -139,7 +136,11 @@ export class Spec {
     return res;
   }
 
-  drawOnCanvas() {}
+  drawOnCanvas() {
+    this.box.drawOnCanvas();
+    this.spec_imgs.drawOnCanvas();
+    this.dets.drawOnCanvas();
+  }
 
   move(p: xyGenCoord) {
     if (this.start_move_coord) {
@@ -157,7 +158,45 @@ export class Spec {
     this.start_move_coord = p;
   }
 
-  stopMoving() : void {
+  stopMoving(): void {
     this.start_move_coord = undefined;
+  }
+
+  onMouseDown(p: xyGenCoord) {
+    if (this.dets.triggered) {
+      this.dets.onMouseDown(p);
+    } else {
+      this.startMoving(p);
+    }
+  }
+
+  onMouseUp(p: xyGenCoord) {
+    this.dets.onMouseUp(p);
+    this.stopMoving();
+  }
+
+  onMouseMove(p: xyGenCoord, md: boolean) {
+    if (md)
+      if (!this.start_move_coord) this.dets.onMouseMove(p, md);
+      else this.move(p);
+    else this.dets.onMouseMove(p, md);
+
+    this.mouse_type = this.dets.mouse_type;
+  }
+}
+
+class SpecImgs {
+  spec: Spec;
+  ctx: CanvasRenderingContext2D;
+
+  constructor(ctx: CanvasRenderingContext2D, spec: Spec) {
+    this.spec = spec;
+    this.ctx = ctx;
+  }
+
+  load() {}
+
+  drawOnCanvas() {
+    this.load();
   }
 }

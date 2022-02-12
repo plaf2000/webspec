@@ -1,8 +1,10 @@
 import { DrawableBox } from "./Box.js";
 import { pxCoord } from "./Coord.js";
+import { Detections } from "./Detection.js";
 import { DateTime, Unit } from "./Units.js";
 export class Spec {
     constructor(ctx, tl, br, dx_limit) {
+        this.mouse_type = "auto";
         this.zoommed_r = {
             x: 1,
             y: 1,
@@ -23,6 +25,8 @@ export class Spec {
                 min: br.y.hz,
             },
         };
+        this.spec_imgs = new SpecImgs(this.ctx, this);
+        this.dets = new Detections(this.ctx, this);
     }
     get tl() {
         return pxCoord(this.tl_.x.px, this.tl_.y.px);
@@ -73,19 +77,13 @@ export class Spec {
     }
     boundPanY(dy) {
         if (+this.tl_.y.hz - dy > this.bound.y.max) {
-            dy = this.bound.y.max - this.tl_.y.hz;
-            this.tl_.y.hz = this.bound.y.max;
-            this.br_.y.hz -= dy;
+            dy = this.tl_.y.hz - this.bound.y.max;
         }
         else if (+this.br_.y.hz - dy < this.bound.y.min) {
-            dy = this.bound.y.min - this.br_.y.hz;
-            this.tl_.y.hz -= dy;
-            this.br_.y.hz = this.bound.y.min;
+            dy = this.br_.y.hz - this.bound.y.min;
         }
-        else {
-            this.tl_.y.hz = +this.tl_.y.hz - dy;
-            this.br_.y.hz = +this.br_.y.hz - dy;
-        }
+        this.tl_.y.hz -= dy;
+        this.br_.y.hz -= dy;
     }
     conv(v, f, t, a) {
         let res = (+v - +this.tl_[a][f]) * this.ratio(a, t, f) + +this.tl_[a][t];
@@ -93,7 +91,11 @@ export class Spec {
             return new Date(res);
         return res;
     }
-    drawOnCanvas() { }
+    drawOnCanvas() {
+        this.box.drawOnCanvas();
+        this.spec_imgs.drawOnCanvas();
+        this.dets.drawOnCanvas();
+    }
     move(p) {
         if (this.start_move_coord) {
             let dx = +p.x.s - +this.start_move_coord.x.s;
@@ -109,5 +111,41 @@ export class Spec {
     }
     stopMoving() {
         this.start_move_coord = undefined;
+    }
+    onMouseDown(p) {
+        if (this.dets.triggered) {
+            this.dets.onMouseDown(p);
+        }
+        else {
+            this.startMoving(p);
+        }
+    }
+    onMouseUp(p) {
+        this.dets.onMouseUp(p);
+        this.stopMoving();
+    }
+    onMouseMove(p, md) {
+        if (md) {
+            if (!this.start_move_coord) {
+                this.dets.onMouseMove(p, md);
+            }
+            else {
+                this.move(p);
+            }
+        }
+        else {
+            this.dets.onMouseMove(p, md);
+        }
+        this.mouse_type = this.dets.mouse_type;
+    }
+}
+class SpecImgs {
+    constructor(ctx, spec) {
+        this.spec = spec;
+        this.ctx = ctx;
+    }
+    load() { }
+    drawOnCanvas() {
+        this.load();
     }
 }

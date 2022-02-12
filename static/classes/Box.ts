@@ -86,7 +86,7 @@ export class Box<
     );
   }
 
-  isHoverPx(p: PXCoord, strict = false): boolean {
+  isHoverPx(p: xyGenCoord, strict = false): boolean {
     return this.isHover(p, "px", "px", strict);
   }
 }
@@ -139,9 +139,11 @@ export class DrawableBox<
   }
 
   drawOnCanvas() {
-    this.ctx.beginPath();
-    this.ctx.rect(this.xl, this.yt, this.w, this.h);
-    this.ctx.stroke();
+    if(this.w>1 && this.h>1) {
+      this.ctx.beginPath();
+      this.ctx.rect(this.xl, this.yt, this.w, this.h);
+      this.ctx.stroke();
+    }
   }
 }
 

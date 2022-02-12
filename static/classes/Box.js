@@ -84,9 +84,11 @@ export class DrawableBox extends Box {
         this.ctx.clearRect(this.xl, this.yt, this.w, this.h);
     }
     drawOnCanvas() {
-        this.ctx.beginPath();
-        this.ctx.rect(this.xl, this.yt, this.w, this.h);
-        this.ctx.stroke();
+        if (this.w > 1 && this.h > 1) {
+            this.ctx.beginPath();
+            this.ctx.rect(this.xl, this.yt, this.w, this.h);
+            this.ctx.stroke();
+        }
     }
 }
 export class EditableBox extends DrawableBox {

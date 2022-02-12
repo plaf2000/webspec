@@ -295,7 +295,7 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
         writeUnit(s_dt.toDateString());
       }
     } else if (this.unit == "s") {
-      writeUnit("time");
+      writeUnit("Time");
     } else {
       writeUnit(this.unit);
     }

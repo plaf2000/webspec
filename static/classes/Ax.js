@@ -201,7 +201,7 @@ export class xAx extends Ax {
             }
         }
         else if (this.unit == "s") {
-            writeUnit("time");
+            writeUnit("Time");
         }
         else {
             writeUnit(this.unit);
