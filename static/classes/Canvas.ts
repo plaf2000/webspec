@@ -74,29 +74,15 @@ export class Canvas {
     };
 
     const tl = {
-      x: {
-        px: grid.x[1],
-        s: 0,
-        date: new DateTime(2021, 11, 31, 23, 59, 40),
-      },
-      y: {
-        px: grid.y[1],
-        hz: 22000,
-      },
+      x:  grid.x[1],
+      y: grid.y[1],
     };
 
     let ws = 50;
 
     const br = {
-      x: {
-        px: grid.x[2],
-        s: ws,
-        date: new DateTime(+tl.x.date + ws * 1000),
-      },
-      y: {
-        px: grid.y[2],
-        hz: 0,
-      },
+      x: grid.x[2],
+      y: grid.y[2],
     };
 
     this.spec = new Spec(this.ctx, tl, br);

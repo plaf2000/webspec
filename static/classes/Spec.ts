@@ -1,7 +1,8 @@
 import { Box, DrawableBox, DrawablePXBox } from "./Box.js";
 import { pxCoord, PXCoord, xyGenCoord } from "./Coord.js";
 import { Detection, Detections } from "./Detection.js";
-import { AxT, DateTime, Unit, Units, xGenUnit } from "./Units.js";
+import { AxT, DateTime, Unit, Units, xGenUnit, yGenUnit } from "./Units.js";
+import { spec_options, spec_start_coord } from "../main.js";
 
 export class Spec {
   time_offset: number;
@@ -57,20 +58,40 @@ export class Spec {
 
   constructor(
     ctx: CanvasRenderingContext2D,
-    tl: Units,
-    br: Units,
+    tl_px: {x: number, y: number},
+    br_px: {x: number, y: number},
     dx_limit?: number
   ) {
     Unit.spec = this;
     this.ctx = ctx;
-    this.tl_ = tl;
-    this.br_ = br;
-    this.time_offset = +tl.x.date - +tl.x.s * 1000;
+    this.tl_ = {
+      x: {
+        px: tl_px.x,
+        s: 0,
+        date: new DateTime(spec_start_coord.tstart)
+      },
+      y: {
+        px: tl_px.y,
+        hz: spec_start_coord.fend
+      }
+    };
+    this.br_ = {
+      x: {
+        px: br_px.x,
+        s: (spec_start_coord.tend-spec_start_coord.tstart)/1000,
+        date: new DateTime(spec_start_coord.tend)
+      },
+      y: {
+        px: br_px.y,
+        hz: spec_start_coord.fstart
+      }
+    };
+    this.time_offset = +this.tl_.x.date - +this.tl_.x.s * 1000;
     this.bound = {
       dx: dx_limit,
       y: {
-        max: tl.y.hz,
-        min: br.y.hz,
+        max: spec_options.hf,
+        min: spec_options.lf,
       },
     };
     this.spec_imgs = new SpecImgs(this.ctx, this);
@@ -84,7 +105,7 @@ export class Spec {
   }
 
   zoom(p: xyGenCoord, dir: number, shift: boolean) {
-    shift ||= (dir<0 && this.zoommed.x>0);
+    shift ||= dir < 0 && this.zoommed.x >= 0;
 
     let rx = Math.pow(this.zoom_r.x, dir);
     let newU = (old: number, v: number, r: number) => v - (v - old) * r;
@@ -99,6 +120,8 @@ export class Spec {
       let newHz = (old: number) => newU(old, p.y.hz, ry);
       this.boundZoomY(newHz(this.tl_.y.hz), newHz(this.br_.y.hz), dir);
     }
+
+    this.updateURLCoord();
   }
 
   boundX(tl: number, br: number): boolean {
@@ -113,36 +136,32 @@ export class Spec {
       this.br_.y.hz = this.bound.y.min;
       this.tl_.y.hz = this.bound.y.max;
       this.zoommed.y = 0;
-    }
-    if(t>=this.bound.y.max  && b<=this.bound.y.min) {
+    };
+    if (t >= this.bound.y.max && b <= this.bound.y.min) {
       reset();
-    }
-    else {
-      if(t>=this.bound.y.max) {
+    } else {
+      if (t >= this.bound.y.max) {
         b = this.br_.y.hz + this.bound.y.max - t;
-        if(b<this.bound.y.min) {
+        if (b <= this.bound.y.min) {
           reset();
-        }
-        else {
+        } else {
           this.tl_.y.hz = this.bound.y.max;
           this.br_.y.hz = b;
-          this.zoommed.y+=dir;
+          this.zoommed.y += dir;
         }
-      }
-      else if(b<=this.bound.y.min) {
-        t = this.tl_.y.hz + this.bound.y.min-b;
-        if(t>this.bound.y.max) {
+      } else if (b <= this.bound.y.min) {
+        t = this.tl_.y.hz + this.bound.y.min - b;
+        if (t >= this.bound.y.max) {
           reset();
-        }
-        else {
+        } else {
           this.br_.y.hz = this.bound.y.min;
           this.tl_.y.hz = t;
+          this.zoommed.y += dir;
         }
-      }
-      else {
+      } else {
         this.tl_.y.hz = t;
         this.br_.y.hz = b;
-        this.zoommed.y+=dir;
+        this.zoommed.y += dir;
       }
     }
   }
@@ -198,6 +217,7 @@ export class Spec {
 
   stopMoving(): void {
     this.start_move_coord = undefined;
+    this.updateURLCoord();
   }
 
   onMouseDown(p: xyGenCoord) {
@@ -229,10 +249,19 @@ export class Spec {
       this.mouse_type = this.dets.mouse_type;
     }
   }
+
+  updateURLCoord() {
+    window.history.replaceState(
+      null,
+      "",
+      `../../../${+this.tl_.x.date}/${+this.br_.x.date}/${this.br_.y.hz}/${this.tl_.y.hz}`
+    );
+  }
 }
 
 class SpecImgs {
   spec: Spec;
+  imgs: SpecImg[] = [];
   ctx: CanvasRenderingContext2D;
 
   constructor(ctx: CanvasRenderingContext2D, spec: Spec) {
@@ -240,9 +269,82 @@ class SpecImgs {
     this.ctx = ctx;
   }
 
-  load() {}
+  load() {
+    this.imgs.push(new SpecImg(this.spec.box.l, this.spec.box.r, this.spec.box.t, this.spec.box.b));
+  }
 
   drawOnCanvas() {
     this.load();
+    this.imgs.map((img, i) => {
+      img.drawOnCanvas();
+    });
   }
+}
+
+class SpecImg {
+  constructor(ts: xGenUnit, te: xGenUnit, fs: yGenUnit, fe: yGenUnit) {
+
+  //     var url = new URL("spec/", window.location);
+  // Object.keys(params).forEach((key) =>
+  //   url.searchParams.append(key, params[key])
+  // );
+
+  // var request = fetch(url, {
+  //   method: "GET",
+  //   mimeType: "blob",
+  // });
+
+  // // var request = $.ajax({
+  // //   method: "GET",
+  // //   url: "spec/",
+  // //   data: params,
+  // //   mimeType: "blob"
+  // // });
+  // // var request = $.get(
+  // //   "spec/",
+  // //   params
+  // // );
+    // SpecImg.requestSpec(offset, i, duration).then((data) => {
+    //   data.blob().then((blob) => {
+    //     this.blob = blob;
+    //     this.blob
+    //       .slice(0, 8)
+    //       .arrayBuffer()
+    //       .then((buffer) => {
+    //         let offset = Number(new Float64Array(buffer)[0]);
+    //         this.start = offset;
+    //         this.end = offset + duration;
+    //       });
+    //     this.duration = duration;
+    //     this.img = new Image();
+    //     this.img.src = URL.createObjectURL(this.blob.slice(8), { type: "image/png" });
+    //     this.img.style = "-webkit-filter: blur(500px);  filter: blur(500px);";
+    //     let parent = this;
+    //     this.img.onload = function () {
+    //       parent.width = this.width;
+    //       parent.height = this.height;
+    //     }
+    //   });
+    // });
+  }
+
+  // static requestSpec(): Promise<Response> {
+
+  // let params = {
+  //   offset: offset,
+  //   lf: lf,
+  //   hf: hf,
+  //   ch: channel,
+  //   sens: sens,
+  //   con: con,
+  //   nfft: nfft,
+  //   wfft: wfft,
+  //   factor: ,
+  // };
+
+
+  // return request;
+  // }
+
+  drawOnCanvas(): void {}
 }

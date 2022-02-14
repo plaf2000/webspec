@@ -1,7 +1,6 @@
 import { xAx, yAx } from "./Ax.js";
 import { pxCoord } from "./Coord.js";
 import { Spec } from "./Spec.js";
-import { DateTime } from "./Units.js";
 function mouseCoord(e) {
     return pxCoord(e.offsetX, e.offsetY);
 }
@@ -23,27 +22,13 @@ export class Canvas {
             y: [0, 10, 600, this.cvs.height],
         };
         const tl = {
-            x: {
-                px: grid.x[1],
-                s: 0,
-                date: new DateTime(2021, 11, 31, 23, 59, 40),
-            },
-            y: {
-                px: grid.y[1],
-                hz: 22000,
-            },
+            x: grid.x[1],
+            y: grid.y[1],
         };
         let ws = 50;
         const br = {
-            x: {
-                px: grid.x[2],
-                s: ws,
-                date: new DateTime(+tl.x.date + ws * 1000),
-            },
-            y: {
-                px: grid.y[2],
-                hz: 0,
-            },
+            x: grid.x[2],
+            y: grid.y[2],
         };
         this.spec = new Spec(this.ctx, tl, br);
         this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
@@ -83,6 +68,7 @@ export class Canvas {
         this.md = true;
         if (this.spec.box.isHoverPx(this.mouse_pos)) {
             this.spec.onMouseDown(this.mouse_pos);
+            this.mouse_type = this.spec.mouse_type;
         }
     }
     onMouseMove(e) {
@@ -94,6 +80,8 @@ export class Canvas {
     onMouseUp(e) {
         this.md = false;
         this.spec.onMouseUp(this.mouse_pos_);
+        if (this.spec.box.isHoverPx(this.mouse_pos_))
+            this.mouse_type = this.spec.mouse_type;
     }
     onMouseLeave(e) {
         this.onMouseUp(e);

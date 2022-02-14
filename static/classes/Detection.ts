@@ -1,7 +1,7 @@
 import { Edges, EditableBox, Box, DrawableBox, BoundedBox } from "./Box.js";
 import { pxCoord, tfCoord, TFCoord, xyGenCoord } from "./Coord.js";
 import { Spec } from "./Spec.js";
-import { xGenUnit, xUnit, yUnit } from "./Units.js";
+import { DateTime, xGenUnit, xUnit, yUnit } from "./Units.js";
 
 function inBound(a: number, x: number, b: number): boolean {
   return a <= x && x <= b;
@@ -27,8 +27,8 @@ export class Detections {
     this.dets.push(
       new Detection(
         this.ctx,
-        tfCoord(5, 8000, true, true),
-        tfCoord(25, 500, true, true),
+        tfCoord(new DateTime(2020,10,12,6,55,0), 8000, true, true),
+        tfCoord(new DateTime(2020,10,12,6,56,0), 500, true, true),
         new Box(tfCoord(0, 22000), tfCoord(50, 0)),
         {
           x: {
@@ -80,6 +80,7 @@ export class Detections {
       this.triggered.onMouseUp(p);
       this.triggered = undefined;
     }
+    this.onMouseMove(p, false);
   }
 
   isHover(p: xyGenCoord): boolean {

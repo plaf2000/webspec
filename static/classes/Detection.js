@@ -1,5 +1,6 @@
 import { Box, BoundedBox } from "./Box.js";
 import { tfCoord } from "./Coord.js";
+import { DateTime } from "./Units.js";
 function inBound(a, x, b) {
     return a <= x && x <= b;
 }
@@ -14,7 +15,7 @@ export class Detections {
             e: spec.box.r,
         };
         this.ctx = ctx;
-        this.dets.push(new Detection(this.ctx, tfCoord(5, 8000, true, true), tfCoord(25, 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
+        this.dets.push(new Detection(this.ctx, tfCoord(new DateTime(2020, 10, 12, 6, 55, 0), 8000, true, true), tfCoord(new DateTime(2020, 10, 12, 6, 56, 0), 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
             x: {
                 l: true,
                 r: true,
@@ -59,6 +60,7 @@ export class Detections {
             this.triggered.onMouseUp(p);
             this.triggered = undefined;
         }
+        this.onMouseMove(p, false);
     }
     isHover(p) {
         let ih = false;
@@ -154,6 +156,7 @@ export class Detection extends BoundedBox {
     onMouseUp(p) {
         this.stopResize(p);
         this.stopMoving();
+        this.onMouseMove(p, false);
     }
 }
 Detection.mouse_transl_type = {

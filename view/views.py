@@ -11,6 +11,7 @@ import math
 from pathlib import Path
 from files.models import File
 from projects.models import Project
+from devices.models import DeviceContext
 
 class Data():
     def __init__(self,request, proj_id, device_id, file_id):
@@ -145,12 +146,16 @@ data_requests={}
 def callback(event):
     line_x=event.x
 
-def spec(request, proj_id, device_id, file_id):
+def spec(request, proj_id, device_id, tstart, tend, fstart, fend):
     project = Project.objects.get(id=proj_id)
-    file_obj = File.objects.get(id=file_id)
+    device = DeviceContext.objects.get(id=device_id)
     return render(request, 'spec_view.html',{
-        'file' : file_obj,
-        'project' : project
+        'project' : project,
+        'device': device,
+        'tstart': tstart,
+        'tend': tend,
+        'fstart': fstart,
+        'fend': fend
     })
 
 
