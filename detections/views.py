@@ -2,8 +2,6 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.http import HttpResponse
 from .models import Detection
-from django.core import serializers
-import json
 
 def getvis(request):
     queryset = list(
@@ -15,7 +13,6 @@ def getvis(request):
             tend__gt=request.GET["ts"]
         )
     )
-    # queryset_json = serializers.serialize('json', queryset)
     return JsonResponse(queryset,safe=False)
 
 def getleft(request):
@@ -29,7 +26,6 @@ def getleft(request):
             tstart__gte=request.GET["ts"]
         )
     )
-    # queryset_json = serializers.serialize('json', queryset)
     return JsonResponse(queryset,safe=False)
 
 def save(request):

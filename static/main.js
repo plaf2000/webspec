@@ -26,7 +26,6 @@ export let spec_options = {
     },
 };
 export const spec_start_coord = window.spec_coord;
-console.log(spec_start_coord);
 if (cvs) {
     let canvas = new Canvas(cvs, window.innerWidth, window.innerHeight * 0.8, isFirefox);
     document.addEventListener("mousemove", (e) => canvas.onMouseMove(e));

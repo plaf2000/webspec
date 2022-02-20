@@ -28,7 +28,7 @@ export class Detections {
       new Detection(
         this.ctx,
         tfCoord(new DateTime(2020,10,12,6,55,0), 8000, true, true),
-        tfCoord(new DateTime(2020,10,12,6,56,0), 500, true, true),
+        tfCoord(new DateTime(2020,10,12,6,55,20), 500, true, true),
         new Box(tfCoord(0, 22000), tfCoord(50, 0)),
         {
           x: {

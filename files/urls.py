@@ -1,10 +1,11 @@
 from django.urls import path, include
 from . import views
 
-#This is urls.py
 
 urlpatterns = [
     path('', views.list_files),
     path('<int:file_id>/', views.get_audio),
-    path('<int:tstart>/<int:tend>/<str:fstart>/<str:fend>', include('view.urls')),
+    path('spec/', include('specimg.urls')),
+    path('view/', include('view.urls')),
+    path('files/<int:tstart>/<int:tend>/', views.get_files)
 ]

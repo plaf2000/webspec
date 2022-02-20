@@ -28,7 +28,6 @@ export let spec_options = {
 };
 
 export const spec_start_coord = (window as any).spec_coord;
-console.log(spec_start_coord)
 
 if (cvs) {
   let canvas = new Canvas(

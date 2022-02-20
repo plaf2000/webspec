@@ -164,21 +164,41 @@ class Second extends Number {
     );
   }
 }
-
 export class DateTime extends Date {
+  static tz: number = 0;
+
+  get local(): DateTime {
+    return new DateTime(+this + DateTime.tz * 3_600_000);
+  }
+
+  set local(date: DateTime) {
+    let new_date = new Date(+date - DateTime.tz * 3_600_000);
+    this.setUTCFullYear(
+      new_date.getUTCFullYear(),
+      new_date.getUTCMonth(),
+      new_date.getUTCDate()
+    );
+    this.setUTCHours(
+      new_date.getUTCHours(),
+      new_date.getUTCMinutes(),
+      new_date.getUTCSeconds(),
+      new_date.getUTCMilliseconds()
+    )
+  }
+
   toDateString(): string {
-    return `${this.getFullYear()}-${digit(this.getMonth() + 1, 2)}-${digit(
-      this.getDate(),
+    return `${this.local.getUTCFullYear()}-${digit(
+      this.local.getUTCMonth() + 1,
       2
-    )}`;
+    )}-${digit(this.local.getUTCDate(), 2)}`;
   }
 
   toTimeString(): string {
     const [h, m, s, ms] = [
-      this.getHours(),
-      this.getMinutes(),
-      this.getSeconds(),
-      this.getMilliseconds(),
+      this.local.getUTCHours(),
+      this.local.getUTCMinutes(),
+      this.local.getUTCSeconds(),
+      this.local.getUTCMilliseconds(),
     ];
     return `${digit(h, 2)}:${digit(m, 2)}:${digit(
       s + Math.round(ms) / 1000,
@@ -187,11 +207,18 @@ export class DateTime extends Date {
   }
 
   toString(): string {
-    return `${this.toDateString()} ${this.toTimeString()}`;
+    return `${this.toDateString()} ${this.toTimeString()} (GMT+${digit(
+      DateTime.tz,
+      2
+    )})`;
   }
 
   get midnight(): DateTime {
-    return new DateTime(this.getFullYear(), this.getMonth(), this.getDate());
+    return new DateTime(
+        this.local.getUTCFullYear(),
+        this.local.getUTCMonth(),
+        this.local.getUTCDate()
+      ).local;
   }
 }
 
