@@ -50,10 +50,10 @@ export abstract class Ax<
     br: PXCoord,
     ax: A,
     unit: U,
-    deltas_ticks =  [1, 1 / 2, 1 / 4, 1 / 8],
+    deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8],
     deltas_units = {
       dec: [1, 1 / 2, 1 / 4, 1 / 5, 1 / 8],
-      ses: [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 12, 1/15, 1/20, 1 / 30],
+      ses: [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 12, 1 / 15, 1 / 20, 1 / 30],
     }
   ) {
     super(ctx, tl, br);
@@ -61,7 +61,7 @@ export abstract class Ax<
     this.unit = unit;
     this.ax = ax;
     this.deltas_ticks = deltas_ticks.sort().reverse();
-    this.deltas_unit =  {
+    this.deltas_unit = {
       dec: deltas_units.dec.sort().reverse(),
       ses: deltas_units.ses.sort().reverse(),
     };
@@ -175,8 +175,6 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
   ) {
     super(ctx, tl, br, "x", unit, deltas_ticks, deltas_units);
     this.system = unit == "s" || unit == "date" ? "ses" : "dec";
-    // this.offset = (unit=="date")? new Date().getTimezoneOffset()*1000 : 0;
-    this.offset = 0;
   }
 
   getUnit(): number {
@@ -232,11 +230,12 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
 
   drawUnit() {
     let unit_pos = 25 + this.t.px + this.len + this.dyn_len + this.txt_margin;
+    let center = (this.l.px + this.r.px) / 2;
 
     let writeUnit = (text: string) => {
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "top";
-      this.ctx.strokeText(text, (this.l.px + this.r.px) / 2, unit_pos);
+      this.ctx.strokeText(text, center, unit_pos);
     };
 
     if (this.unit == "date") {
@@ -249,23 +248,23 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
       let sm = +s_dt.midnight;
       let em = +e_dt.midnight;
 
-      let one_day = 86_400_000;
-      let day = one_day;
-
-      day *= Math.ceil(this.label_dist / day);
-
-      let mid = +new DateTime(Math.floor((sm + em) / 2 / day) * day).midnight;
-
-      let bar_margin = 6;
-
       let bar_len = 31;
       let bar_pos = unit_pos - 10;
 
       if (sm < em) {
+        let one_day = 86_400_000;
+        let day = one_day;
+
+        day *= Math.ceil(this.label_dist / day);
+
+        let bar_margin = 6;
+
         let writeRightSide = (pos: number) => {
           this.ctx.textAlign = "left";
           this.ctx.textBaseline = "top";
-          let midnight = new xUnit(pos, "date");
+          let local_pos = new DateTime();
+          local_pos.local = new DateTime(pos)
+          let midnight = new xUnit(+local_pos, "date");
           this.ctx.moveTo(midnight.px, bar_pos);
           this.ctx.lineTo(midnight.px, bar_pos + bar_len);
           this.ctx.stroke();
@@ -275,6 +274,8 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
             unit_pos
           );
         };
+
+        let mid = +new DateTime(Math.floor((sm + em) / 2 / day) * day).midnight;
         let d;
 
         for (d = mid; d >= +this.start; d -= day) writeRightSide(d);
@@ -282,8 +283,10 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
         d += day;
         this.ctx.textAlign = "right";
         this.ctx.textBaseline = "top";
-        let midnight_pos = new xUnit(d, "date");
-        let midnight = new xUnit(d - one_day, "date");
+        let local_pos = new DateTime();
+        local_pos.local = new DateTime(d)
+        let midnight_pos = new xUnit(+local_pos, "date");
+        let midnight = new xUnit(+local_pos - one_day, "date");
         this.ctx.strokeText(
           midnight.date.toDateString(),
           midnight_pos.px - bar_margin,
@@ -294,6 +297,8 @@ export class xAx<U extends uList<"x">> extends Ax<"x", U> {
       } else {
         writeUnit(s_dt.toDateString());
       }
+      unit_pos = this.txt_margin + bar_len + bar_pos;
+      writeUnit(DateTime.toTimeZoneString());
     } else if (this.unit == "s") {
       writeUnit("Time");
     } else {
@@ -322,7 +327,7 @@ export class yAx<U extends uList<"y">> extends Ax<"y", U> {
     this.ctx.moveTo(this.r.px, y.px);
     this.ctx.lineTo(this.r.px - l, y.px);
     if (size == this.deltas_ticks[0]) {
-      let label = y.toString(this.unit,4);
+      let label = y.toString(this.unit, 4);
       this.ctx.textAlign = "right";
       this.ctx.textBaseline = "middle";
       this.ctx.strokeText(label, this.r.px - l - this.txt_margin, y.px);

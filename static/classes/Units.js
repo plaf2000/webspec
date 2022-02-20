@@ -114,25 +114,37 @@ class Second extends Number {
     }
 }
 export class DateTime extends Date {
+    get local() {
+        return new DateTime(+this + DateTime.tz * 3600000);
+    }
+    set local(date) {
+        let new_date = new Date(+date - DateTime.tz * 3600000);
+        this.setUTCFullYear(new_date.getUTCFullYear(), new_date.getUTCMonth(), new_date.getUTCDate());
+        this.setUTCHours(new_date.getUTCHours(), new_date.getUTCMinutes(), new_date.getUTCSeconds(), new_date.getUTCMilliseconds());
+    }
     toDateString() {
-        return `${this.getFullYear()}-${digit(this.getMonth() + 1, 2)}-${digit(this.getDate(), 2)}`;
+        return `${this.local.getUTCFullYear()}-${digit(this.local.getUTCMonth() + 1, 2)}-${digit(this.local.getUTCDate(), 2)}`;
+    }
+    static toTimeZoneString() {
+        return `(UTC+${digit(DateTime.tz, 2)})`;
     }
     toTimeString() {
         const [h, m, s, ms] = [
-            this.getHours(),
-            this.getMinutes(),
-            this.getSeconds(),
-            this.getMilliseconds(),
+            this.local.getUTCHours(),
+            this.local.getUTCMinutes(),
+            this.local.getUTCSeconds(),
+            this.local.getUTCMilliseconds(),
         ];
         return `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`;
     }
     toString() {
-        return `${this.toDateString()} ${this.toTimeString()}`;
+        return `${this.toDateString()} ${this.toTimeString()} ${DateTime.toTimeZoneString()}`;
     }
     get midnight() {
-        return new DateTime(this.getFullYear(), this.getMonth(), this.getDate());
+        return new DateTime(this.local.getUTCFullYear(), this.local.getUTCMonth(), this.local.getUTCDate()).local;
     }
 }
+DateTime.tz = 0;
 export function convertDist(val, ax, f, t) {
     let zero = new Unit(0, ax, f);
     let uval = new Unit(val, ax, f);

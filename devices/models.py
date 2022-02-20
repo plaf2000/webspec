@@ -18,7 +18,7 @@ class DeviceContext(models.Model):
     project = models.ForeignKey(Project,on_delete=models.PROTECT,related_name='project')
     place = models.ForeignKey(Place,on_delete=models.PROTECT,related_name='place')
     device = models.ForeignKey(Device,on_delete=models.PROTECT,related_name='device')
-    time_zone = models.FloatField()
+    timezone = models.FloatField()
     
     @property
     def all_files(self):

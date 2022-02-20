@@ -183,7 +183,7 @@ export class DateTime extends Date {
       new_date.getUTCMinutes(),
       new_date.getUTCSeconds(),
       new_date.getUTCMilliseconds()
-    )
+    );
   }
 
   toDateString(): string {
@@ -193,6 +193,10 @@ export class DateTime extends Date {
     )}-${digit(this.local.getUTCDate(), 2)}`;
   }
 
+  static toTimeZoneString(): string {
+    return `(UTC+${digit(DateTime.tz, 2)})`;
+  }
+
   toTimeString(): string {
     const [h, m, s, ms] = [
       this.local.getUTCHours(),
@@ -200,6 +204,7 @@ export class DateTime extends Date {
       this.local.getUTCSeconds(),
       this.local.getUTCMilliseconds(),
     ];
+
     return `${digit(h, 2)}:${digit(m, 2)}:${digit(
       s + Math.round(ms) / 1000,
       2
@@ -207,18 +212,15 @@ export class DateTime extends Date {
   }
 
   toString(): string {
-    return `${this.toDateString()} ${this.toTimeString()} (GMT+${digit(
-      DateTime.tz,
-      2
-    )})`;
+    return `${this.toDateString()} ${this.toTimeString()} ${DateTime.toTimeZoneString()}`;
   }
 
   get midnight(): DateTime {
     return new DateTime(
-        this.local.getUTCFullYear(),
-        this.local.getUTCMonth(),
-        this.local.getUTCDate()
-      ).local;
+      this.local.getUTCFullYear(),
+      this.local.getUTCMonth(),
+      this.local.getUTCDate()
+    ).local;
   }
 }
 

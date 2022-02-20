@@ -1,33 +1,48 @@
 import { Canvas } from "./classes/Canvas.js";
+import { DateTime } from "./classes/Units.js";
 let cvs = document.getElementById("spec");
 let isFirefox = /Firefox/i.test(navigator.userAgent);
 
 export let spec_options = {
   get nfft(): number {
-    return parseInt((document.getElementById("nfft") as HTMLSelectElement).value);
+    return parseInt(
+      (document.getElementById("nfft") as HTMLSelectElement).value
+    );
   },
   get wfft(): number {
-    return parseInt((document.getElementById("wfft") as HTMLSelectElement).value);
+    return parseInt(
+      (document.getElementById("wfft") as HTMLSelectElement).value
+    );
   },
   get lf(): number {
-    return parseFloat((document.getElementById("lf") as HTMLInputElement).value);
+    return parseFloat(
+      (document.getElementById("lf") as HTMLInputElement).value
+    );
   },
   get hf(): number {
-    return parseFloat((document.getElementById("hf") as HTMLInputElement).value);
+    return parseFloat(
+      (document.getElementById("hf") as HTMLInputElement).value
+    );
   },
   get channel(): string {
     return (document.querySelector(".channel:checked") as HTMLInputElement)
       .value;
   },
   get contr(): number {
-    return parseInt((document.getElementById("contr") as HTMLInputElement).value);
+    return parseInt(
+      (document.getElementById("contr") as HTMLInputElement).value
+    );
   },
   get sens(): number {
-    return parseInt((document.getElementById("sens") as HTMLInputElement).value);
+    return parseInt(
+      (document.getElementById("sens") as HTMLInputElement).value
+    );
   },
 };
 
 export const spec_start_coord = (window as any).spec_coord;
+
+DateTime.tz = (window as any).timezone;
 
 if (cvs) {
   let canvas = new Canvas(
