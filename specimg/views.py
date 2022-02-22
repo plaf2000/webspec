@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import librosa
 import time
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 from files.models import File
 from projects.models import Project
@@ -163,6 +163,7 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     #     print("present")
     # return data_requests[nfft][wfft][offset].get_img_response(factor)
 
+    last_time = time.time()
     file_obj = File.objects.get(id=file_id)
     tz = timezone(settings.TIME_ZONE)
     ts = dt.datetime.fromtimestamp(tstart/1000, tz)
@@ -190,24 +191,76 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
 
     y, _ = librosa.load(file_obj.path, sr=file_obj.sample_rate,
                         duration=dur, offset=offset, mono=mono)
+                        
+    cur_time = time.time()
+    print("file read {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
 
     thresholds = ((sens/25-2)+con*3/50, (sens/25-7)-con*3/50)
 
+    # data = np.abs(librosa.stft(y, n_fft=nfft, win_length=wfft))-thresholds[0]
     data = np.log10(
                 np.abs(librosa.stft(y, n_fft=nfft, win_length=wfft))**2
            )-thresholds[0]
 
-    data[data > 0] = 0
-    data[data < thresholds[1]] = thresholds[1]
+    cur_time = time.time()
+    print("fft computed {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
 
-    data /= thresholds[1]
-    data *= 255
-    data[data > 255] = 255
+
+
+
+    data *= 255/thresholds[1]
+    cur_time = time.time()
+    print("scaled {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
+    data = np.maximum(0,data)
+    cur_time = time.time()
+    print("minned {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
+    data = np.minimum(255,data)
+
+    cur_time = time.time()
+    print("maxxed {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
     data = data.astype(np.uint8)
-    data = np.flip(data, axis=0)
+
+    cur_time = time.time()
+    print("flipped {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
     img = Image.fromarray(data, 'L')
+    
+    cur_time = time.time()
+    print("img obj created {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+    
     buffered = BytesIO()
     img = img.resize((1920,img.size[1]),resample=Image.NEAREST)
+    
+    cur_time = time.time()
+    print("img obj resize {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+    
+    img = ImageOps.flip(img)
+    
+    cur_time = time.time()
+    print("img obj flip {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
     img.save(buffered, format="png")
 
-    return HttpResponse(buffered.getvalue(), content_type="image/png")
+    cur_time = time.time()
+    print("img saved {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
+    res = buffered.getvalue()
+
+    cur_time = time.time()
+    print("raw val {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
+    return HttpResponse(res, content_type="image/png")
