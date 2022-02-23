@@ -213,21 +213,17 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
 
 
 
+    s=255/thresholds[1]
+    data *= s
 
-    data *= 255/thresholds[1]
     cur_time = time.time()
     print("scaled {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
 
-    data = np.maximum(0,data)
-    cur_time = time.time()
-    print("minned {t:.4f}".format(t=cur_time - last_time))
-    last_time = cur_time
-
-    data = np.minimum(255,data)
+    data = np.clip(data,0,255)
 
     cur_time = time.time()
-    print("maxxed {t:.4f}".format(t=cur_time - last_time))
+    print("clipped {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
 
     data = data.astype(np.uint8)
