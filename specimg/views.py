@@ -12,6 +12,9 @@ from projects.models import Project
 import datetime as dt
 from webspec import settings
 from pytz import timezone
+from skimage import transform
+import multiprocessing
+import threading
 
 
 # Create your views here.
@@ -189,6 +192,8 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
 
     mono = ch == "mono"
 
+    # TODO: Test: read the file and compute the fft in a multithreaded fashion (using librosa stream)
+
     y, _ = librosa.load(file_obj.path, sr=file_obj.sample_rate,
                         duration=dur, offset=offset, mono=mono)
                         
@@ -202,7 +207,6 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     data = np.log10(
                 np.abs(librosa.stft(y, n_fft=nfft, win_length=wfft))**2
            )-thresholds[0]
-
     cur_time = time.time()
     print("fft computed {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
@@ -229,38 +233,19 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     data = data.astype(np.uint8)
 
     cur_time = time.time()
-    print("flipped {t:.4f}".format(t=cur_time - last_time))
+    print("int8 {t:.4f}".format(t=cur_time - last_time))
+    last_time = cur_time
+
+    data = transform.resize(data,(data.shape[0],1920),order=0,anti_aliasing=False)
+    
+    cur_time = time.time()
+    print("data resize {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
 
     img = Image.fromarray(data, 'L')
-    
-    cur_time = time.time()
-    print("img obj created {t:.4f}".format(t=cur_time - last_time))
-    last_time = cur_time
-    
     buffered = BytesIO()
-    img = img.resize((1920,img.size[1]),resample=Image.NEAREST)
-    
-    cur_time = time.time()
-    print("img obj resize {t:.4f}".format(t=cur_time - last_time))
-    last_time = cur_time
-    
     img = ImageOps.flip(img)
-    
-    cur_time = time.time()
-    print("img obj flip {t:.4f}".format(t=cur_time - last_time))
-    last_time = cur_time
-
     img.save(buffered, format="png")
-
-    cur_time = time.time()
-    print("img saved {t:.4f}".format(t=cur_time - last_time))
-    last_time = cur_time
-
     res = buffered.getvalue()
-
-    cur_time = time.time()
-    print("raw val {t:.4f}".format(t=cur_time - last_time))
-    last_time = cur_time
 
     return HttpResponse(res, content_type="image/png")
