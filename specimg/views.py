@@ -21,10 +21,6 @@ import math
 # Create your views here.
 
 
-
-
-
-
 class Data():
     def __init__(self, request, proj_id, device_id):
 
@@ -149,17 +145,19 @@ class Data():
             self.img_text = img_bytes.decode('latin1')
         return HttpResponse(self.img_text, content_type="text/plain")
 
-def compute_stft(data, block, i, nfft, wfft, fft_hop_l, threshold,s, fft_block_width,last_block_widths):
+
+def compute_stft(data, block, i, nfft, wfft, fft_hop_l, threshold, s, fft_block_width, last_block_widths):
     fft_block = np.log10(
-        np.abs(librosa.stft(block, n_fft=nfft, win_length=wfft, hop_length= fft_hop_l, center=False))**2
+        np.abs(librosa.stft(block, n_fft=nfft, win_length=wfft,
+               hop_length=fft_hop_l, center=False))**2
     )-threshold
-    fft_block*= s
-    fft_block = np.clip(fft_block,0,255)
+    fft_block *= s
+    fft_block = np.clip(fft_block, 0, 255)
     fft_block = fft_block.astype(np.uint8)
     width = fft_block.shape[1]
-    last_block_widths[0] = min(last_block_widths[0],width)
+    last_block_widths[0] = min(last_block_widths[0], width)
     start = i*fft_block_width
-    data[:,start:start+fft_block.shape[1]] = fft_block
+    data[:, start:start+fft_block.shape[1]] = fft_block
 
 
 data_requests = {}
@@ -202,73 +200,71 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
         ts = file_obj.tstart
 
     offset = (ts - file_obj.tstart).total_seconds()
-    if te<ts:
+    if te < ts:
         return HttpResponse('', content_type="text/html")
     else:
-        if file_obj.tend<te:
+        if file_obj.tend < te:
             te = file_obj.tend
-        dur = (te-ts).total_seconds() 
+        dur = (te-ts).total_seconds()
 
-
-    print(offset,dur)
+    print(offset, dur)
 
     mono = ch == "mono"
 
-    
     hop_length = int(3*(wfft//4))
     frame_length = wfft
     block_width_approx = dur*file_obj.sample_rate/multiprocessing.cpu_count()/2
     exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
-    block_length = min(256,2**exp)
+    block_length = min(256, 2**exp)
 
-    stream = librosa.stream(file_obj.path, block_length = block_length, frame_length = frame_length, hop_length = hop_length,
-                        duration=dur, offset=offset, mono=mono)
-    
+    stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
+                            duration=dur, offset=offset, mono=mono)
+
     thresholds = ((sens/25-2)+con*3/50, (sens/25-7)-con*3/50)
 
-
     tot_width = int(file_obj.sample_rate*dur)
-    
+
     block_width = (block_length-1)*hop_length+frame_length
-    fft_hop_l = wfft//4
-    fft_block_width = int(math.ceil((block_width - wfft)/fft_hop_l + 1))
     n_blocks = int(math.ceil(tot_width/block_width))
-    last_block_width = tot_width-block_width*(n_blocks-1)
-    fft_last_block_width = int(((last_block_width - wfft)/fft_hop_l) + 1)
+    fft_hop_l = wfft//4
+    fft_block_width = int(math.ceil((block_width - wfft)/fft_hop_l))
+    last_frame_length = tot_width - hop_length*(n_blocks-1)*(block_length)-hop_length*(block_length-1)
+    print("lfl", last_frame_length)
+    print("Frame, last frame",frame_length,last_frame_length)
+    last_block_width = (block_length-1)*hop_length+last_frame_length
+    fft_last_block_width = int(math.ceil((last_block_width - wfft)/fft_hop_l))
 
-    print(tot_width,block_width,n_blocks, fft_last_block_width)
-
-
-    data_ = np.empty([int(wfft//2+1),fft_block_width*(n_blocks-1)+fft_last_block_width], dtype=np.uint8)
-    i=0
-    threads=[]
+    data = np.empty([int(wfft//2+1), fft_block_width *
+                     (n_blocks-1)+fft_last_block_width], dtype=np.uint8)
+    i = 0
+    threads = []
     last_block_widths = [fft_block_width]
     block_samples = block_width
-    tw=0
-    s=255/thresholds[1]
+    tw = 0
+    s = 255/thresholds[1]
     for block in stream:
-        thread = threading.Thread(target=compute_stft, args=(data_, block, i, nfft, wfft, fft_hop_l, thresholds[0], s, fft_block_width,last_block_widths,))
-        tw+=block.shape[0]
-        if block.shape[0]<block_samples:
+        thread = threading.Thread(target=compute_stft, args=(
+            data, block, i, nfft, wfft, fft_hop_l, thresholds[0], s, fft_block_width, last_block_widths,))
+        tw += block.shape[0]
+        if block.shape[0] < block_samples:
             block_samples = block.shape[0]
-            print(block_samples,last_block_width)
+            print("bs, lbw",block_samples == last_block_width ,block_samples, last_block_width)
         thread.start()
         threads.append(thread)
-        i+=1
-    print(tw,tot_width)
-    print(int(((tw-block_width*(n_blocks-1)) - wfft)/fft_hop_l + 1))
+        i += 1
+        
     for thread in threads:
         thread.join()
 
-    print(last_block_widths[0]==last_block_width, last_block_widths[0], fft_last_block_width)
-    data = data_[:,:fft_block_width*(n_blocks-1)+fft_last_block_width]
+    print(last_block_widths[0] == fft_last_block_width,
+          last_block_widths[0], fft_last_block_width)
     cur_time = time.time()
     print("read, fft computed {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
 
+    data = transform.resize(data, (data.shape[0], min(
+        width, data.shape[1])), order=0, anti_aliasing=False)
 
-    data = transform.resize(data,(data.shape[0],min(width,data.shape[1])),order=0,anti_aliasing=False)
-    
     cur_time = time.time()
     print("data resize {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
