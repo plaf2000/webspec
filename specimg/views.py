@@ -15,9 +15,14 @@ from pytz import timezone
 from skimage import transform
 import multiprocessing
 import threading
+import math
 
 
 # Create your views here.
+
+
+
+
 
 
 class Data():
@@ -144,6 +149,14 @@ class Data():
             self.img_text = img_bytes.decode('latin1')
         return HttpResponse(self.img_text, content_type="text/plain")
 
+def compute_stft(data, block, i, nfft, wfft, fft_hop_l, threshold, fft_block_width):
+    fft_block = np.log10(
+        np.abs(librosa.stft(block, n_fft=nfft, win_length=wfft, hop_length= fft_hop_l, center=False))**2
+    )-threshold
+    width = fft_block.shape[1]
+    start = i*fft_block_width
+    data[:,start:start+fft_block.shape[1]] = fft_block 
+
 
 data_requests = {}
 
@@ -166,6 +179,7 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     #     print("present")
     # return data_requests[nfft][wfft][offset].get_img_response(factor)
 
+    width = 1920
     last_time = time.time()
     file_obj = File.objects.get(id=file_id)
     tz = timezone(settings.TIME_ZONE)
@@ -185,31 +199,50 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
 
     offset = (ts - file_obj.tstart).total_seconds()
     if te<ts:
-        dur = 0
+        return HttpResponse('', content_type="text/html")
     else:
+        if file_obj.tend<te:
+            te = file_obj.tend
         dur = (te-ts).total_seconds() 
 
 
+    print(offset,dur)
+
     mono = ch == "mono"
 
-    # TODO: Test: read the file and compute the fft in a multithreaded fashion (using librosa stream)
+    hop_length = int(3*(wfft//4))
+    frame_length = wfft
+    block_length = 256
 
-    y, _ = librosa.load(file_obj.path, sr=file_obj.sample_rate,
+    stream = librosa.stream(file_obj.path, block_length = block_length, frame_length = frame_length, hop_length = hop_length,
                         duration=dur, offset=offset, mono=mono)
-                        
-    cur_time = time.time()
-    print("file read {t:.4f}".format(t=cur_time - last_time))
-    last_time = cur_time
-
+    
     thresholds = ((sens/25-2)+con*3/50, (sens/25-7)-con*3/50)
 
-    # data = np.abs(librosa.stft(y, n_fft=nfft, win_length=wfft))-thresholds[0]
-    data = np.log10(
-                np.abs(librosa.stft(y, n_fft=nfft, win_length=wfft))**2
-           )-thresholds[0]
+    block_width = (block_length-1)*hop_length+frame_length
+    fft_hop_l = wfft//4
+    fft_block_width = int(math.ceil((block_width - wfft)/fft_hop_l) + 1)
+    n_blocks = int(math.ceil(dur*file_obj.sample_rate/block_width))
+    data_ = np.empty([int(wfft//2+1),fft_block_width*n_blocks])
+    i=0
+    last_block_width = 0
+    threads=[]
+    for block in stream:
+        thread = threading.Thread(target=compute_stft, args=(data_, block, i, nfft, wfft, fft_hop_l, thresholds[0], fft_block_width,))
+        thread.start()
+        threads.append(thread)
+        i+=1
+    
+    for thread in threads:
+        thread.join()
+
+    data = data_[:,:fft_block_width*(n_blocks-1)+last_block_width]
     cur_time = time.time()
-    print("fft computed {t:.4f}".format(t=cur_time - last_time))
+    print("read and fft computed {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
+
+
+    # data = np.abs(librosa.stft(y, n_fft=nfft, win_length=wfft))-thresholds[0]
 
 
 
@@ -232,7 +265,7 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     print("int8 {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
 
-    data = transform.resize(data,(data.shape[0],1920),order=0,anti_aliasing=False)
+    data = transform.resize(data,(data.shape[0],width),order=0,anti_aliasing=False)
     
     cur_time = time.time()
     print("data resize {t:.4f}".format(t=cur_time - last_time))
