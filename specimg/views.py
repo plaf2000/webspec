@@ -149,11 +149,12 @@ class Data():
             self.img_text = img_bytes.decode('latin1')
         return HttpResponse(self.img_text, content_type="text/plain")
 
-def compute_stft(data, block, i, nfft, wfft, fft_hop_l, threshold, fft_block_width):
+def compute_stft(data, block, i, nfft, wfft, fft_hop_l, threshold, fft_block_width, last_block_width):
     fft_block = np.log10(
         np.abs(librosa.stft(block, n_fft=nfft, win_length=wfft, hop_length= fft_hop_l, center=False))**2
     )-threshold
     width = fft_block.shape[1]
+    last_block_width[0] = min(width,last_block_width[0])
     start = i*fft_block_width
     data[:,start:start+fft_block.shape[1]] = fft_block 
 
@@ -227,8 +228,9 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     i=0
     last_block_width = 0
     threads=[]
+    last_block_width = [fft_block_width]
     for block in stream:
-        thread = threading.Thread(target=compute_stft, args=(data_, block, i, nfft, wfft, fft_hop_l, thresholds[0], fft_block_width,))
+        thread = threading.Thread(target=compute_stft, args=(data_, block, i, nfft, wfft, fft_hop_l, thresholds[0], fft_block_width,last_block_width,))
         thread.start()
         threads.append(thread)
         i+=1
@@ -236,7 +238,7 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     for thread in threads:
         thread.join()
 
-    data = data_[:,:fft_block_width*(n_blocks-1)+last_block_width]
+    data = data_[:,:fft_block_width*(n_blocks-1)+last_block_width[0]]
     cur_time = time.time()
     print("read and fft computed {t:.4f}".format(t=cur_time - last_time))
     last_time = cur_time
