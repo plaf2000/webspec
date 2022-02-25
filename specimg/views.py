@@ -216,6 +216,7 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     block_width_approx = dur*file_obj.sample_rate/multiprocessing.cpu_count()/2
     exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
     block_length = min(256, 2**exp)
+    print(hop_length,block_length)
 
     stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
                             duration=dur, offset=offset, mono=mono)
@@ -225,13 +226,16 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
     tot_width = int(file_obj.sample_rate*dur)
 
     block_width = (block_length-1)*hop_length+frame_length
-    n_blocks = int(math.ceil(tot_width/block_width))
+    n_frames = int(math.ceil((tot_width-frame_length)//hop_length))+1
+    n_blocks = int(math.ceil(n_frames/block_length))
     fft_hop_l = wfft//4
     fft_block_width = int(math.ceil((block_width - wfft)/fft_hop_l))
+    # last_block_width = tot_width - hop_length*(n_blocks-1)*(block_length)
     last_frame_length = tot_width - hop_length*(n_blocks-1)*(block_length)-hop_length*(block_length-1)
-    print("lfl", last_frame_length)
-    print("Frame, last frame",frame_length,last_frame_length)
-    last_block_width = (block_length-1)*hop_length+last_frame_length
+    # print("Frame, last frame",frame_length,last_frame_length)
+    # last_block_width = tot_width-(n_blocks-1)*block_width
+    # last_block_width =   tot_width - hop_length*((n_blocks-1)*(block_length)-1) - frame_length
+    last_block_width =   tot_width - hop_length*(n_blocks-1)*(block_length)
     fft_last_block_width = int(math.ceil((last_block_width - wfft)/fft_hop_l))
 
     data = np.empty([int(wfft//2+1), fft_block_width *
@@ -252,6 +256,7 @@ def render_spec(request, proj_id, device_id, file_id, tstart, tend, fstart, fend
         thread.start()
         threads.append(thread)
         i += 1
+    print("blocks number", n_blocks, i)
         
     for thread in threads:
         thread.join()
