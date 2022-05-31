@@ -16,8 +16,8 @@
       window.project_id  = {{ project.id }};
       window.timezone = {{ device.timezone}}
       window.spec_coord =  {
-        tstart: parseInt({{ tstart }}),
-        tend: parseInt({{ tend }}),
+        tstart: "{{ tstart }}",
+        tend: "{{ tend }}",
         fstart: parseFloat({{ fstart }}),
         fend: parseFloat({{ fend }}),
       }
@@ -44,9 +44,7 @@
             <td>Lower frequency limit</td>
             <td>Upper frequency limit</td>
             <td>Offset (s)</td>
-            {% if file.stereo %}
             <td>Channels</td>
-            {% endif %}
             <td>Contrast</td>
             <td>Sensitivity</td>
           </tr>
@@ -80,7 +78,6 @@
             <td>
               <input type="number" name="offset" id="offset" value="0" />
             </td>
-            {% if file.stereo %}
             <td>
               <input
                 type="radio"
@@ -92,7 +89,6 @@
               <input type="radio" name="channel" class="channel" id="cl" value="l" />Left
               <input type="radio" name="channel" class="channel" id="cr" value="r" />Right
             </td>
-            {% endif %}
 
             <td>
               <input type="range" min="1" max="100" value="50" id="contr" />

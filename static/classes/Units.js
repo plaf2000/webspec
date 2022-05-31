@@ -50,7 +50,7 @@ export class xUnit extends Unit {
         return new Second(this.getv("s"));
     }
     get px() {
-        return this.getv("px");
+        return Math.round(this.getv("px"));
     }
     set date(v) {
         this.setv(v, "date");
@@ -59,7 +59,7 @@ export class xUnit extends Unit {
         this.setv(v, "s");
     }
     set px(v) {
-        this.setv(v, "px");
+        this.setv(Math.round(v), "px");
     }
 }
 export class yUnit extends Unit {
@@ -70,13 +70,13 @@ export class yUnit extends Unit {
         return this.getv("hz");
     }
     get px() {
-        return this.getv("px");
+        return Math.round(this.getv("px"));
     }
     set hz(v) {
         this.setv(v, "hz");
     }
     set px(v) {
-        this.setv(v, "px");
+        this.setv(Math.round(v), "px");
     }
 }
 let digit = (x, n) => x.toLocaleString("en-US", {

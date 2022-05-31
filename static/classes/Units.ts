@@ -96,7 +96,7 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
     return new Second(this.getv("s"));
   }
   get px(): Units["x"]["px"] {
-    return this.getv("px");
+    return Math.round(this.getv("px"));
   }
 
   set date(v: Units["x"]["date"]) {
@@ -106,7 +106,7 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
     this.setv(v, "s");
   }
   set px(v: Units["x"]["px"]) {
-    this.setv(v, "px");
+    this.setv(Math.round(v), "px");
   }
 }
 
@@ -119,14 +119,14 @@ export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
     return this.getv("hz");
   }
   get px(): Units["y"]["px"] {
-    return this.getv("px");
+    return Math.round(this.getv("px"));
   }
 
   set hz(v: Units["y"]["hz"]) {
     this.setv(v, "hz");
   }
   set px(v: Units["y"]["px"]) {
-    this.setv(v, "px");
+    this.setv(Math.round(v), "px");
   }
 }
 

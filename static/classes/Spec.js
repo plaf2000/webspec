@@ -1,10 +1,19 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { DrawableBox } from "./Box.js";
-import { pxCoord } from "./Coord.js";
+import { pxCoord, tfCoord } from "./Coord.js";
 import { Detections } from "./Detection.js";
 import { DateTime, Unit } from "./Units.js";
 import { spec_options, spec_start_coord } from "../main.js";
 export class Spec {
-    constructor(ctx, tl_px, br_px, dx_limit) {
+    constructor(cvs, tl_px, br_px, dx_limit) {
         this.mouse_type = "auto";
         this.zoommed = {
             x: 0,
@@ -15,28 +24,31 @@ export class Spec {
             y: 1.14,
         };
         Unit.spec = this;
-        this.ctx = ctx;
+        this.cvs = cvs;
+        let ts = new DateTime(spec_start_coord.tstart);
+        let te = new DateTime(spec_start_coord.tend);
+        let s = (+te - +ts) / 1000;
         this.tl_ = {
             x: {
                 px: tl_px.x,
                 s: 0,
-                date: new DateTime(spec_start_coord.tstart)
+                date: ts,
             },
             y: {
                 px: tl_px.y,
-                hz: spec_start_coord.fend
-            }
+                hz: spec_start_coord.fend,
+            },
         };
         this.br_ = {
             x: {
                 px: br_px.x,
-                s: (spec_start_coord.tend - spec_start_coord.tstart) / 1000,
-                date: new DateTime(spec_start_coord.tend)
+                s: s,
+                date: te,
             },
             y: {
                 px: br_px.y,
-                hz: spec_start_coord.fstart
-            }
+                hz: spec_start_coord.fstart,
+            },
         };
         this.time_offset = +this.tl_.x.date - +this.tl_.x.s * 1000;
         this.bound = {
@@ -46,8 +58,8 @@ export class Spec {
                 min: spec_options.lf,
             },
         };
-        this.spec_imgs = new SpecImgs(this.ctx, this);
-        this.dets = new Detections(this.ctx, this);
+        this.spec_imgs = new SpecImgs(this.cvs, this);
+        this.dets = new Detections(this.cvs, this);
     }
     get tl() {
         return pxCoord(this.tl_.x.px, this.tl_.y.px);
@@ -56,7 +68,7 @@ export class Spec {
         return pxCoord(this.br_.x.px, this.br_.y.px);
     }
     get box() {
-        return new DrawableBox(this.ctx, this.tl, this.br);
+        return new DrawableBox(this.cvs, this.tl, this.br);
     }
     delta(ax, u) {
         return +this.tl_[ax][u] - +this.br_[ax][u];
@@ -152,9 +164,10 @@ export class Spec {
         return res;
     }
     drawOnCanvas() {
-        this.box.drawOnCanvas();
         this.spec_imgs.drawOnCanvas();
         this.dets.drawOnCanvas();
+        this.box.clearOutside();
+        this.box.drawOnCanvas();
     }
     move(p) {
         if (this.start_move_coord) {
@@ -203,17 +216,27 @@ export class Spec {
         }
     }
     updateURLCoord() {
-        window.history.replaceState(null, "", `../../../${+this.tl_.x.date}/${+this.br_.x.date}/${this.br_.y.hz}/${this.tl_.y.hz}`);
+        window.history.replaceState(null, "", `../../../${this.tl_.x.date.toISOString()}/${this.br_.x.date.toISOString()}/${this.br_.y.hz}/${this.tl_.y.hz}`);
     }
 }
 class SpecImgs {
-    constructor(ctx, spec) {
+    constructor(cvs, spec) {
         this.imgs = [];
+        this.status = 0;
         this.spec = spec;
-        this.ctx = ctx;
+        this.cvs = cvs;
     }
     load() {
-        this.imgs.push(new SpecImg(this.spec.box.l, this.spec.box.r, this.spec.box.t, this.spec.box.b));
+        // this.imgs.push(new SpecImg(this.spec.box.l, this.spec.box.r, this.spec.box.b, this.spec.box.t));
+        let file_id = 1;
+        if (this.status == 0) {
+            console.log("Load request", this.status);
+            SpecImg.requestSpecBlob(file_id, this.spec.box.l, this.spec.box.r, this.spec.box.b, this.spec.box.t).then((result) => {
+                let img = new SpecImg(this.cvs, result.tbuffer, result.fbuffer, result.blob);
+                this.imgs = [img];
+            });
+            this.status++;
+        }
     }
     drawOnCanvas() {
         this.load();
@@ -222,62 +245,31 @@ class SpecImgs {
         });
     }
 }
-class SpecImg {
-    constructor(ts, te, fs, fe) {
-        //     var url = new URL("spec/", window.location);
-        // Object.keys(params).forEach((key) =>
-        //   url.searchParams.append(key, params[key])
-        // );
-        // var request = fetch(url, {
-        //   method: "GET",
-        //   mimeType: "blob",
-        // });
-        // // var request = $.ajax({
-        // //   method: "GET",
-        // //   url: "spec/",
-        // //   data: params,
-        // //   mimeType: "blob"
-        // // });
-        // // var request = $.get(
-        // //   "spec/",
-        // //   params
-        // // );
-        // SpecImg.requestSpec(offset, i, duration).then((data) => {
-        //   data.blob().then((blob) => {
-        //     this.blob = blob;
-        //     this.blob
-        //       .slice(0, 8)
-        //       .arrayBuffer()
-        //       .then((buffer) => {
-        //         let offset = Number(new Float64Array(buffer)[0]);
-        //         this.start = offset;
-        //         this.end = offset + duration;
-        //       });
-        //     this.duration = duration;
-        //     this.img = new Image();
-        //     this.img.src = URL.createObjectURL(this.blob.slice(8), { type: "image/png" });
-        //     this.img.style = "-webkit-filter: blur(500px);  filter: blur(500px);";
-        //     let parent = this;
-        //     this.img.onload = function () {
-        //       parent.width = this.width;
-        //       parent.height = this.height;
-        //     }
-        //   });
-        // });
+class SpecImg extends DrawableBox {
+    constructor(cvs, tbuffer, fbuffer, blob) {
+        let tarr = new BigUint64Array(tbuffer);
+        let farr = new Float64Array(fbuffer);
+        super(cvs, tfCoord(new DateTime(Number(tarr[0])), farr[0]), tfCoord(new DateTime(Number(tarr[1])), farr[1]));
+        this.loaded = false;
+        this.cvs = cvs;
+        this.img = new Image();
+        this.img.src = URL.createObjectURL(blob.slice(32));
+        this.img.onload = (_) => this.cvs.drawCanvas();
+        // img.style = "-webkit-filter: blur(500px);  filter: blur(500px);";
     }
-    // static requestSpec(): Promise<Response> {
-    // let params = {
-    //   offset: offset,
-    //   lf: lf,
-    //   hf: hf,
-    //   ch: channel,
-    //   sens: sens,
-    //   con: con,
-    //   nfft: nfft,
-    //   wfft: wfft,
-    //   factor: ,
-    // };
-    // return request;
-    // }
-    drawOnCanvas() { }
+    static requestSpecBlob(file_id, ts, te, fs, fe) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let url = new URL(`../../../../spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`, document.baseURI);
+            let data = yield fetch(url.href, {
+                method: "GET",
+            });
+            let blob = yield data.blob();
+            let tb = yield blob.slice(0, 16).arrayBuffer();
+            let fb = yield blob.slice(16, 32).arrayBuffer();
+            return { tbuffer: tb, fbuffer: fb, blob: blob };
+        });
+    }
+    drawOnCanvas() {
+        this.cvs.ctx.drawImage(this.img, this.l.px, this.t.px, this.w, this.h);
+    }
 }

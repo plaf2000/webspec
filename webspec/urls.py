@@ -22,5 +22,5 @@ urlpatterns = [
     path('det/', include('detections.urls')),
     path('label/', include('labels.urls')),
     path('projects/', include('projects.urls')),
-    path('places/', include('places.urls'))
+    path('places/', include('places.urls')),
 ]

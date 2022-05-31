@@ -11,22 +11,22 @@ export class Detections {
   spec: Spec;
   dets: Detection[] = [];
   loaded: { s: xGenUnit; e: xGenUnit };
-  ctx: CanvasRenderingContext2D;
+  cvs: Canvas;
   to_resize: Detection | undefined;
   triggered: Detection | undefined;
   mouse_type: string = "auto";
   resizing = false;
 
-  constructor(ctx: CanvasRenderingContext2D, spec: Spec) {
+  constructor(cvs: Canvas, spec: Spec) {
     this.spec = spec;
     this.loaded = {
       s: spec.box.l,
       e: spec.box.r,
     };
-    this.ctx = ctx;
+    this.cvs = cvs;
     this.dets.push(
       new Detection(
-        this.ctx,
+        this.cvs,
         tfCoord(new DateTime(2020,10,12,6,55,0), 8000, true, true),
         tfCoord(new DateTime(2020,10,12,6,55,20), 500, true, true),
         new Box(tfCoord(0, 22000), tfCoord(50, 0)),

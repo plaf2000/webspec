@@ -85,7 +85,7 @@ export class Canvas {
       y: grid.y[2],
     };
 
-    this.spec = new Spec(this.ctx, tl, br);
+    this.spec = new Spec(this, tl, br);
 
     this.xax = new xAx(
       this.ctx,

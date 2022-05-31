@@ -1,4 +1,4 @@
-import { xyCoord } from "./Coord.js";
+import { xyCoord, pxCoord } from "./Coord.js";
 export class Box {
     constructor(tl, br) {
         this.tl_ = tl;
@@ -58,9 +58,9 @@ export class Box {
 export class PXBox extends Box {
 }
 export class DrawableBox extends Box {
-    constructor(ctx, tl, br) {
+    constructor(cvs, tl, br) {
         super(tl, br);
-        this.ctx = ctx;
+        this.cvs = cvs;
     }
     get xl() {
         return this.l.px;
@@ -81,13 +81,19 @@ export class DrawableBox extends Box {
         return this.height("hz");
     }
     clear() {
-        this.ctx.clearRect(this.xl, this.yt, this.w, this.h);
+        this.cvs.ctx.clearRect(this.xl, this.yt, this.w, this.h);
+    }
+    clearOutside() {
+        new DrawableBox(this.cvs, pxCoord(0, 0), pxCoord(this.cvs.w, this.t.px)).clear();
+        new DrawableBox(this.cvs, pxCoord(0, 0), pxCoord(this.l.px, this.cvs.h)).clear();
+        new DrawableBox(this.cvs, pxCoord(0, this.b.px), pxCoord(this.cvs.w, this.cvs.h)).clear();
+        new DrawableBox(this.cvs, pxCoord(this.r.px, 0), pxCoord(this.cvs.w, this.cvs.h)).clear();
     }
     drawOnCanvas() {
         if (this.w > 1 && this.h > 1) {
-            this.ctx.beginPath();
-            this.ctx.rect(this.xl, this.yt, this.w, this.h);
-            this.ctx.stroke();
+            this.cvs.ctx.beginPath();
+            this.cvs.ctx.rect(this.xl, this.yt, this.w, this.h);
+            this.cvs.ctx.stroke();
         }
     }
 }
@@ -215,8 +221,8 @@ export class EditableBox extends DrawableBox {
 export class DrawablePXBox extends DrawableBox {
 }
 export class BoundedBox extends EditableBox {
-    constructor(ctx, tl, br, bound_box, bounds) {
-        super(ctx, tl, br);
+    constructor(cvs, tl, br, bound_box, bounds) {
+        super(cvs, tl, br);
         this.bounds = bounds;
         this.bound_box = bound_box;
     }

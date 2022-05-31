@@ -5,7 +5,7 @@ function inBound(a, x, b) {
     return a <= x && x <= b;
 }
 export class Detections {
-    constructor(ctx, spec) {
+    constructor(cvs, spec) {
         this.dets = [];
         this.mouse_type = "auto";
         this.resizing = false;
@@ -14,8 +14,8 @@ export class Detections {
             s: spec.box.l,
             e: spec.box.r,
         };
-        this.ctx = ctx;
-        this.dets.push(new Detection(this.ctx, tfCoord(new DateTime(2020, 10, 12, 6, 55, 0), 8000, true, true), tfCoord(new DateTime(2020, 10, 12, 6, 55, 20), 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
+        this.cvs = cvs;
+        this.dets.push(new Detection(this.cvs, tfCoord(new DateTime(2020, 10, 12, 6, 55, 0), 8000, true, true), tfCoord(new DateTime(2020, 10, 12, 6, 55, 20), 500, true, true), new Box(tfCoord(0, 22000), tfCoord(50, 0)), {
             x: {
                 l: true,
                 r: true,

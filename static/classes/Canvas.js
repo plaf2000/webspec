@@ -30,7 +30,7 @@ export class Canvas {
             x: grid.x[2],
             y: grid.y[2],
         };
-        this.spec = new Spec(this.ctx, tl, br);
+        this.spec = new Spec(this, tl, br);
         this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
         this.yax = new yAx(this.ctx, pxCoord(grid.x[0], grid.y[1]), this.spec.box.bl, "hz");
         this.bound_rect = this.cvs.getBoundingClientRect();
