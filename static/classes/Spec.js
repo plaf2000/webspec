@@ -263,7 +263,7 @@ class SpecImgs {
     }
     load() {
         let file_id = 1;
-        let margin_rx = 0.5;
+        let margin_rx = 0;
         let margin_x = (r = margin_rx) => new xUnit(this.spec.box.dur * r * 1000, "date");
         let addmx = (bound, m = margin_x()) => bound.add(m, "date");
         let submx = (bound, m = margin_x()) => bound.sub(m, "date");
@@ -275,16 +275,18 @@ class SpecImgs {
                 this.imgs.push(img);
             };
             if (ts.date < this.ts.date) {
-                ts = submx(ts, margin_x(1));
+                ts = submx(ts, margin_x(.5));
                 let te_ = (te.date < this.ts.date) ? te : this.ts;
+                console.log(te.date < this.ts.date, te_ == te);
                 SpecImg.requestSpecBlob(file_id, ts, te_, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
                 this.ts = ts;
                 this.te = (te == te_) ? te : this.te;
             }
             if (te.date > this.te.date) {
-                te = addmx(te, margin_x(1));
+                te = addmx(te, margin_x(.5));
                 let ts_ = (ts.date > this.te.date) ? ts : this.te;
-                SpecImg.requestSpecBlob(file_id, this.te, te, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
+                console.log(ts.date > this.te.date);
+                SpecImg.requestSpecBlob(file_id, ts_, te, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
                 this.te = te;
                 this.ts = (ts == ts_) ? ts : this.ts;
             }

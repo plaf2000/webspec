@@ -337,7 +337,7 @@ class SpecImgs {
 
   load() {
     let file_id = 1;
-    let margin_rx = 0.5;
+    let margin_rx = 0;
     let margin_x = (r = margin_rx) =>
       new xUnit(this.spec.box.dur * r * 1000, "date");
 
@@ -346,6 +346,7 @@ class SpecImgs {
 
     let ts = submx(this.spec.box.l);
     let te = addmx(this.spec.box.r);
+
 
     if (ts.date < this.ts.date || te.date > this.te.date) {
       let resolver = (result: ReqSpecRes) => {
@@ -358,8 +359,10 @@ class SpecImgs {
         this.imgs.push(img);
       };
       if (ts.date < this.ts.date) {
-        ts = submx(ts, margin_x(1));
+        ts = submx(ts, margin_x(.5));
         let te_ = (te.date < this.ts.date) ? te : this.ts;
+        console.log(te.date < this.ts.date, te_==te);
+
         SpecImg.requestSpecBlob(
           file_id,
           ts,
@@ -372,11 +375,13 @@ class SpecImgs {
         this.te = (te==te_) ? te : this.te
       }
       if (te.date > this.te.date) {
-        te = addmx(te, margin_x(1));
+        te = addmx(te, margin_x(.5));
         let ts_ = (ts.date > this.te.date) ? ts : this.te;
+        console.log(ts.date > this.te.date);
+
         SpecImg.requestSpecBlob(
           file_id,
-          this.te,
+          ts_,
           te,
           this.pxs,
           this.spec.box.b,
