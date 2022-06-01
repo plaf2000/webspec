@@ -162,13 +162,13 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     wfft = int(request.GET['wfft'])
 
     if ts >= file_obj.tend:
-        return HttpResponse('', content_type="text/html")
+        return None, None, None, None, None
     elif ts < file_obj.tstart:
         ts = file_obj.tstart
 
     offset = (ts - file_obj.tstart).total_seconds()
     if te < ts:
-        return HttpResponse('', content_type="text/html")
+        return None, None, None, None, None
     else:
         if file_obj.tend < te:
             te = file_obj.tend
@@ -181,7 +181,7 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     hop_length = int(3*(wfft//4))
     frame_length = wfft
     n_approx = multiprocessing.cpu_count()*2
-    n_approx = 8
+    # n_approx = 8
     block_width_approx = dur*file_obj.sample_rate/n_approx
     # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
     # block_length = min(256, 2**exp)
@@ -234,10 +234,14 @@ def spec_multi_threaded(file_id, tstart, tend, request):
 
 
     for block in stream:
-        thread = threading.Thread(target=compute_stft, args=(block, i,))
-        tw += block.shape[0]
-        if block.shape[0] < block_samples:
-            block_samples = block.shape[0]
+        if not mono:
+          b=block[0] if ch=="l" else block[1] 
+        else:
+          b=block
+        tw += b.shape[0]
+        thread = threading.Thread(target=compute_stft, args=(b, i,))
+        if b.shape[0] < block_samples:
+            block_samples = b.shape[0]
             print("bs, lbw", block_samples == last_block_width,
                   block_samples, last_block_width)
         thread.start()
@@ -255,7 +259,9 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     print("read, fft computed {:.4f}".format(cur_time - last_time))
     last_time = cur_time
 
-    # data = transform.resize(data, (data.shape[0], min(width, data.shape[1])), order=0, anti_aliasing=False)
+    width=round(dur*float(request.GET["pxs"]))
+
+    data = transform.resize(data, (data.shape[0], min(width, data.shape[1])), order=0, anti_aliasing=False)
     # data = transform.resize(data, (data.shape[0], width), order=0, anti_aliasing=False)
 
     cur_time = time.time()
@@ -310,7 +316,7 @@ def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart,
     buffered.write(struct.pack('QQdd',round(ts),round(te),fs,fe))
     img.save(buffered, format="png")
 
-    return HttpResponse(buffered.getvalue(), content_type="applicetion/octet-stream")
+    return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
 
 
 

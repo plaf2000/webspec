@@ -1,7 +1,15 @@
 import { Box, DrawableBox, DrawablePXBox } from "./Box.js";
 import { pxCoord, PXCoord, TFCoord, tfCoord, xyGenCoord } from "./Coord.js";
 import { Detection, Detections } from "./Detection.js";
-import { AxT, DateTime, Unit, Units, xGenUnit, yGenUnit } from "./Units.js";
+import {
+  AxT,
+  DateTime,
+  Unit,
+  Units,
+  xGenUnit,
+  xUnit,
+  yGenUnit,
+} from "./Units.js";
 import { spec_options, spec_start_coord } from "../main.js";
 import { Canvas } from "./Canvas.js";
 
@@ -11,7 +19,7 @@ export class Spec {
   private br_: Units;
   cvs: Canvas;
   start_move_coord: xyGenCoord | undefined;
-  spec_imgs: SpecImgs;
+  spec_imgs_layers: SpecImgsLayers;
   dets: Detections;
   mouse_type: string = "auto";
 
@@ -101,7 +109,7 @@ export class Spec {
         min: spec_options.lf,
       },
     };
-    this.spec_imgs = new SpecImgs(this.cvs, this);
+    this.spec_imgs_layers = new SpecImgsLayers(this.cvs, this);
     this.dets = new Detections(this.cvs, this);
   }
 
@@ -201,7 +209,7 @@ export class Spec {
   }
 
   drawOnCanvas() {
-    this.spec_imgs.drawOnCanvas();
+    this.spec_imgs_layers.drawOnCanvas();
     this.dets.drawOnCanvas();
     this.box.clearOutside();
     this.box.drawOnCanvas();
@@ -268,40 +276,115 @@ export class Spec {
   }
 }
 
-class SpecImgs {
-  spec: Spec;
-  imgs: SpecImg[] = [];
-  cvs: Canvas;
+type ReqSpecRes = { tbuffer: ArrayBuffer; fbuffer: ArrayBuffer; blob: Blob };
+type ReqSpecBlob = Promise<ReqSpecRes>;
 
-  status = 0;
+class SpecImgsLayers {
+  layers: SpecImgs[] = [];
+  spec: Spec;
+  cvs: Canvas;
+  zoommed: { x: number; y: number };
+  threshold = 10;
+
+  ptr = 0;
 
   constructor(cvs: Canvas, spec: Spec) {
     this.spec = spec;
+    this.zoommed = { x: spec.zoommed.x, y: spec.zoommed.y};
+    this.cvs = cvs;
+    this.layers.push(new SpecImgs(cvs, spec));
+  }
+
+  drawOnCanvas() {
+    this.update();
+    this.layers[this.ptr].drawOnCanvas();
+  }
+
+  update() {
+    if (this.spec.zoommed.x < this.zoommed.x - this.threshold) {
+      console.log(this.ptr, this.layers.length);
+      this.ptr--;
+      if(this.ptr<0) {
+        this.layers.unshift(new SpecImgs(this.cvs, this.spec));
+        this.ptr = 0;
+      }
+      this.zoommed.x = this.spec.zoommed.x;
+    } else if (this.spec.zoommed.x > this.zoommed.x + this.threshold) {
+      this.ptr++;
+      if(this.ptr==this.layers.length) {
+        this.layers.push(new SpecImgs(this.cvs, this.spec));
+      }
+      this.zoommed.x = this.spec.zoommed.x;
+    }
+  }
+}
+
+class SpecImgs {
+  spec: Spec;
+  imgs: SpecImg[] = [];
+  ts: xGenUnit;
+  te: xGenUnit;
+  cvs: Canvas;
+  pxs: number;
+
+  constructor(cvs: Canvas, spec: Spec) {
+    this.spec = spec;
+    this.ts = spec.box.l.midPoint(spec.box.r, "date");
+    this.pxs = (spec.ratio("x","px","s"))
+    this.te = this.ts;
     this.cvs = cvs;
   }
 
   load() {
-    // this.imgs.push(new SpecImg(this.spec.box.l, this.spec.box.r, this.spec.box.b, this.spec.box.t));
     let file_id = 1;
+    let margin_rx = 0.5;
+    let margin_x = (r = margin_rx) =>
+      new xUnit(this.spec.box.dur * r * 1000, "date");
 
-    if (this.status == 0) {
-      console.log("Load request", this.status);
-      SpecImg.requestSpecBlob(
-        file_id,
-        this.spec.box.l,
-        this.spec.box.r,
-        this.spec.box.b,
-        this.spec.box.t
-      ).then((result) => {
+    let addmx = (bound: xGenUnit, m = margin_x()) => bound.add(m, "date");
+    let submx = (bound: xGenUnit, m = margin_x()) => bound.sub(m, "date");
+
+    let ts = submx(this.spec.box.l);
+    let te = addmx(this.spec.box.r);
+
+    if (ts.date < this.ts.date || te.date > this.te.date) {
+      let resolver = (result: ReqSpecRes) => {
         let img = new SpecImg(
           this.cvs,
           result.tbuffer,
           result.fbuffer,
           result.blob
         );
-        this.imgs = [img];
-      });
-      this.status++;
+        this.imgs.push(img);
+      };
+      if (ts.date < this.ts.date) {
+        ts = submx(ts, margin_x(1));
+        let te_ = (te.date < this.ts.date) ? te : this.ts;
+        SpecImg.requestSpecBlob(
+          file_id,
+          ts,
+          te_,
+          this.pxs,
+          this.spec.box.b,
+          this.spec.box.t
+        ).then(resolver);
+        this.ts = ts;
+        this.te = (te==te_) ? te : this.te
+      }
+      if (te.date > this.te.date) {
+        te = addmx(te, margin_x(1));
+        let ts_ = (ts.date > this.te.date) ? ts : this.te;
+        SpecImg.requestSpecBlob(
+          file_id,
+          this.te,
+          te,
+          this.pxs,
+          this.spec.box.b,
+          this.spec.box.t
+        ).then(resolver);
+        this.te = te;
+        this.ts = (ts==ts_) ? ts : this.ts;
+      }
     }
   }
 
@@ -343,15 +426,18 @@ class SpecImg extends DrawableBox<"hz", "date" | "s", "hz", "date" | "s"> {
     file_id: number,
     ts: xGenUnit,
     te: xGenUnit,
+    pxs: number,
     fs: yGenUnit,
     fe: yGenUnit
-  ): Promise<{ tbuffer: ArrayBuffer; fbuffer: ArrayBuffer; blob: Blob }> {
+  ): ReqSpecBlob {
     let url = new URL(
       `../../../../spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${
         fs.hz
-      }/${fe.hz}/?con=${spec_options.contr}&sens=${spec_options.sens}&ch=${
-        spec_options.channel
-      }&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`,
+      }/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${
+        spec_options.sens
+      }&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${
+        spec_options.wfft
+      }`,
       document.baseURI
     );
 

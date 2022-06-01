@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { DrawableBox } from "./Box.js";
 import { pxCoord, tfCoord } from "./Coord.js";
 import { Detections } from "./Detection.js";
-import { DateTime, Unit } from "./Units.js";
+import { DateTime, Unit, xUnit, } from "./Units.js";
 import { spec_options, spec_start_coord } from "../main.js";
 export class Spec {
     constructor(cvs, tl_px, br_px, dx_limit) {
@@ -58,7 +58,7 @@ export class Spec {
                 min: spec_options.lf,
             },
         };
-        this.spec_imgs = new SpecImgs(this.cvs, this);
+        this.spec_imgs_layers = new SpecImgsLayers(this.cvs, this);
         this.dets = new Detections(this.cvs, this);
     }
     get tl() {
@@ -164,7 +164,7 @@ export class Spec {
         return res;
     }
     drawOnCanvas() {
-        this.spec_imgs.drawOnCanvas();
+        this.spec_imgs_layers.drawOnCanvas();
         this.dets.drawOnCanvas();
         this.box.clearOutside();
         this.box.drawOnCanvas();
@@ -219,23 +219,75 @@ export class Spec {
         window.history.replaceState(null, "", `../../../${this.tl_.x.date.toISOString()}/${this.br_.x.date.toISOString()}/${this.br_.y.hz}/${this.tl_.y.hz}`);
     }
 }
+class SpecImgsLayers {
+    constructor(cvs, spec) {
+        this.layers = [];
+        this.threshold = 10;
+        this.ptr = 0;
+        this.spec = spec;
+        this.zoommed = { x: spec.zoommed.x, y: spec.zoommed.y };
+        this.cvs = cvs;
+        this.layers.push(new SpecImgs(cvs, spec));
+    }
+    drawOnCanvas() {
+        this.update();
+        this.layers[this.ptr].drawOnCanvas();
+    }
+    update() {
+        if (this.spec.zoommed.x < this.zoommed.x - this.threshold) {
+            console.log(this.ptr, this.layers.length);
+            this.ptr--;
+            if (this.ptr < 0) {
+                this.layers.unshift(new SpecImgs(this.cvs, this.spec));
+                this.ptr = 0;
+            }
+            this.zoommed.x = this.spec.zoommed.x;
+        }
+        else if (this.spec.zoommed.x > this.zoommed.x + this.threshold) {
+            this.ptr++;
+            if (this.ptr == this.layers.length) {
+                this.layers.push(new SpecImgs(this.cvs, this.spec));
+            }
+            this.zoommed.x = this.spec.zoommed.x;
+        }
+    }
+}
 class SpecImgs {
     constructor(cvs, spec) {
         this.imgs = [];
-        this.status = 0;
         this.spec = spec;
+        this.ts = spec.box.l.midPoint(spec.box.r, "date");
+        this.pxs = (spec.ratio("x", "px", "s"));
+        this.te = this.ts;
         this.cvs = cvs;
     }
     load() {
-        // this.imgs.push(new SpecImg(this.spec.box.l, this.spec.box.r, this.spec.box.b, this.spec.box.t));
         let file_id = 1;
-        if (this.status == 0) {
-            console.log("Load request", this.status);
-            SpecImg.requestSpecBlob(file_id, this.spec.box.l, this.spec.box.r, this.spec.box.b, this.spec.box.t).then((result) => {
+        let margin_rx = 0.5;
+        let margin_x = (r = margin_rx) => new xUnit(this.spec.box.dur * r * 1000, "date");
+        let addmx = (bound, m = margin_x()) => bound.add(m, "date");
+        let submx = (bound, m = margin_x()) => bound.sub(m, "date");
+        let ts = submx(this.spec.box.l);
+        let te = addmx(this.spec.box.r);
+        if (ts.date < this.ts.date || te.date > this.te.date) {
+            let resolver = (result) => {
                 let img = new SpecImg(this.cvs, result.tbuffer, result.fbuffer, result.blob);
-                this.imgs = [img];
-            });
-            this.status++;
+                this.imgs.push(img);
+            };
+            if (ts.date < this.ts.date) {
+                ts = submx(ts, margin_x(1));
+                let te_ = (te.date < this.ts.date) ? te : this.ts;
+                SpecImg.requestSpecBlob(file_id, ts, te_, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
+                this.ts = ts;
+                this.te = (te == te_) ? te : this.te;
+            }
+            if (te.date > this.te.date) {
+                te = addmx(te, margin_x(1));
+                let ts_ = (ts.date > this.te.date) ? ts : this.te;
+                SpecImg.requestSpecBlob(file_id, this.te, te, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
+                this.te = te;
+                this.ts = (ts == ts_) ? ts : this.ts;
+            }
         }
     }
     drawOnCanvas() {
@@ -257,9 +309,9 @@ class SpecImg extends DrawableBox {
         this.img.onload = (_) => this.cvs.drawCanvas();
         // img.style = "-webkit-filter: blur(500px);  filter: blur(500px);";
     }
-    static requestSpecBlob(file_id, ts, te, fs, fe) {
+    static requestSpecBlob(file_id, ts, te, pxs, fs, fe) {
         return __awaiter(this, void 0, void 0, function* () {
-            let url = new URL(`../../../../spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`, document.baseURI);
+            let url = new URL(`../../../../spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`, document.baseURI);
             let data = yield fetch(url.href, {
                 method: "GET",
             });

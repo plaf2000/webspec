@@ -63,8 +63,8 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return typeof this.val_;
   }
 
-  midPoint(u: Unit<A, U>) {
-    return new Unit((this.val + +u) / 2, this.ax, this.unit);
+  midPoint(u: Unit<A, U>, unit: keyof Units[A], e = false) {
+    return new Unit((this.val + +u) / 2, this.ax, unit, e);
   }
 
   getv<T extends keyof Units[A]>(t: T): Units[A][T] {
@@ -81,6 +81,26 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return `${Math.round(+this.getv(unit) * roundval) / roundval}${
       print_unit ? " " + unit : ""
     }`;
+  }
+
+  add<V extends keyof Units[A]>(other: Unit<A, V>, unit: keyof Units[A]) {
+    return new Unit(
+      +this.getv(unit) + +other.getv(unit),
+      this.ax,
+      unit,
+      this.editable,
+      this.spec
+    );
+  }
+
+  sub<V extends keyof Units[A]>(other: Unit<A, V>, unit: keyof Units[A]) {
+    return new Unit(
+      +this.getv(unit) - +other.getv(unit),
+      this.ax,
+      unit,
+      this.editable,
+      this.spec
+    );
   }
 }
 
@@ -108,6 +128,18 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
   set px(v: Units["x"]["px"]) {
     this.setv(Math.round(v), "px");
   }
+
+  midPoint<V extends uList<"x">>(u: Unit<"x", V>, unit: uList<"x">, e = false) {
+    return new xUnit((+this.getv(unit) + +u.getv(unit)) / 2, unit, e);
+  }
+
+  add<V extends uList<"x">>(other: Unit<"x", V>, unit: uList<"x">, e = false) {
+    return new xUnit(+this.getv(unit) + +other.getv(unit), unit, e);
+  }
+
+  sub<V extends uList<"x">>(other: Unit<"x", V>, unit: uList<"x">, e = false) {
+    return new xUnit(+this.getv(unit) - +other.getv(unit), unit, e);
+  }
 }
 
 export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
@@ -127,6 +159,18 @@ export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
   }
   set px(v: Units["y"]["px"]) {
     this.setv(Math.round(v), "px");
+  }
+
+  midPoint<V extends uList<"y">>(u: Unit<"y", V>, unit: uList<"y">, e = false) {
+    return new yUnit((+this.getv(unit) + +u.getv(unit)) / 2, unit, e);
+  }
+
+  add<V extends uList<"y">>(other: Unit<"y", V>, unit: uList<"y">, e = false) {
+    return new yUnit(+this.getv(unit) + +other.getv(unit), unit, e);
+  }
+
+  sub<V extends uList<"y">>(other: Unit<"y", V>, unit: uList<"y">, e = false) {
+    return new yUnit(+this.getv(unit) - +other.getv(unit), unit, e);
   }
 }
 
