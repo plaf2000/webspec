@@ -21,6 +21,11 @@ export class Coord2D {
         if (this.y.editable)
             this.y_ = y;
     }
+    midPoint(p, xunit, yunit, ex, ey) {
+        let x = this.x.midPoint(this.x, xunit, ex);
+        let y = this.y.midPoint(this.y, yunit, ex);
+        return this.constructor(x, y);
+    }
 }
 export class xyCoord extends Coord2D {
     get x() {
@@ -46,14 +51,9 @@ export class xyCoord extends Coord2D {
         let dy = this.distanceY(p, yunit);
         return Math.sqrt(dx * dx + dy * dy);
     }
-    midPoint(p, xunit, yunit, ex, ey) {
-        let x = +p.x[xunit] + +this.x[xunit];
-        let y = +p.y[yunit] + +this.y[yunit];
-        return xy(x / 2, y / 2, xunit, yunit, ex, ey);
-    }
 }
 export function xy(x, y, xunit, yunit, ex, ey) {
-    return new xyCoord(new xUnit(+x, xunit, ex), new yUnit(+y, yunit, ey));
+    return new xyCoord(new xUnit(+x, xunit, "x", ex), new yUnit(+y, yunit, "y", ey));
 }
 export let pxCoord = (x, y, ex, ey) => xy(x, y, "px", "px", ex, ey);
 export let tfCoord = (x, y, ex, ey) => {

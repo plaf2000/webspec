@@ -1,4 +1,5 @@
 import { Edges, EditableBox, Box, DrawableBox, BoundedBox } from "./Box.js";
+import { Canvas } from "./Canvas.js";
 import { pxCoord, tfCoord, TFCoord, xyGenCoord } from "./Coord.js";
 import { Spec } from "./Spec.js";
 import { DateTime, xGenUnit, xUnit, yUnit } from "./Units.js";

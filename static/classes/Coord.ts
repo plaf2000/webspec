@@ -36,6 +36,22 @@ export class Coord2D<
   set y(y: Unit<Y, yU>) {
     if (this.y.editable) this.y_ = y;
   }
+
+
+  midPoint<xP extends uList<X>, yP extends uList<Y>,xR extends uList<X>, yR extends uList<Y>>(
+    p: Coord2D<X,Y,xP,yP>,
+    xunit: xR,
+    yunit: yR,
+    ex?: boolean,
+    ey?: boolean
+  ) {
+    let x: Unit<X,xR> = this.x.midPoint(this.x, xunit, ex);
+    let y: Unit<Y,yR> = this.y.midPoint(this.y, yunit, ex);
+
+    return this.constructor(x,y);
+  }
+
+
 }
 
 export class xyCoord<
@@ -69,19 +85,6 @@ export class xyCoord<
     let dy = this.distanceY(p, yunit);
     return Math.sqrt(dx * dx + dy * dy);
   }
-
-  midPoint<xR extends uList<"x">, yR extends uList<"y">>(
-    p: xyGenCoord,
-    xunit: xR,
-    yunit: yR,
-    ex?: boolean,
-    ey?: boolean
-  ): xyCoord<xR, yR> {
-    let x = +p.x[xunit] + +this.x[xunit];
-    let y = +p.y[yunit] + +this.y[yunit];
-
-    return xy(x / 2, y / 2, xunit, yunit, ex, ey);
-  }
 }
 
 export function xy<xU extends uList<"x">, yU extends uList<"y">>(
@@ -92,7 +95,7 @@ export function xy<xU extends uList<"x">, yU extends uList<"y">>(
   ex?: boolean,
   ey?: boolean
 ): xyCoord<xU, yU> {
-  return new xyCoord(new xUnit<xU>(+x, xunit, ex), new yUnit<yU>(+y, yunit, ey));
+  return new xyCoord(new xUnit<xU>(+x, xunit, "x", ex), new yUnit<yU>(+y, yunit, "y", ey));
 }
 
 export let pxCoord = (

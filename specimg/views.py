@@ -186,6 +186,14 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
     # block_length = min(256, 2**exp)
     block_length = int((block_width_approx-frame_length)/hop_length+1)//2
+    if block_length==0:
+      n_approx = 1
+      # n_approx = 8
+      block_width_approx = dur*file_obj.sample_rate/n_approx
+      # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
+      # block_length = min(256, 2**exp)
+      block_length = int((block_width_approx-frame_length)/hop_length+1)//2
+
 
     stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
                             duration=dur, offset=offset, mono=mono)

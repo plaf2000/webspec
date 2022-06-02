@@ -4,7 +4,7 @@ x and y units definitons
 
 */
 export class Unit {
-    constructor(val, ax, unit, e = false, spec = Unit.spec) {
+    constructor(val, unit, ax, e = false, spec = Unit.spec) {
         this.spec = spec;
         if (spec != Unit.spec)
             Unit.spec = spec;
@@ -24,14 +24,12 @@ export class Unit {
         return typeof this.val_;
     }
     midPoint(u, unit, e = false) {
-        return new Unit((this.val + +u) / 2, this.ax, unit, e);
+        return new this.constructor((+this.getv(unit) + +u.getv(unit)) / 2, unit, this.ax, e, this.spec);
     }
     getv(t) {
         return this.spec.conv(this.val, this.unit, t, this.ax);
     }
     setv(v, f) {
-        if (v instanceof Unit)
-            v = v.getv(f);
         this.val = this.spec.conv(v, f, this.unit, this.ax);
     }
     toString(unit, digit, print_unit = false) {
@@ -39,15 +37,15 @@ export class Unit {
         return `${Math.round(+this.getv(unit) * roundval) / roundval}${print_unit ? " " + unit : ""}`;
     }
     add(other, unit) {
-        return new Unit(+this.getv(unit) + +other.getv(unit), this.ax, unit, this.editable, this.spec);
+        return new this.constructor(+this.getv(unit) + +other.getv(unit), unit, this.ax, this.editable, this.spec);
     }
     sub(other, unit) {
-        return new Unit(+this.getv(unit) - +other.getv(unit), this.ax, unit, this.editable, this.spec);
+        return new this.constructor(+this.getv(unit) - +other.getv(unit), unit, this.ax, this.editable, this.spec);
     }
 }
 export class xUnit extends Unit {
-    constructor(val, unit, e = false) {
-        super(val, "x", unit, e);
+    constructor(val, unit, ax = "x", e = false, spec = Unit.spec) {
+        super(val, unit, "x", e, spec);
     }
     get date() {
         return new DateTime(this.getv("date"));
@@ -59,27 +57,18 @@ export class xUnit extends Unit {
         return Math.round(this.getv("px"));
     }
     set date(v) {
-        this.setv(v, "date");
+        this.setv(+v, "date");
     }
     set s(v) {
-        this.setv(v, "s");
+        this.setv(+v, "s");
     }
     set px(v) {
         this.setv(Math.round(v), "px");
     }
-    midPoint(u, unit, e = false) {
-        return new xUnit((+this.getv(unit) + +u.getv(unit)) / 2, unit, e);
-    }
-    add(other, unit, e = false) {
-        return new xUnit(+this.getv(unit) + +other.getv(unit), unit, e);
-    }
-    sub(other, unit, e = false) {
-        return new xUnit(+this.getv(unit) - +other.getv(unit), unit, e);
-    }
 }
 export class yUnit extends Unit {
-    constructor(val, unit, e = false) {
-        super(val, "y", unit, e);
+    constructor(val, unit, ax = "y", e = false, spec = Unit.spec) {
+        super(val, unit, "y", e, spec);
     }
     get hz() {
         return this.getv("hz");
@@ -92,15 +81,6 @@ export class yUnit extends Unit {
     }
     set px(v) {
         this.setv(Math.round(v), "px");
-    }
-    midPoint(u, unit, e = false) {
-        return new yUnit((+this.getv(unit) + +u.getv(unit)) / 2, unit, e);
-    }
-    add(other, unit, e = false) {
-        return new yUnit(+this.getv(unit) + +other.getv(unit), unit, e);
-    }
-    sub(other, unit, e = false) {
-        return new yUnit(+this.getv(unit) - +other.getv(unit), unit, e);
     }
 }
 let digit = (x, n) => x.toLocaleString("en-US", {
@@ -170,7 +150,7 @@ export class DateTime extends Date {
 }
 DateTime.tz = 0;
 export function convertDist(val, ax, f, t) {
-    let zero = new Unit(0, ax, f);
-    let uval = new Unit(val, ax, f);
+    let zero = new Unit(0, f, ax);
+    let uval = new Unit(val, f, ax);
     return Math.abs(+uval.getv(t) - +zero.getv(t));
 }

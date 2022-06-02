@@ -197,14 +197,13 @@ export class Spec {
   }
 
   conv<A extends AxT, F extends keyof Units[A], T extends keyof Units[A]>(
-    v: Units[A][F] | number,
+    v: number,
     f: F,
     t: T,
     a: A
-  ): any {
+  ): number {
     let res: number =
-      (+v - +this.tl_[a][f]) * this.ratio(a, t, f) + +this.tl_[a][t];
-    if (t == "date") return new Date(res);
+      (+v - +this.tl_[a][f]) * this.ratio(a, t, f) + +this.tl_[a][t];    
     return res;
   }
 
@@ -302,7 +301,7 @@ class SpecImgsLayers {
 
   update() {
     if (this.spec.zoommed.x < this.zoommed.x - this.threshold) {
-      console.log(this.ptr, this.layers.length);
+      // console.log(this.ptr, this.layers.length);
       this.ptr--;
       if(this.ptr<0) {
         this.layers.unshift(new SpecImgs(this.cvs, this.spec));
@@ -330,8 +329,8 @@ class SpecImgs {
   constructor(cvs: Canvas, spec: Spec) {
     this.spec = spec;
     this.ts = spec.box.l.midPoint(spec.box.r, "date");
-    this.pxs = (spec.ratio("x","px","s"))
     this.te = this.ts;
+    this.pxs = (spec.ratio("x","px","s"))
     this.cvs = cvs;
   }
 
@@ -348,7 +347,9 @@ class SpecImgs {
     let te = addmx(this.spec.box.r);
 
 
+
     if (ts.date < this.ts.date || te.date > this.te.date) {
+
       let resolver = (result: ReqSpecRes) => {
         let img = new SpecImg(
           this.cvs,
@@ -361,7 +362,6 @@ class SpecImgs {
       if (ts.date < this.ts.date) {
         ts = submx(ts, margin_x(.5));
         let te_ = (te.date < this.ts.date) ? te : this.ts;
-        console.log(te.date < this.ts.date, te_==te);
 
         SpecImg.requestSpecBlob(
           file_id,
@@ -377,7 +377,6 @@ class SpecImgs {
       if (te.date > this.te.date) {
         te = addmx(te, margin_x(.5));
         let ts_ = (ts.date > this.te.date) ? ts : this.te;
-        console.log(ts.date > this.te.date);
 
         SpecImg.requestSpecBlob(
           file_id,

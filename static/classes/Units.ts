@@ -42,7 +42,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
   readonly unit: U;
   readonly ax: A;
 
-  constructor(val: number, ax: A, unit: U, e = false, spec = Unit.spec) {
+  constructor(val: number, unit: U, ax: A, e = false, spec = Unit.spec) {
     this.spec = spec;
     if (spec != Unit.spec) Unit.spec = spec;
     this.val_ = val;
@@ -63,16 +63,22 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return typeof this.val_;
   }
 
-  midPoint(u: Unit<A, U>, unit: keyof Units[A], e = false) {
-    return new Unit((this.val + +u) / 2, this.ax, unit, e);
+
+  midPoint<V extends keyof Units[A]>(u: Unit<A, V>, unit: keyof Units[A], e = false) {
+    return new this.constructor(
+      (+this.getv(unit) + +u.getv(unit)) / 2,
+      unit,
+      this.ax,
+      e,
+      this.spec
+    );
   }
 
-  getv<T extends keyof Units[A]>(t: T): Units[A][T] {
+  getv<T extends keyof Units[A]>(t: T): number {
     return this.spec.conv(this.val, this.unit, t, this.ax);
   }
 
-  setv<F extends keyof Units[A]>(v: Units[A][F] | Unit<A, F>, f: F) {
-    if (v instanceof Unit) v = v.getv(f);
+  setv<F extends keyof Units[A]>(v: number, f: F) {
     this.val = this.spec.conv(v, f, this.unit, this.ax);
   }
 
@@ -83,21 +89,21 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     }`;
   }
 
-  add<V extends keyof Units[A]>(other: Unit<A, V>, unit: keyof Units[A]) {
-    return new Unit(
+  add<V extends keyof Units[A], W extends keyof Units[A]>(other: Unit<A, V>, unit: W) {
+    return new this.constructor(
       +this.getv(unit) + +other.getv(unit),
-      this.ax,
       unit,
+      this.ax,
       this.editable,
       this.spec
     );
   }
 
   sub<V extends keyof Units[A]>(other: Unit<A, V>, unit: keyof Units[A]) {
-    return new Unit(
+    return new this.constructor(
       +this.getv(unit) - +other.getv(unit),
-      this.ax,
       unit,
+      this.ax,
       this.editable,
       this.spec
     );
@@ -105,8 +111,8 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
-  constructor(val: number, unit: U, e = false) {
-    super(val, "x", unit, e);
+  constructor(val: number, unit: U, ax: "x" = "x", e = false, spec = Unit.spec) {
+    super(val, unit,"x", e, spec);
   }
 
   get date(): Units["x"]["date"] {
@@ -120,31 +126,19 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
   }
 
   set date(v: Units["x"]["date"]) {
-    this.setv(v, "date");
+    this.setv(+v, "date");
   }
   set s(v: Units["x"]["s"]) {
-    this.setv(v, "s");
+    this.setv(+v, "s");
   }
   set px(v: Units["x"]["px"]) {
     this.setv(Math.round(v), "px");
   }
-
-  midPoint<V extends uList<"x">>(u: Unit<"x", V>, unit: uList<"x">, e = false) {
-    return new xUnit((+this.getv(unit) + +u.getv(unit)) / 2, unit, e);
-  }
-
-  add<V extends uList<"x">>(other: Unit<"x", V>, unit: uList<"x">, e = false) {
-    return new xUnit(+this.getv(unit) + +other.getv(unit), unit, e);
-  }
-
-  sub<V extends uList<"x">>(other: Unit<"x", V>, unit: uList<"x">, e = false) {
-    return new xUnit(+this.getv(unit) - +other.getv(unit), unit, e);
-  }
 }
 
 export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
-  constructor(val: number, unit: U, e = false) {
-    super(val, "y", unit, e);
+  constructor(val: number, unit: U, ax: "y" = "y",  e = false, spec = Unit.spec) {
+    super(val, unit, "y", e, spec);
   }
 
   get hz(): Units["y"]["hz"] {
@@ -159,18 +153,6 @@ export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
   }
   set px(v: Units["y"]["px"]) {
     this.setv(Math.round(v), "px");
-  }
-
-  midPoint<V extends uList<"y">>(u: Unit<"y", V>, unit: uList<"y">, e = false) {
-    return new yUnit((+this.getv(unit) + +u.getv(unit)) / 2, unit, e);
-  }
-
-  add<V extends uList<"y">>(other: Unit<"y", V>, unit: uList<"y">, e = false) {
-    return new yUnit(+this.getv(unit) + +other.getv(unit), unit, e);
-  }
-
-  sub<V extends uList<"y">>(other: Unit<"y", V>, unit: uList<"y">, e = false) {
-    return new yUnit(+this.getv(unit) - +other.getv(unit), unit, e);
   }
 }
 
@@ -273,7 +255,8 @@ export function convertDist<
   F extends uList<A>,
   T extends uList<A>
 >(val: number, ax: A, f: F, t: T): number {
-  let zero = new Unit(0, ax, f);
-  let uval = new Unit(val, ax, f);
+  let zero = new Unit(0, f, ax);
+  let uval = new Unit(val, f, ax);
   return Math.abs(+uval.getv(t) - +zero.getv(t));
 }
+

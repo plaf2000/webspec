@@ -159,8 +159,8 @@ export class Spec {
     }
     conv(v, f, t, a) {
         let res = (+v - +this.tl_[a][f]) * this.ratio(a, t, f) + +this.tl_[a][t];
-        if (t == "date")
-            return new Date(res);
+        if (isNaN(res))
+            throw new Error("Invalid res");
         return res;
     }
     drawOnCanvas() {
@@ -235,7 +235,7 @@ class SpecImgsLayers {
     }
     update() {
         if (this.spec.zoommed.x < this.zoommed.x - this.threshold) {
-            console.log(this.ptr, this.layers.length);
+            // console.log(this.ptr, this.layers.length);
             this.ptr--;
             if (this.ptr < 0) {
                 this.layers.unshift(new SpecImgs(this.cvs, this.spec));
@@ -257,8 +257,8 @@ class SpecImgs {
         this.imgs = [];
         this.spec = spec;
         this.ts = spec.box.l.midPoint(spec.box.r, "date");
-        this.pxs = (spec.ratio("x", "px", "s"));
         this.te = this.ts;
+        this.pxs = (spec.ratio("x", "px", "s"));
         this.cvs = cvs;
     }
     load() {
@@ -277,7 +277,6 @@ class SpecImgs {
             if (ts.date < this.ts.date) {
                 ts = submx(ts, margin_x(.5));
                 let te_ = (te.date < this.ts.date) ? te : this.ts;
-                console.log(te.date < this.ts.date, te_ == te);
                 SpecImg.requestSpecBlob(file_id, ts, te_, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
                 this.ts = ts;
                 this.te = (te == te_) ? te : this.te;
@@ -285,7 +284,6 @@ class SpecImgs {
             if (te.date > this.te.date) {
                 te = addmx(te, margin_x(.5));
                 let ts_ = (ts.date > this.te.date) ? ts : this.te;
-                console.log(ts.date > this.te.date);
                 SpecImg.requestSpecBlob(file_id, ts_, te, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
                 this.te = te;
                 this.ts = (ts == ts_) ? ts : this.ts;
