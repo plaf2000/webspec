@@ -3,6 +3,7 @@ import { pxCoord, PXCoord, TFCoord, tfCoord, xyGenCoord } from "./Coord.js";
 import { Detection, Detections } from "./Detection.js";
 import {
   AxT,
+  castx,
   DateTime,
   Unit,
   Units,
@@ -329,7 +330,7 @@ class SpecImgs {
 
   constructor(cvs: Canvas, spec: Spec) {
     this.spec = spec;
-    this.ts = spec.box.l.midPoint(spec.box.r, "date") as xUnit<"date">;
+    this.ts = castx(spec.box.l.midPoint(spec.box.r, "date"));
     this.te = this.ts;
     this.pxs = (spec.ratio("x","px","s"))
     this.cvs = cvs;
@@ -344,8 +345,8 @@ class SpecImgs {
     let addmx = (bound: xGenUnit, m = margin_x()) => bound.add(m, "date");
     let submx = (bound: xGenUnit, m = margin_x()) => bound.sub(m, "date");
 
-    let ts = submx(this.spec.box.l) as xUnit<"date">;
-    let te = addmx(this.spec.box.r) as xUnit<"date">;
+    let ts = castx(submx(this.spec.box.l));
+    let te = castx(addmx(this.spec.box.r));
 
     console.log(ts.date)
 
@@ -361,7 +362,7 @@ class SpecImgs {
         this.imgs.push(img);
       };
       if (ts.date < this.ts.date) {
-        ts = submx(ts, margin_x(.5)) as xUnit<"date">;
+        ts = castx(submx(ts, margin_x(.5)));
         let te_ = (te.date < this.ts.date) ? te : this.ts;
 
         SpecImg.requestSpecBlob(
@@ -376,7 +377,7 @@ class SpecImgs {
         this.te = (te==te_) ? te : this.te
       }
       if (te.date > this.te.date) {
-        te = addmx(te, margin_x(.5)) as xUnit<"date">;
+        te = castx(addmx(te, margin_x(.5)));
         let ts_ = (ts.date > this.te.date) ? ts : this.te;
 
         SpecImg.requestSpecBlob(

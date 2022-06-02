@@ -10,7 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { DrawableBox } from "./Box.js";
 import { pxCoord, tfCoord } from "./Coord.js";
 import { Detections } from "./Detection.js";
-import { DateTime, Unit, xUnit, } from "./Units.js";
+import { castx, DateTime, Unit, xUnit, } from "./Units.js";
 import { spec_options, spec_start_coord } from "../main.js";
 export class Spec {
     constructor(cvs, tl_px, br_px, dx_limit) {
@@ -254,7 +254,7 @@ class SpecImgs {
     constructor(cvs, spec) {
         this.imgs = [];
         this.spec = spec;
-        this.ts = spec.box.l.midPoint(spec.box.r, "date");
+        this.ts = castx(spec.box.l.midPoint(spec.box.r, "date"));
         this.te = this.ts;
         this.pxs = (spec.ratio("x", "px", "s"));
         this.cvs = cvs;
@@ -265,8 +265,8 @@ class SpecImgs {
         let margin_x = (r = margin_rx) => new xUnit(this.spec.box.dur * r * 1000, "date");
         let addmx = (bound, m = margin_x()) => bound.add(m, "date");
         let submx = (bound, m = margin_x()) => bound.sub(m, "date");
-        let ts = submx(this.spec.box.l);
-        let te = addmx(this.spec.box.r);
+        let ts = castx(submx(this.spec.box.l));
+        let te = castx(addmx(this.spec.box.r));
         console.log(ts.date);
         if (ts.date < this.ts.date || te.date > this.te.date) {
             let resolver = (result) => {
@@ -274,14 +274,14 @@ class SpecImgs {
                 this.imgs.push(img);
             };
             if (ts.date < this.ts.date) {
-                ts = submx(ts, margin_x(.5));
+                ts = castx(submx(ts, margin_x(.5)));
                 let te_ = (te.date < this.ts.date) ? te : this.ts;
                 SpecImg.requestSpecBlob(file_id, ts, te_, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
                 this.ts = ts;
                 this.te = (te == te_) ? te : this.te;
             }
             if (te.date > this.te.date) {
-                te = addmx(te, margin_x(.5));
+                te = castx(addmx(te, margin_x(.5)));
                 let ts_ = (ts.date > this.te.date) ? ts : this.te;
                 SpecImg.requestSpecBlob(file_id, ts_, te, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
                 this.te = te;

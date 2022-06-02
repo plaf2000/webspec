@@ -20,11 +20,8 @@ export class Unit {
     get val() {
         return this.val_;
     }
-    get prim_type() {
-        return typeof this.val_;
-    }
     midPoint(u, unit, e = false, constr = Unit) {
-        return new this.constructor((this.getv(unit) + u.getv(unit)) / 2, unit, this.ax, e, this.spec);
+        return new Unit((this.getv(unit) + u.getv(unit)) / 2, unit, this.ax, e, this.spec);
     }
     getv(t) {
         return this.spec.conv(this.val, this.unit, t, this.ax);
@@ -37,10 +34,10 @@ export class Unit {
         return `${Math.round(+this.getv(unit) * roundval) / roundval}${print_unit ? " " + unit : ""}`;
     }
     add(other, unit) {
-        return new this.constructor(this.getv(unit) + other.getv(unit), unit, this.ax, this.editable, this.spec);
+        return new Unit(this.getv(unit) + other.getv(unit), unit, this.ax, this.editable, this.spec);
     }
     sub(other, unit) {
-        return new this.constructor(this.getv(unit) - other.getv(unit), unit, this.ax, this.editable, this.spec);
+        return new Unit(this.getv(unit) - other.getv(unit), unit, this.ax, this.editable, this.spec);
     }
 }
 export class xUnit extends Unit {
@@ -82,6 +79,12 @@ export class yUnit extends Unit {
     set px(v) {
         this.setv(Math.round(v), "px");
     }
+}
+export function castx(u) {
+    return new xUnit(u.val, u.unit, "x", u.editable, u.spec);
+}
+export function casty(u) {
+    return new yUnit(u.val, u.unit, "y", u.editable, u.spec);
 }
 let digit = (x, n) => x.toLocaleString("en-US", {
     minimumIntegerDigits: n,

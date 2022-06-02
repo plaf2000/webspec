@@ -51,7 +51,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     this.ax = ax;
   }
 
-  protected set val(v: number) {
+  set val(v: number) {
     if (this.editable) this.val_ = v;
   }
 
@@ -59,9 +59,6 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return this.val_;
   }
 
-  get prim_type(): string {
-    return typeof this.val_;
-  }
 
   midPoint<V extends keyof Units[A], W extends keyof Units[A]> (
     u: Unit<A, V>,
@@ -69,7 +66,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     e = false,
     constr = Unit
   ): Unit<A,W> {
-    return new this.constructor(
+    return new Unit(
       (this.getv(unit) + u.getv(unit)) / 2,
       unit,
       this.ax,
@@ -97,7 +94,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     other: Unit<A, V>,
     unit: W
   ): Unit<A, W> {
-    return new this.constructor(
+    return new Unit(
       this.getv(unit) + other.getv(unit),
       unit,
       this.ax,
@@ -110,7 +107,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     other: Unit<A, V>,
     unit: W
   ): Unit<A, W> {
-    return new this.constructor(
+    return new Unit(
       this.getv(unit) - other.getv(unit),
       unit,
       this.ax,
@@ -153,6 +150,8 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
   }
 }
 
+
+
 export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
   constructor(
     val: number,
@@ -178,6 +177,15 @@ export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
     this.setv(Math.round(v), "px");
   }
 }
+
+export function castx<U extends uList<"x">>(u: Unit<"x",U>){
+  return new xUnit(u.val,u.unit,"x",u.editable,u.spec);
+}
+
+export function casty<U extends uList<"y">>(u: Unit<"y",U>){
+  return new yUnit(u.val,u.unit,"y",u.editable,u.spec);
+}
+
 
 let digit = (x: number, n: number) =>
   x.toLocaleString("en-US", {
