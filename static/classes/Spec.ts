@@ -347,7 +347,7 @@ class SpecImgs {
     let ts = submx(this.spec.box.l) as xUnit<"date">;
     let te = addmx(this.spec.box.r) as xUnit<"date">;
 
-
+    console.log(ts.date)
 
     if (ts.date < this.ts.date || te.date > this.te.date) {
 

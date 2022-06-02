@@ -42,7 +42,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
   readonly unit: U;
   readonly ax: A;
 
-  constructor(val: number, ax: A, unit: U, e = false, spec = Unit.spec) {
+  constructor(val: number,  unit: U, ax: A, e = false, spec = Unit.spec) {
     this.spec = spec;
     if (spec != Unit.spec) Unit.spec = spec;
     this.val_ = val;
@@ -69,10 +69,10 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     e = false,
     constr = Unit
   ): Unit<A,W> {
-    return new Unit(
+    return new this.constructor(
       (this.getv(unit) + u.getv(unit)) / 2,
-      this.ax,
       unit,
+      this.ax,
       e,
       this.spec
     );
@@ -97,10 +97,10 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     other: Unit<A, V>,
     unit: W
   ): Unit<A, W> {
-    return new Unit(
+    return new this.constructor(
       this.getv(unit) + other.getv(unit),
-      this.ax,
       unit,
+      this.ax,
       this.editable,
       this.spec
     );
@@ -110,10 +110,10 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     other: Unit<A, V>,
     unit: W
   ): Unit<A, W> {
-    return new Unit(
+    return new this.constructor(
       this.getv(unit) - other.getv(unit),
-      this.ax,
       unit,
+      this.ax,
       this.editable,
       this.spec
     );
@@ -121,13 +121,15 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
+  
   constructor(
     val: number,
     unit: U,
+    ax: "x" = "x",
     e = false,
     spec = Unit.spec
   ) {
-    super(val, "x", unit, e, spec);
+    super(val,unit, "x",  e, spec);
   }
 
   get date(): Units["x"]["date"] {
@@ -155,10 +157,11 @@ export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
   constructor(
     val: number,
     unit: U,
+    ax: "y" = "y",
     e = false,
     spec = Unit.spec
   ) {
-    super(val, "y", unit, e, spec);
+    super(val, unit,"y", e, spec);
   }
 
   get hz(): Units["y"]["hz"] {
@@ -275,7 +278,7 @@ export function convertDist<
   F extends uList<A>,
   T extends uList<A>
 >(val: number, ax: A, f: F, t: T): number {
-  let zero = new Unit(0,ax,f);
-  let uval = new Unit(val, ax, f);
+  let zero = new Unit(0,f,ax);
+  let uval = new Unit(val, f, ax);
   return Math.abs(uval.getv(t) - zero.getv(t));
 }

@@ -267,6 +267,7 @@ class SpecImgs {
         let submx = (bound, m = margin_x()) => bound.sub(m, "date");
         let ts = submx(this.spec.box.l);
         let te = addmx(this.spec.box.r);
+        console.log(ts.date);
         if (ts.date < this.ts.date || te.date > this.te.date) {
             let resolver = (result) => {
                 let img = new SpecImg(this.cvs, result.tbuffer, result.fbuffer, result.blob);

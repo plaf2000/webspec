@@ -53,7 +53,7 @@ export class xyCoord extends Coord2D {
     }
 }
 export function xy(x, y, xunit, yunit, ex, ey) {
-    return new xyCoord(new xUnit(+x, xunit, ex), new yUnit(+y, yunit, ey));
+    return new xyCoord(new xUnit(+x, xunit, "x", ex), new yUnit(+y, yunit, "y", ey));
 }
 export let pxCoord = (x, y, ex, ey) => xy(x, y, "px", "px", ex, ey);
 export let tfCoord = (x, y, ex, ey) => {

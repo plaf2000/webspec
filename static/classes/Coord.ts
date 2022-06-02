@@ -112,8 +112,8 @@ export function xy<xU extends uList<"x">, yU extends uList<"y">>(
   ey?: boolean
 ): xyCoord<xU, yU> {
   return new xyCoord(
-    new xUnit<xU>(+x, xunit, ex),
-    new yUnit<yU>(+y, yunit, ey)
+    new xUnit<xU>(+x, xunit, "x", ex),
+    new yUnit<yU>(+y, yunit, "y", ey)
   );
 }
 
