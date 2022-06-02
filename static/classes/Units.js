@@ -4,7 +4,7 @@ x and y units definitons
 
 */
 export class Unit {
-    constructor(val, unit, ax, e = false, spec = Unit.spec) {
+    constructor(val, ax, unit, e = false, spec = Unit.spec) {
         this.spec = spec;
         if (spec != Unit.spec)
             Unit.spec = spec;
@@ -23,8 +23,8 @@ export class Unit {
     get prim_type() {
         return typeof this.val_;
     }
-    midPoint(u, unit, e = false) {
-        return new this.constructor((+this.getv(unit) + +u.getv(unit)) / 2, unit, this.ax, e, this.spec);
+    midPoint(u, unit, e = false, constr = Unit) {
+        return new Unit((this.getv(unit) + u.getv(unit)) / 2, this.ax, unit, e, this.spec);
     }
     getv(t) {
         return this.spec.conv(this.val, this.unit, t, this.ax);
@@ -37,15 +37,15 @@ export class Unit {
         return `${Math.round(+this.getv(unit) * roundval) / roundval}${print_unit ? " " + unit : ""}`;
     }
     add(other, unit) {
-        return new this.constructor(+this.getv(unit) + +other.getv(unit), unit, this.ax, this.editable, this.spec);
+        return new Unit(this.getv(unit) + other.getv(unit), this.ax, unit, this.editable, this.spec);
     }
     sub(other, unit) {
-        return new this.constructor(+this.getv(unit) - +other.getv(unit), unit, this.ax, this.editable, this.spec);
+        return new Unit(this.getv(unit) - other.getv(unit), this.ax, unit, this.editable, this.spec);
     }
 }
 export class xUnit extends Unit {
-    constructor(val, unit, ax = "x", e = false, spec = Unit.spec) {
-        super(val, unit, "x", e, spec);
+    constructor(val, unit, e = false, spec = Unit.spec) {
+        super(val, "x", unit, e, spec);
     }
     get date() {
         return new DateTime(this.getv("date"));
@@ -67,8 +67,8 @@ export class xUnit extends Unit {
     }
 }
 export class yUnit extends Unit {
-    constructor(val, unit, ax = "y", e = false, spec = Unit.spec) {
-        super(val, unit, "y", e, spec);
+    constructor(val, unit, e = false, spec = Unit.spec) {
+        super(val, "y", unit, e, spec);
     }
     get hz() {
         return this.getv("hz");
@@ -150,7 +150,7 @@ export class DateTime extends Date {
 }
 DateTime.tz = 0;
 export function convertDist(val, ax, f, t) {
-    let zero = new Unit(0, f, ax);
-    let uval = new Unit(val, f, ax);
-    return Math.abs(+uval.getv(t) - +zero.getv(t));
+    let zero = new Unit(0, ax, f);
+    let uval = new Unit(val, ax, f);
+    return Math.abs(uval.getv(t) - zero.getv(t));
 }

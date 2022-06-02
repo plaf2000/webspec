@@ -159,8 +159,6 @@ export class Spec {
     }
     conv(v, f, t, a) {
         let res = (+v - +this.tl_[a][f]) * this.ratio(a, t, f) + +this.tl_[a][t];
-        if (isNaN(res))
-            throw new Error("Invalid res");
         return res;
     }
     drawOnCanvas() {
