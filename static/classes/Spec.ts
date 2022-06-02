@@ -9,6 +9,7 @@ import {
   xGenUnit,
   xUnit,
   yGenUnit,
+  yUnit,
 } from "./Units.js";
 import { spec_options, spec_start_coord } from "../main.js";
 import { Canvas } from "./Canvas.js";
@@ -61,7 +62,7 @@ export class Spec {
     A extends keyof Units,
     U extends keyof Units[A],
     V extends keyof Units[A]
-  >(ax: A, u: U, v: V) {
+  >(ax: A, u: U, v: V): number {
     return this.delta(ax, u) / this.delta(ax, v);
   }
 
@@ -328,7 +329,7 @@ class SpecImgs {
 
   constructor(cvs: Canvas, spec: Spec) {
     this.spec = spec;
-    this.ts = spec.box.l.midPoint(spec.box.r, "date");
+    this.ts = spec.box.l.midPoint(spec.box.r, "date") as xUnit<"date">;
     this.te = this.ts;
     this.pxs = (spec.ratio("x","px","s"))
     this.cvs = cvs;
@@ -343,8 +344,8 @@ class SpecImgs {
     let addmx = (bound: xGenUnit, m = margin_x()) => bound.add(m, "date");
     let submx = (bound: xGenUnit, m = margin_x()) => bound.sub(m, "date");
 
-    let ts = submx(this.spec.box.l);
-    let te = addmx(this.spec.box.r);
+    let ts = submx(this.spec.box.l) as xUnit<"date">;
+    let te = addmx(this.spec.box.r) as xUnit<"date">;
 
 
 
@@ -360,7 +361,7 @@ class SpecImgs {
         this.imgs.push(img);
       };
       if (ts.date < this.ts.date) {
-        ts = submx(ts, margin_x(.5));
+        ts = submx(ts, margin_x(.5)) as xUnit<"date">;
         let te_ = (te.date < this.ts.date) ? te : this.ts;
 
         SpecImg.requestSpecBlob(
@@ -375,7 +376,7 @@ class SpecImgs {
         this.te = (te==te_) ? te : this.te
       }
       if (te.date > this.te.date) {
-        te = addmx(te, margin_x(.5));
+        te = addmx(te, margin_x(.5)) as xUnit<"date">;
         let ts_ = (ts.date > this.te.date) ? ts : this.te;
 
         SpecImg.requestSpecBlob(

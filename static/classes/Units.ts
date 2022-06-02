@@ -42,7 +42,7 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
   readonly unit: U;
   readonly ax: A;
 
-  constructor(val: number, unit: U, ax: A, e = false, spec = Unit.spec) {
+  constructor(val: number, ax: A, unit: U, e = false, spec = Unit.spec) {
     this.spec = spec;
     if (spec != Unit.spec) Unit.spec = spec;
     this.val_ = val;
@@ -63,12 +63,16 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     return typeof this.val_;
   }
 
-
-  midPoint<V extends keyof Units[A]>(u: Unit<A, V>, unit: keyof Units[A], e = false) {
-    return new this.constructor(
-      (+this.getv(unit) + +u.getv(unit)) / 2,
-      unit,
+  midPoint<V extends keyof Units[A], W extends keyof Units[A]> (
+    u: Unit<A, V>,
+    unit: W,
+    e = false,
+    constr = Unit
+  ): Unit<A,W> {
+    return new Unit(
+      (this.getv(unit) + u.getv(unit)) / 2,
       this.ax,
+      unit,
       e,
       this.spec
     );
@@ -89,21 +93,27 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
     }`;
   }
 
-  add<V extends keyof Units[A], W extends keyof Units[A]>(other: Unit<A, V>, unit: W) {
-    return new this.constructor(
-      +this.getv(unit) + +other.getv(unit),
-      unit,
+  add<V extends keyof Units[A], W extends keyof Units[A]>(
+    other: Unit<A, V>,
+    unit: W
+  ): Unit<A, W> {
+    return new Unit(
+      this.getv(unit) + other.getv(unit),
       this.ax,
+      unit,
       this.editable,
       this.spec
     );
   }
 
-  sub<V extends keyof Units[A]>(other: Unit<A, V>, unit: keyof Units[A]) {
-    return new this.constructor(
-      +this.getv(unit) - +other.getv(unit),
-      unit,
+  sub<V extends keyof Units[A], W extends keyof Units[A]>(
+    other: Unit<A, V>,
+    unit: W
+  ): Unit<A, W> {
+    return new Unit(
+      this.getv(unit) - other.getv(unit),
       this.ax,
+      unit,
       this.editable,
       this.spec
     );
@@ -111,8 +121,13 @@ export class Unit<A extends keyof Units, U extends keyof Units[A]> {
 }
 
 export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
-  constructor(val: number, unit: U, ax: "x" = "x", e = false, spec = Unit.spec) {
-    super(val, unit,"x", e, spec);
+  constructor(
+    val: number,
+    unit: U,
+    e = false,
+    spec = Unit.spec
+  ) {
+    super(val, "x", unit, e, spec);
   }
 
   get date(): Units["x"]["date"] {
@@ -137,8 +152,13 @@ export class xUnit<U extends keyof Units["x"]> extends Unit<"x", U> {
 }
 
 export class yUnit<U extends keyof Units["y"]> extends Unit<"y", U> {
-  constructor(val: number, unit: U, ax: "y" = "y",  e = false, spec = Unit.spec) {
-    super(val, unit, "y", e, spec);
+  constructor(
+    val: number,
+    unit: U,
+    e = false,
+    spec = Unit.spec
+  ) {
+    super(val, "y", unit, e, spec);
   }
 
   get hz(): Units["y"]["hz"] {
@@ -255,8 +275,7 @@ export function convertDist<
   F extends uList<A>,
   T extends uList<A>
 >(val: number, ax: A, f: F, t: T): number {
-  let zero = new Unit(0, f, ax);
-  let uval = new Unit(val, f, ax);
-  return Math.abs(+uval.getv(t) - +zero.getv(t));
+  let zero = new Unit(0,ax,f);
+  let uval = new Unit(val, ax, f);
+  return Math.abs(uval.getv(t) - zero.getv(t));
 }
-

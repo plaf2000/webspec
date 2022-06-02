@@ -37,21 +37,51 @@ export class Coord2D<
     if (this.y.editable) this.y_ = y;
   }
 
+  distanceX<
+    xUp extends uList<X>,
+    Z extends AxT,
+    yUp extends uList<Z>,
+    xR extends uList<X>
+  >(p: Coord2D<X, Z, xUp, yUp>, unit: xR): number {
+    return p.x.sub(this.x, unit).getv(unit);
+  }
 
-  midPoint<xP extends uList<X>, yP extends uList<Y>,xR extends uList<X>, yR extends uList<Y>>(
-    p: Coord2D<X,Y,xP,yP>,
+  distanceY<
+    Z extends AxT,
+    xUp extends uList<Z>,
+    yUp extends uList<Y>,
+    yR extends uList<Y>
+  >(p: Coord2D<Z, Y, xUp, yUp>, unit: yR): number {
+    return p.y.sub(this.y, unit).getv(unit);
+  }
+
+  euclDistance<xUp extends uList<X>, yUp extends uList<Y>>(
+    p: Coord2D<X, Y, xUp, yUp>,
+    xunit: uList<X>,
+    yunit: uList<Y>
+  ): number {
+    let dx = this.distanceX(p, xunit);
+    let dy = this.distanceY(p, yunit);
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  midPoint<
+    xP extends uList<X>,
+    yP extends uList<Y>,
+    xR extends uList<X>,
+    yR extends uList<Y>
+  >(
+    p: Coord2D<X, Y, xP, yP>,
     xunit: xR,
     yunit: yR,
     ex?: boolean,
     ey?: boolean
-  ) {
-    let x: Unit<X,xR> = this.x.midPoint(this.x, xunit, ex);
-    let y: Unit<Y,yR> = this.y.midPoint(this.y, yunit, ex);
+  ): Coord2D<X, Y, xR, yR> {
+    let x = this.x.midPoint(this.x, xunit, ex);
+    let y = this.y.midPoint(this.y, yunit, ex);
 
-    return this.constructor(x,y);
+    return new Coord2D(x, y);
   }
-
-
 }
 
 export class xyCoord<
@@ -71,20 +101,6 @@ export class xyCoord<
   set y(y: yUnit<yU>) {
     super.y = y;
   }
-
-  distanceX(p: xyGenCoord, unit: uList<"x">) {
-    return +p.x[unit] - +this.x[unit];
-  }
-
-  distanceY(p: xyGenCoord, unit: uList<"y">) {
-    return +p.y[unit] - +this.y[unit];
-  }
-
-  euclDistance(p: xyGenCoord, xunit: uList<"x">, yunit: uList<"y">): number {
-    let dx = this.distanceX(p, xunit);
-    let dy = this.distanceY(p, yunit);
-    return Math.sqrt(dx * dx + dy * dy);
-  }
 }
 
 export function xy<xU extends uList<"x">, yU extends uList<"y">>(
@@ -95,7 +111,10 @@ export function xy<xU extends uList<"x">, yU extends uList<"y">>(
   ex?: boolean,
   ey?: boolean
 ): xyCoord<xU, yU> {
-  return new xyCoord(new xUnit<xU>(+x, xunit, "x", ex), new yUnit<yU>(+y, yunit, "y", ey));
+  return new xyCoord(
+    new xUnit<xU>(+x, xunit, ex),
+    new yUnit<yU>(+y, yunit, ey)
+  );
 }
 
 export let pxCoord = (
