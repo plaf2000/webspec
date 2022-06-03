@@ -12,7 +12,7 @@ import {
   yGenUnit,
   yUnit,
 } from "./Units.js";
-import { spec_options, spec_start_coord } from "../main.js";
+import { urls, spec_options, spec_start_coord } from "../main.js";
 import { Canvas } from "./Canvas.js";
 
 export class Spec {
@@ -277,8 +277,7 @@ export class Spec {
   }
 }
 
-type ReqSpecRes = { tbuffer: ArrayBuffer; fbuffer: ArrayBuffer; blob: Blob };
-type ReqSpecBlob = Promise<ReqSpecRes>;
+
 
 class SpecImgsLayers {
   layers: SpecImgs[] = [];
@@ -303,7 +302,6 @@ class SpecImgsLayers {
 
   update() {
     if (this.spec.zoommed.x < this.zoommed.x - this.threshold) {
-      // console.log(this.ptr, this.layers.length);
       this.ptr--;
       if(this.ptr<0) {
         this.layers.unshift(new SpecImgs(this.cvs, this.spec));
@@ -319,6 +317,22 @@ class SpecImgsLayers {
     }
   }
 }
+
+type ReqSpecRes = { tbuffer: ArrayBuffer; fbuffer: ArrayBuffer; blob: Blob };
+type ReqSpecBlob = Promise<ReqSpecRes>;
+
+type FileObj = {
+  id: number,
+  path: string,
+  tstart: string,
+  tend: string,
+  length: number,
+  sample_rate: number,
+  stereo: number,
+  device_id: number
+}
+
+type ReqFilesRes = FileObj[]
 
 class SpecImgs {
   spec: Spec;
@@ -336,8 +350,46 @@ class SpecImgs {
     this.cvs = cvs;
   }
 
+  static async getFiles(ts: xGenUnit, te: xGenUnit): Promise<Response> {
+    return await fetch(urls.getRel(`files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href)
+  }
+
+  loadFromFiles(ts: xGenUnit, te: xGenUnit) {
+    let resolver = (result: ReqSpecRes) => {
+      let img = new SpecImg(
+        this.cvs,
+        result.tbuffer,
+        result.fbuffer,
+        result.blob
+      );
+      this.imgs.push(img);
+    };
+
+    SpecImgs.getFiles(ts,te).then(
+      (result: Response) => {
+        result.json().then(
+          (files: ReqFilesRes) => {
+            files.map((f) => {
+              const fts = new DateTime(f.tstart);
+              const fte = new DateTime(f.tend);
+              if(!(fts > te.date || fte < ts.date))
+              SpecImg.requestSpecBlob(
+                  f.id,
+                  ts,
+                  te,
+                  this.pxs,
+                  this.spec.box.b,
+                  this.spec.box.t
+                ).then(resolver)
+              }
+            )
+          }
+        )
+      }
+    )
+  }
+
   load() {
-    let file_id = 1;
     let margin_rx = 0;
     let margin_x = (r = margin_rx) =>
       new xUnit(this.spec.box.dur * r * 1000, "date");
@@ -348,46 +400,27 @@ class SpecImgs {
     let ts = castx(submx(this.spec.box.l));
     let te = castx(addmx(this.spec.box.r));
 
-    console.log(ts.date)
+    // console.log(ts.date)
 
     if (ts.date < this.ts.date || te.date > this.te.date) {
 
-      let resolver = (result: ReqSpecRes) => {
-        let img = new SpecImg(
-          this.cvs,
-          result.tbuffer,
-          result.fbuffer,
-          result.blob
-        );
-        this.imgs.push(img);
-      };
       if (ts.date < this.ts.date) {
         ts = castx(submx(ts, margin_x(.5)));
         let te_ = (te.date < this.ts.date) ? te : this.ts;
 
-        SpecImg.requestSpecBlob(
-          file_id,
-          ts,
-          te_,
-          this.pxs,
-          this.spec.box.b,
-          this.spec.box.t
-        ).then(resolver);
+        this.loadFromFiles(ts,te_);        
+        
         this.ts = ts;
         this.te = (te==te_) ? te : this.te
       }
+
+
       if (te.date > this.te.date) {
         te = castx(addmx(te, margin_x(.5)));
         let ts_ = (ts.date > this.te.date) ? ts : this.te;
 
-        SpecImg.requestSpecBlob(
-          file_id,
-          ts_,
-          te,
-          this.pxs,
-          this.spec.box.b,
-          this.spec.box.t
-        ).then(resolver);
+        this.loadFromFiles(ts_,te);        
+
         this.te = te;
         this.ts = (ts==ts_) ? ts : this.ts;
       }
@@ -436,15 +469,14 @@ class SpecImg extends DrawableBox<"hz", "date" | "s", "hz", "date" | "s"> {
     fs: yGenUnit,
     fe: yGenUnit
   ): ReqSpecBlob {
-    let url = new URL(
-      `../../../../spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${
+    let url = urls.getRel(
+      `spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${
         fs.hz
       }/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${
         spec_options.sens
       }&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${
         spec_options.wfft
-      }`,
-      document.baseURI
+      }`
     );
 
     let data = await fetch(url.href, {

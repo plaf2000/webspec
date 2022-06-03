@@ -11,7 +11,7 @@ import { DrawableBox } from "./Box.js";
 import { pxCoord, tfCoord } from "./Coord.js";
 import { Detections } from "./Detection.js";
 import { castx, DateTime, Unit, xUnit, } from "./Units.js";
-import { spec_options, spec_start_coord } from "../main.js";
+import { urls, spec_options, spec_start_coord } from "../main.js";
 export class Spec {
     constructor(cvs, tl_px, br_px, dx_limit) {
         this.mouse_type = "auto";
@@ -233,7 +233,6 @@ class SpecImgsLayers {
     }
     update() {
         if (this.spec.zoommed.x < this.zoommed.x - this.threshold) {
-            // console.log(this.ptr, this.layers.length);
             this.ptr--;
             if (this.ptr < 0) {
                 this.layers.unshift(new SpecImgs(this.cvs, this.spec));
@@ -259,31 +258,47 @@ class SpecImgs {
         this.pxs = (spec.ratio("x", "px", "s"));
         this.cvs = cvs;
     }
+    static getFiles(ts, te) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield fetch(urls.getRel(`files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href);
+        });
+    }
+    loadFromFiles(ts, te) {
+        let resolver = (result) => {
+            let img = new SpecImg(this.cvs, result.tbuffer, result.fbuffer, result.blob);
+            this.imgs.push(img);
+        };
+        SpecImgs.getFiles(ts, te).then((result) => {
+            result.json().then((files) => {
+                files.map((f) => {
+                    const fts = new DateTime(f.tstart);
+                    const fte = new DateTime(f.tend);
+                    if (!(fts > te.date || fte < ts.date))
+                        SpecImg.requestSpecBlob(f.id, ts, te, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
+                });
+            });
+        });
+    }
     load() {
-        let file_id = 1;
         let margin_rx = 0;
         let margin_x = (r = margin_rx) => new xUnit(this.spec.box.dur * r * 1000, "date");
         let addmx = (bound, m = margin_x()) => bound.add(m, "date");
         let submx = (bound, m = margin_x()) => bound.sub(m, "date");
         let ts = castx(submx(this.spec.box.l));
         let te = castx(addmx(this.spec.box.r));
-        console.log(ts.date);
+        // console.log(ts.date)
         if (ts.date < this.ts.date || te.date > this.te.date) {
-            let resolver = (result) => {
-                let img = new SpecImg(this.cvs, result.tbuffer, result.fbuffer, result.blob);
-                this.imgs.push(img);
-            };
             if (ts.date < this.ts.date) {
                 ts = castx(submx(ts, margin_x(.5)));
                 let te_ = (te.date < this.ts.date) ? te : this.ts;
-                SpecImg.requestSpecBlob(file_id, ts, te_, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
+                this.loadFromFiles(ts, te_);
                 this.ts = ts;
                 this.te = (te == te_) ? te : this.te;
             }
             if (te.date > this.te.date) {
                 te = castx(addmx(te, margin_x(.5)));
                 let ts_ = (ts.date > this.te.date) ? ts : this.te;
-                SpecImg.requestSpecBlob(file_id, ts_, te, this.pxs, this.spec.box.b, this.spec.box.t).then(resolver);
+                this.loadFromFiles(ts_, te);
                 this.te = te;
                 this.ts = (ts == ts_) ? ts : this.ts;
             }
@@ -310,7 +325,7 @@ class SpecImg extends DrawableBox {
     }
     static requestSpecBlob(file_id, ts, te, pxs, fs, fe) {
         return __awaiter(this, void 0, void 0, function* () {
-            let url = new URL(`../../../../spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`, document.baseURI);
+            let url = urls.getRel(`spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`);
             let data = yield fetch(url.href, {
                 method: "GET",
             });

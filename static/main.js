@@ -1,5 +1,4 @@
 import { Canvas } from "./classes/Canvas.js";
-import { DateTime } from "./classes/Units.js";
 let cvs = document.getElementById("spec");
 let isFirefox = /Firefox/i.test(navigator.userAgent);
 export let spec_options = {
@@ -26,8 +25,12 @@ export let spec_options = {
         return parseInt(document.getElementById("sens").value);
     },
 };
+let lol = URL.bind("", document.baseURI);
+export const urls = {
+    device_root: new URL("../../../../", document.baseURI),
+    getRel: (p) => new URL(p, urls.device_root.href)
+};
 export const spec_start_coord = window.spec_coord;
-DateTime.tz = window.timezone;
 if (cvs) {
     let canvas = new Canvas(cvs, window.innerWidth, window.innerHeight * 0.8, isFirefox);
     document.addEventListener("mousemove", (e) => canvas.onMouseMove(e));

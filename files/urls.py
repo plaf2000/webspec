@@ -7,5 +7,5 @@ urlpatterns = [
     path('<int:file_id>/', views.get_audio),
     path('spec/', include('specimg.urls')),
     path('view/', include('view.urls')),
-    path('files/<int:tstart>/<int:tend>/', views.get_files)
+    path('files/<str:tstart>/<str:tend>/', views.get_files)
 ]

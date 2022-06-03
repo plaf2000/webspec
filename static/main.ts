@@ -40,9 +40,17 @@ export let spec_options = {
   },
 };
 
-export const spec_start_coord = (window as any).spec_coord;
+let lol = URL.bind("", document.baseURI);
 
-DateTime.tz = (window as any).timezone;
+export const urls: {
+  device_root: URL;
+  getRel: (p: string) => URL
+} = {
+  device_root: new URL("../../../../", document.baseURI),
+  getRel: (p) => new URL(p,urls.device_root.href)
+};
+
+export const spec_start_coord = (window as any).spec_coord;
 
 if (cvs) {
   let canvas = new Canvas(

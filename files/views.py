@@ -8,6 +8,7 @@ from files.models import File
 import datetime as dt
 import webspec.settings as settings
 from pytz import timezone
+from dateutil.parser import isoparse
 
 # Create your views here.
 
@@ -22,10 +23,8 @@ def list_files(request, proj_id, device_id):
 
 
 def get_files(request, proj_id, device_id, tstart, tend):
-    tz = timezone(settings.TIME_ZONE)
-    ts = dt.datetime.fromtimestamp(tstart/1000,tz)
-    te = dt.datetime.fromtimestamp(tend/1000,tz)
-    print(ts,te)
+    ts = isoparse(tstart)
+    te = isoparse(tend)
     files = list(File.objects.exclude(
         tstart__gt=te
     ).exclude(
