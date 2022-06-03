@@ -52,6 +52,8 @@ export const urls: {
 
 export const spec_start_coord = (window as any).spec_coord;
 
+DateTime.tz = (window as any).timezone;
+
 if (cvs) {
   let canvas = new Canvas(
     cvs as HTMLCanvasElement,
