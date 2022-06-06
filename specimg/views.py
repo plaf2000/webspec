@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 
+from tempfile import mkdtemp
+import os.path as path
 import numpy as np
 import pandas as pd
 import librosa
@@ -25,67 +27,170 @@ JOBS_PER_CORE = 3
 class CachedFile():
     def __init__(self, file_id, tstart, tend, nfft, wfft):
         self.file_obj = File.objects.get(id=file_id)
-        self.last_access = time.time()
-        file_obj = File.objects.get(id=file_id)
 
         self.nfft = nfft
         self.wfft = wfft
         self.hop_l = wfft//4
-        self.fftws_per_block = 20
+        self.fftws_per_block = 10
         self.last_fftw_pos = (self.fftws_per_block-1)*self.hop_l
         self.frames_per_block = self.last_fftw_pos+self.wfft
         self.overlap = self.wfft - self.hop_l
         self.blocks_per_chunk = multiprocessing.cpu_count()*JOBS_PER_CORE
         self.chunk_l = self.fftws_per_block*(self.blocks_per_chunk-1)*self.hop_l+(self.fftws_per_block-1)*self.hop_l+self.wfft
+        self.hops_per_chunk = self.fftws_per_block*self.blocks_per_chunk
+        self.tot_frames = self.file_obj.dur*self.file_obj.sr
 
-        self.cv = threading.Condition()
+        self.last_i = math.floor((self.tot_frames - self.wfft)/self.hop_l/self.hops_per_chunk)
+        self.nchunks = self.last_i+1
+
+        self.cache_fn = path.join(mkdtemp(),f"{file_id}_{nfft}_{wfft}.dat")
+        # TODO: create cache
+        w = (self.tot_frames - self.wfft)//self.hop_l+1
+        self.pxs = w/self.file_obj.dur
+        if self.file_obj.mono:
+            self.cache = np.memmap(self.cache_fn, dtype="float32", mode="r+", shape=(1+self.nfft//2,w))
+
+        self.last_access = time.time()
+
+
+
+        self.requested_chunks_ixs = []
+        self.cached_ixs = []
+
+        self.cached_ixs_ptr = 0
 
         ts = isoparse(tstart)
         te = isoparse(tend)
 
+        self.enqueue_chunks_request(ts,te)
+
+        threading.Thread(target=self.fill_raw_stft()).start()
+        
+
+        self.cv = threading.Condition()
+
+    @property
+    def cur_cache_range(self):
+        return self.cached_ixs[self.cached_ixs_ptr]
+
+    def enqueue_chunks_request(self, ts, te):
+        i_s = self.time_to_chunk(self.to_seconds(ts))
+        i_e = self.time_to_chunk(self.to_seconds(te))
+        for i in range(i_s,i_e+1):
+            self.requested_chunks_ixs.append(i)
+
+    def to_seconds(self, t):
+        return (t-self.file_obj.tstart).total_seconds()
+
     def chunk_pos(self,i):
         return i*self.hop_l*self.blocks_per_chunk*self.fftws_per_block
 
+    def time_to_chunk(self, t):
+        return math.floor(t*self.file_obj.sr/(self.hop_l*self.blocks_per_chunk*self.fftws_per_block))
+
+    def reaches_end(self):
+        return self.cached_ixs[-1][1] == self.last_i
+
+    def reaches_start(self): 
+        return self.cached_ixs[0][0] == 0
+
+
     def is_filled(self):
-        return self.ts == self.file_obj.tstart and self.te == self.file_obj.te
-    
+        return self.reaches_start() and self.reaches_end() and len(self.cached_ixs) == 1
+
     def fill_raw_stft(self):
-        pass
+        even = True
+        while not self.is_filled():
+            while self.requested_chunks_ixs:
+                i = self.requested_chunks_ixs.pop(0)
+                self.load_chunk(i)
+            if even:
+                if not self.reaches_end():
+                    self.load_chunk(self.cur_cache_range[1]+1)
+                if not self.reaches_start():
+                    even = not even
+            else:
+                if not self.reaches_start():
+                    self.load_chunk(self.cur_cache_range[0]-1)
+                if not self.reaches_end():
+                    even = not even
 
-    def load_chunk(self, ts, te):
-        hop_length = int(3*(self.wfft//4))
-        frame_length = self.wfft
-        n_approx = multiprocessing.cpu_count()*2
-        # n_approx = 8
-        block_width_approx = dur*file_obj.sample_rate/n_approx
-        # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
-        # block_length = min(256, 2**exp)
-        block_length = int((block_width_approx-frame_length)/hop_length+1)//2
-        if block_length == 0:
-            n_approx = 1
-            # n_approx = 8
-            block_width_approx = dur*self.file_obj.sample_rate/n_approx
-            # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
-            # block_length = min(256, 2**exp)
-            block_length = int((block_width_approx-frame_length)/hop_length+1)//2
+    def load_chunk(self, i):
 
-        stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
-                                duration=dur, offset=ts, mono=mono)
+        j = 0
+        while i>self.cached_ixs[j][0]-1:
+            j+=1
+        self.cached_ixs_ptr = j
+        if j < len(self.cached_ixs):
+            if self.cur_cache_range[0] <= i and self.cur_cache_range[1] >= i:
+                return
 
-        tot_width = int(file_obj.sample_rate*dur)
+        blocks = sf.blocks(self.file_obj.path,blocksize=self.frames_per_block, frames=self.chunk_l, start = self.chunk_pos(i), overlap=self.overlap)
 
-        block_width = (block_length-1)*hop_length+frame_length
-        n_frames = int(math.ceil((tot_width-frame_length)/hop_length))+1
-        print("n_frames raw, actual", (tot_width-frame_length)/hop_length, n_frames)
-        n_blocks = int(math.ceil(n_frames/block_length))
-        fft_hop_l = self.wfft//4
-        fft_block_width = int(math.ceil((block_width - self.wfft)/fft_hop_l))
-        last_block_width = tot_width - hop_length*(n_blocks-1)*(block_length)
-        fft_last_block_width = max(
-            int(math.ceil((last_block_width - self.wfft)/fft_hop_l)), 1)
 
-        data = np.empty([int(self.nfft//2+1), fft_block_width *
-                        (n_blocks-1)+fft_last_block_width], dtype=np.uint8)
+        def compute_stft(block, cache_buffer):
+            fft_block = np.log10(
+                np.abs(librosa.stft(block, n_fft=self.nfft, win_length=self.wfft,
+                                    hop_length=self.hop_l, center=False, dtype=np.complex64), dtype=np.float32)**2
+
+            )
+
+        for block in blocks:
+            if self.file_obj.mono:
+                b = block[0] if ch == "l" else block[1]
+            else:
+                b = block
+            tw += b.shape[0]
+            thread = threading.Thread(target=compute_stft, args=(b, i,))
+            if b.shape[0] < block_samples:
+                block_samples = b.shape[0]
+                print("bs, lbw", block_samples == last_block_width,
+                    block_samples, last_block_width)
+            thread.start()
+            threads.append(thread)
+            i += 1
+
+        for thread in threads:
+            thread.join()
+
+        self.update_cached(i)
+
+        self.cv.notify_all()
+
+
+    def update_cached(self,i):
+        def check_merge(left):
+            if left and self.cached_ixs_ptr>0 and self.cached_ixs[self.cached_ixs_ptr-1][1] == self.cur_cache_range[0]-1:
+                self.cur_cache_range[0] = self.cached_ixs[self.cached_ixs_ptr-1][0]
+                self.cached_ixs.pop(self.cached_ixs_ptr-1)
+                self.cached_ixs_ptr-=1
+            elif not left and self.cached_ixs_ptr<len(self.cached_ixs)-1 and self.cached_ixs[self.cached_ixs_ptr+1][0] == self.cur_cache_range[1]+1:
+                self.cur_cache_range[1] = self.cached_ixs[self.cached_ixs_ptr+1][1]
+                self.cached_ixs.pop(self.cached_ixs_ptr+1)
+            self.cv.notify_all()
+            
+
+        if not self.cached_ixs:
+            self.cached_ixs.append((i,i))
+            self.cached_ixs_ptr = 0
+            self.cv.notify_all()
+            return
+        
+        if self.cached_ixs_ptr < len(self.cached_ixs):
+            if self.cached_ixs[self.cached_ixs_ptr][0]-1 == i:
+                self.cached_ixs[self.cached_ixs_ptr][0] = i
+                check_merge(True)
+                return
+            if self.cached_ixs[self.cached_ixs_ptr][1]+1 == i:
+                self.cached_ixs[self.cached_ixs_ptr][1] = i
+                check_merge(False)
+                return
+
+        if self.cached_ixs_ptr == len(self.cached_ixs) or not (i >= self.cached_ixs[self.cached_ixs_ptr][0] and i<=self.cached_ixs[i][0]):
+            self.cached_ixs.insert(self.cached_ixs_ptr,(i,i))
+            self.cached_ixs_ptr = self.cached_ixs_ptr
+            self.cv.notify_all()     
+                
 
     def offset_dur_block(self, i):
         pass
@@ -94,7 +199,13 @@ class CachedFile():
         pass
 
     def is_req_sat(self,tstart,tend):
-        return self.ts <= tstart and self.te<=tend
+        i_s, i_e = self.time_to_chunk(self.to_seconds(tstart)), self.time_to_chunk(self.to_seconds(tend))
+        j=0
+        while i_s < self.cached_ixs[j][0]:
+            j+=1
+        if j==len(self.cached_ixs):
+            return False
+        return self.cached_ixs[j][0]<= i_s and i_e <= self.cached_ixs[j][1]
 
     def get(self, tstart, tend, request):
         with self.cv:
@@ -128,8 +239,8 @@ class CachedFile():
 
         return tstart.timestamp()*1000, tend.timestamp()*1000, 0, self.file_obj.sr/2, img
 
-
-    def fill(self):
+    def clear(self):
+        # TODO: delete the file and all data related to the cached array
         pass
 
 
@@ -152,7 +263,8 @@ class Cache:
 
     def evict(self):
         self.files = dict(sorted(self.files.items(), key = lambda file: file[1].last_access, reverse=True))
-        self.files.popitem()
+        f = self.files.popitem()
+        f.clear()
 
     def get(self, file_id,tstart, tend, nfft, wfft, request):
 
