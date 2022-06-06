@@ -20,132 +20,144 @@ import math
 from dateutil.parser import isoparse
 
 
-# Create your views here.
-
-
-class Data():
-    def __init__(self, request, proj_id, device_id):
-
+class CachedFile():
+    def __init__(self, file_id, tstart, tend, nfft, wfft):
+        self.file_obj = File.objects.get(id=file_id)
+        self.last_access = time.time()
         file_obj = File.objects.get(id=file_id)
 
-        offset = float(request.GET['offset'])
-        dur = float(request.GET['dur'])
-        ch = str(request.GET['ch'])
-        sens = 100-float(request.GET['sens'])
-        con = 100-float(request.GET['con'])
-        fname = File.objects.get(id=file_id).path
-        nfft = int(request.GET['nfft'])
-        wfft = int(request.GET['wfft'])
-        last = bool(int(request.GET['last']))
-        sr = file_obj.sample_rate
-        spx = wfft/sr/4
-        mono = ch == "mono"
-        try:
-            f_ulim = int(request.GET['hf'])
-        except:
-            f_ulim = None
-        try:
-            f_llim = int(request.GET['lf'])
-        except:
-            f_llim = None
+        self.nfft = nfft
+        self.wfft = wfft
 
-        first = offset == 0
+        self.cv = threading.Condition()
 
-        i_ch = 0 if ch == "l" else 1 if ch == "r" else None
+        ts = isoparse(tstart)
+        te = isoparse(tend)
+
+    def is_filled(self):
+        return self.ts == self.file_obj.tstart and self.te == self.file_obj.te
+    
+    def fill_raw_stft(self):
+        pass
+
+    def load_block(self, ts, te):
+        hop_length = int(3*(self.wfft//4))
+        frame_length = self.wfft
+        n_approx = multiprocessing.cpu_count()*2
+        # n_approx = 8
+        block_width_approx = dur*file_obj.sample_rate/n_approx
+        # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
+        # block_length = min(256, 2**exp)
+        block_length = int((block_width_approx-frame_length)/hop_length+1)//2
+        if block_length == 0:
+            n_approx = 1
+            # n_approx = 8
+            block_width_approx = dur*file_obj.sample_rate/n_approx
+            # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
+            # block_length = min(256, 2**exp)
+            block_length = int((block_width_approx-frame_length)/hop_length+1)//2
+
+        stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
+                                duration=dur, offset=offset, mono=mono)
 
         thresholds = ((sens/25-2)+con*3/50, (sens/25-7)-con*3/50)
 
-        margin_factor = 10
+        tot_width = int(file_obj.sample_rate*dur)
 
-        if first:
-            dur += spx*margin_factor
-        else:
-            offset -= spx*margin_factor
-            dur += 2*spx*margin_factor
+        block_width = (block_length-1)*hop_length+frame_length
+        n_frames = int(math.ceil((tot_width-frame_length)/hop_length))+1
+        print("n_frames raw, actual", (tot_width-frame_length)/hop_length, n_frames)
+        n_blocks = int(math.ceil(n_frames/block_length))
+        fft_hop_l = self.wfft//4
+        width = int(math.ceil((sr*dur)/fft_hop_l))
+        fft_block_width = int(math.ceil((block_width - self.wfft)/fft_hop_l))
+        # last_block_width = tot_width - hop_length*(n_blocks-1)*(block_length)
+        last_frame_length = tot_width - hop_length*(n_frames-1)
+        # print("Frame, last frame",frame_length,last_frame_length)
+        # last_block_width = tot_width-(n_blocks-1)*block_width
+        # last_block_width =   (n_frames - block_length*(n_blocks-1)-1)*hop_length+last_frame_length
+        last_block_width = tot_width - hop_length*(n_blocks-1)*(block_length)
+        fft_last_block_width = max(
+            int(math.ceil((last_block_width - self.wfft)/fft_hop_l)), 1)
 
-        y, _ = librosa.load(fname, sr=sr, duration=dur,
-                            offset=offset, mono=mono)
-        val = (librosa.get_duration(y, sr)-dur)*sr
-        to_append = False
-        print((librosa.get_duration(y, sr)-dur)*sr)
-        if -1 < val < 0:
-            to_append = True
-            y_append, _ = librosa.load(
-                fname, sr=sr, duration=1/sr, offset=offset+dur, mono=mono)
+        data = np.empty([int(self.nfft//2+1), fft_block_width *
+                        (n_blocks-1)+fft_last_block_width], dtype=np.uint8)
 
-        elif 0 < val < 1:
-            if mono:
-                y = y[:-1]
-            else:
-                y = y[i_ch, :-1]
+    def offset_dur_block(self, i):
+        pass
 
-        elif 0 < val < 1:
-            if mono:
-                y = y[1:]
-            else:
-                y = y[i_ch, 1:]
+    def get_stft_raw(self,tstart,tend,ch):
+        pass
 
-        if not mono:
-            y = np.asfortranarray(y[i_ch])
+    def is_req_sat(self,tstart,tend):
+        return self.ts <= tstart and self.te<=tend
 
-        if to_append:
-            if mono:
-                y = np.append(y, y_append[0])
-            else:
-                y = np.append(y, np.asfortranarray(y_append[i_ch, 0]))
-        if to_append:
-            if mono:
-                y = np.append(y, y_append[0])
-            else:
-                y = np.insert(y, 0, y_append[i_ch, -1])
+    def get(self, tstart, tend, request):
+        with self.cv:
+            self.cv.wait_for(lambda: self.is_req_sat(tstart,tend))
+        
+        reqprop = lambda name, format: format(request.GET[name])
+        ch = reqprop('ch',str)
 
-        print((librosa.get_duration(y, sr)-dur)*sr)
+        fft_raw, tstart, tend = self.get_stft_raw(tstart,tend,ch)
+        
+        
+        sens = 100-reqprop('sens',float)
+        con = 100-reqprop('con',float)
+        thresholds = ((sens/25-2)+con*3/50, 255/((sens/25-7)-con*3/50))
 
-        self.data = np.log10(
-            np.abs(librosa.stft(y, n_fft=nfft, win_length=wfft))**2)-thresholds[0]
-        # self.data = librosa.amplitude_to_db(np.abs(librosa.stft(y,n_fft=nfft,win_length=wfft)),ref=sens*200)
 
-        # print(self.data.shape)
-        i_ulim = int((self.data.shape[0]*2/sr) *
-                     f_ulim) if f_ulim is not None else None
-        i_llim = int((self.data.shape[0]*2/sr) *
-                     f_llim) if f_llim is not None else None
+        fft_block-= thresholds[0]
+        fft_block *= thresholds[1]
+        fft_block = np.clip(fft_block, 0, 255)
+        fft_block = fft_block.astype(np.uint8)
 
-        self.data = self.data[i_llim:i_ulim]
-        if not last:
-            self.data = self.data[:, :-margin_factor]
-        if not first:
-            self.data = self.data[:, margin_factor:]
+        dur = (tend-tstart).total_seconds()
+        width = round(dur*float(request.GET["pxs"]))
 
-        print(self.data.shape)
+        data = transform.resize(data, (data.shape[0], min(width, data.shape[1])), order=0, anti_aliasing=False)
 
-        # self.data[self.data>0]=0
-        self.data[self.data > 0] = 0
-        self.data[self.data < thresholds[1]] = thresholds[1]
+        img = Image.fromarray(data, 'L')
+        img = ImageOps.flip(img)
 
-        self.data /= thresholds[1]
-        self.data *= 255
-        self.data[self.data > 255] = 255
-        self.data = self.data.astype(np.uint8)
-        self.data = np.flip(self.data, axis=0)
-        self.dsize = self.data.shape
-        self.img = Image.fromarray(self.data, 'L')
-        self.img_bytes = {}
+        self.last_access = time.time()
 
-    def get_img(self, factor):
-        img = self.img
-        if(factor != 1):
-            new_size = (self.dsize[1]//factor, self.dsize[0])
-            img = img.resize(new_size)
-        buffered = BytesIO()
-        img.save(buffered, format="png")
-        return buffered
+        return tstart.timestamp()*1000, tend.timestamp()*1000, 0, self.file_obj.sr/2, img
 
-    def get_img_response(self, factor=1):
-        if not hasattr(self, 'img_text'):
-            img_bytes = self.get_img(factor).getvalue()
-            self.img_text = img_bytes.decode('latin1')
-        return HttpResponse(self.img_text, content_type="text/plain")
+
+    def fill(self):
+        pass
+
+
+class Cache:
+    def __init__(self, max_count):
+        self.files = {}
+        self.max_count = max_count
+
+    def index(self, file_id, nfft, wfft):
+        return f"{file_id}_{nfft}_{wfft}"
+
+    def f(self, file_id, nfft,wfft):
+        return self.files[self.index(file_id,nfft,wfft)]
+
+    def add(self, file_id, tstart, tend, nfft, wfft):
+        if len(self.count) == self.max_count:
+            self.evict()
+        self.files[self.index(file_id,nfft,wfft)] = CachedFile(file_id, tstart, tend, nfft, wfft)
+        return self.f(file_id,nfft,wfft)
+
+    def evict(self):
+        self.files = dict(sorted(self.files.items(), key = lambda file: file[1].last_access, reverse=True))
+        self.files.popitem()
+
+    def get(self, file_id,tstart, tend, nfft, wfft, request):
+
+        f = self.f(file_id,nfft,wfft)
+
+        if f is not None:
+            return f.get(tstart, tend, request)
+        return self.add(self,file_id,tstart,tend,nfft,wfft).get(tstart, tend, request)
+        
 
 
 def spec_multi_threaded(file_id, tstart, tend, request):
@@ -155,11 +167,19 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     ts = isoparse(tstart)
     te = isoparse(tend)
 
-    ch = str(request.GET['ch'])
-    sens = 100-float(request.GET['sens'])
-    con = 100-float(request.GET['con'])
-    nfft = int(request.GET['nfft'])
-    wfft = int(request.GET['wfft'])
+    reqprop = lambda name, format: format(request.GET[name])
+    ch = reqprop('ch',str)
+    sens = 100-reqprop('sens',float)
+    con = 100-reqprop('con',float)
+    nfft = reqprop('nfft',int)
+    wfft = reqprop('wfft',int)
+    
+
+    # ch = str(request.GET['ch'])
+    # sens = 100-float(request.GET['sens'])
+    # con = 100-float(request.GET['con'])
+    # nfft = int(request.GET['nfft'])
+    # wfft = int(request.GET['wfft'])
 
     if ts >= file_obj.tend:
         return None, None, None, None, None
@@ -186,14 +206,13 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
     # block_length = min(256, 2**exp)
     block_length = int((block_width_approx-frame_length)/hop_length+1)//2
-    if block_length==0:
-      n_approx = 1
-      # n_approx = 8
-      block_width_approx = dur*file_obj.sample_rate/n_approx
-      # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
-      # block_length = min(256, 2**exp)
-      block_length = int((block_width_approx-frame_length)/hop_length+1)//2
-
+    if block_length == 0:
+        n_approx = 1
+        # n_approx = 8
+        block_width_approx = dur*file_obj.sample_rate/n_approx
+        # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
+        # block_length = min(256, 2**exp)
+        block_length = int((block_width_approx-frame_length)/hop_length+1)//2
 
     stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
                             duration=dur, offset=offset, mono=mono)
@@ -230,7 +249,8 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     def compute_stft(block, i):
         fft_block = np.log10(
             np.abs(librosa.stft(block, n_fft=nfft, win_length=wfft,
-                hop_length=fft_hop_l, center=False))**2
+                                hop_length=fft_hop_l, center=False, dtype=np.complex64), dtype=np.float32)**2
+
         )-thresholds[0]
         fft_block *= s
         fft_block = np.clip(fft_block, 0, 255)
@@ -240,12 +260,11 @@ def spec_multi_threaded(file_id, tstart, tend, request):
         start = i*fft_block_width
         data[:, start:start+fft_block.shape[1]] = fft_block
 
-
     for block in stream:
         if not mono:
-          b=block[0] if ch=="l" else block[1] 
+            b = block[0] if ch == "l" else block[1]
         else:
-          b=block
+            b = block
         tw += b.shape[0]
         thread = threading.Thread(target=compute_stft, args=(b, i,))
         if b.shape[0] < block_samples:
@@ -267,9 +286,10 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     print("read, fft computed {:.4f}".format(cur_time - last_time))
     last_time = cur_time
 
-    width=round(dur*float(request.GET["pxs"]))
+    width = round(dur*float(request.GET["pxs"]))
 
-    data = transform.resize(data, (data.shape[0], min(width, data.shape[1])), order=0, anti_aliasing=False)
+    data = transform.resize(data, (data.shape[0], min(
+        width, data.shape[1])), order=0, anti_aliasing=False)
     # data = transform.resize(data, (data.shape[0], width), order=0, anti_aliasing=False)
 
     cur_time = time.time()
@@ -280,10 +300,6 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     img = ImageOps.flip(img)
 
     return ts.timestamp()*1000, te.timestamp()*1000, 0, sr/2, img
-
-
-
-
 
 
 data_requests = {}
@@ -307,13 +323,11 @@ def render_spec_img(request, proj_id, device_id, file_id, tstart, tend, fstart, 
     #     print("present")
     # return data_requests[nfft][wfft][offset].get_img_response(factor)
 
-
     # To test: 2020-11-12T07:11:30.000+01:00/2020-11-12T07:12:30.000+01:00
 
-    _, _,_, _, img = spec_multi_threaded(file_id, tstart, tend, request)
+    _, _, _, _, img = spec_multi_threaded(file_id, tstart, tend, request)
     buffered = BytesIO()
     img.save(buffered, format="png")
-   
 
     return HttpResponse(buffered.getvalue(), content_type="image/png")
 
@@ -321,14 +335,10 @@ def render_spec_img(request, proj_id, device_id, file_id, tstart, tend, fstart, 
 def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
     ts, te, fs, fe, img = spec_multi_threaded(file_id, tstart, tend, request)
     buffered = BytesIO()
-    buffered.write(struct.pack('QQdd',round(ts),round(te),fs,fe))
+    buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
     img.save(buffered, format="png")
 
     return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
-
-
-
-
 
 
 def render_spec_single_core(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):

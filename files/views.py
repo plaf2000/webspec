@@ -9,14 +9,19 @@ import datetime as dt
 import webspec.settings as settings
 from pytz import timezone
 from dateutil.parser import isoparse
-
-# Create your views here.
+from datetime import timedelta
 
 
 def list_files(request, proj_id, device_id):
     device = DeviceContext.objects.get(id=device_id)
+    files = device.all_files.order_by('tstart')
+    for f in files:
+        f.tstart_iso = f.tstart.isoformat()
+        # Link to the the first 20 seconds of the file
+        te = f.tstart + timedelta(seconds=20)
+        f.tend_iso = te.isoformat()
     return render(request, 'files_list.html', {
-        'files': device.all_files.order_by('tstart'),
+        'files': files,
         'project': Project.objects.get(id=proj_id),
         'device': device
     })
