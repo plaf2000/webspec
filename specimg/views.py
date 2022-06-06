@@ -4,6 +4,7 @@ from django.http import HttpResponse
 import numpy as np
 import pandas as pd
 import librosa
+import soundfile as sf
 import struct
 import time
 from PIL import Image, ImageOps
@@ -19,6 +20,7 @@ import threading
 import math
 from dateutil.parser import isoparse
 
+JOBS_PER_CORE = 3
 
 class CachedFile():
     def __init__(self, file_id, tstart, tend, nfft, wfft):
@@ -28,11 +30,21 @@ class CachedFile():
 
         self.nfft = nfft
         self.wfft = wfft
+        self.hop_l = wfft//4
+        self.fftws_per_block = 20
+        self.last_fftw_pos = (self.fftws_per_block-1)*self.hop_l
+        self.frames_per_block = self.last_fftw_pos+self.wfft
+        self.overlap = self.wfft - self.hop_l
+        self.blocks_per_chunk = multiprocessing.cpu_count()*JOBS_PER_CORE
+        self.chunk_l = self.fftws_per_block*(self.blocks_per_chunk-1)*self.hop_l+(self.fftws_per_block-1)*self.hop_l+self.wfft
 
         self.cv = threading.Condition()
 
         ts = isoparse(tstart)
         te = isoparse(tend)
+
+    def chunk_pos(self,i):
+        return i*self.hop_l*self.blocks_per_chunk*self.fftws_per_block
 
     def is_filled(self):
         return self.ts == self.file_obj.tstart and self.te == self.file_obj.te
@@ -40,7 +52,7 @@ class CachedFile():
     def fill_raw_stft(self):
         pass
 
-    def load_block(self, ts, te):
+    def load_chunk(self, ts, te):
         hop_length = int(3*(self.wfft//4))
         frame_length = self.wfft
         n_approx = multiprocessing.cpu_count()*2
@@ -52,15 +64,13 @@ class CachedFile():
         if block_length == 0:
             n_approx = 1
             # n_approx = 8
-            block_width_approx = dur*file_obj.sample_rate/n_approx
+            block_width_approx = dur*self.file_obj.sample_rate/n_approx
             # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
             # block_length = min(256, 2**exp)
             block_length = int((block_width_approx-frame_length)/hop_length+1)//2
 
         stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
-                                duration=dur, offset=offset, mono=mono)
-
-        thresholds = ((sens/25-2)+con*3/50, (sens/25-7)-con*3/50)
+                                duration=dur, offset=ts, mono=mono)
 
         tot_width = int(file_obj.sample_rate*dur)
 
@@ -69,13 +79,7 @@ class CachedFile():
         print("n_frames raw, actual", (tot_width-frame_length)/hop_length, n_frames)
         n_blocks = int(math.ceil(n_frames/block_length))
         fft_hop_l = self.wfft//4
-        width = int(math.ceil((sr*dur)/fft_hop_l))
         fft_block_width = int(math.ceil((block_width - self.wfft)/fft_hop_l))
-        # last_block_width = tot_width - hop_length*(n_blocks-1)*(block_length)
-        last_frame_length = tot_width - hop_length*(n_frames-1)
-        # print("Frame, last frame",frame_length,last_frame_length)
-        # last_block_width = tot_width-(n_blocks-1)*block_width
-        # last_block_width =   (n_frames - block_length*(n_blocks-1)-1)*hop_length+last_frame_length
         last_block_width = tot_width - hop_length*(n_blocks-1)*(block_length)
         fft_last_block_width = max(
             int(math.ceil((last_block_width - self.wfft)/fft_hop_l)), 1)
@@ -215,7 +219,7 @@ def spec_multi_threaded(file_id, tstart, tend, request):
         block_length = int((block_width_approx-frame_length)/hop_length+1)//2
 
     stream = librosa.stream(file_obj.path, block_length=block_length, frame_length=frame_length, hop_length=hop_length,
-                            duration=dur, offset=offset, mono=mono)
+                            duration=dur, offset=offset, mono=mono, dtype=np.float32)
 
     thresholds = ((sens/25-2)+con*3/50, (sens/25-7)-con*3/50)
 
@@ -344,7 +348,8 @@ def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart,
 def render_spec_single_core(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
 
     # Width is here given by the following formula:
-    #   ceil((sr*dur)/hop_length)
+    #   ceil((sr*dur-fft_win)/hop_length)
+
 
     width = 7718
     last_time = time.time()
@@ -375,6 +380,9 @@ def render_spec_single_core(request, proj_id, device_id, file_id, tstart, tend, 
 
     mono = ch == "mono"
 
+    print("Width",math.ceil(((file_obj.sample_rate*dur)-wfft)*4/wfft))
+
+
     raw_data, _ = librosa.load(
         file_obj.path, duration=dur, offset=offset, mono=mono, sr=file_obj.sample_rate)
 
@@ -382,7 +390,7 @@ def render_spec_single_core(request, proj_id, device_id, file_id, tstart, tend, 
 
     data = np.log10(
         np.abs(librosa.stft(raw_data, n_fft=nfft,
-               win_length=wfft, center=True))**2
+               win_length=wfft, center=False))**2
     )-thresholds[0]
     data *= 255/thresholds[1]
     data = np.clip(data, 0, 255)
