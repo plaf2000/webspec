@@ -232,16 +232,18 @@ class CachedFile():
 
         for block in blocks:
             if self.file_obj.stereo:
+                b = block.T
                 for k in range(2):
                     thread = threading.Thread(
-                        target=compute_stft, args=(block.T[k], k,j,))
+                        target=compute_stft, args=(b[k], k, j,))
+                    threads.append(thread)
+                    thread.start()
 
             else:
                 thread = threading.Thread(
-                    target=compute_stft, args=(block.T,0, j,))
-            
-            threads.append(thread)
-            thread.start()
+                    target=compute_stft, args=(block.T, 0, j,))
+                threads.append(thread)
+                thread.start()
             j += self.fftws_per_block
 
         for thread in threads:
@@ -321,7 +323,7 @@ class CachedFile():
             if not self.file_obj.stereo:
                 raw_stft = self.cache[:, i_s:i_e]
             else:
-                raw_stft = np.sum(self.cache[:, :, i_s:i_e], axis=0)
+                raw_stft = np.sum(self.cache[:, :, i_s:i_e], axis=0)/2
 
         ts = i_s/self.pxs
         te = i_e/self.pxs
