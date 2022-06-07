@@ -2,7 +2,7 @@ import os
 from django.shortcuts import render
 from django.http import HttpResponse
 
-from tempfile import mkdtemp
+from tempfile import gettempdir
 import os.path as path
 import numpy as np
 import pandas as pd
@@ -58,22 +58,24 @@ class CachedFile():
             (self.blocks_per_chunk-1)*self.hop_l + \
             (self.fftws_per_block-1)*self.hop_l+self.wfft
         self.hops_per_chunk = self.fftws_per_block*self.blocks_per_chunk
-        self.tot_frames = self.file_obj.duration*self.file_obj.sample_rate
+        self.tot_frames = self.file_obj.length*self.file_obj.sample_rate
+
 
         self.last_i = math.floor(
             (self.tot_frames - self.wfft)/self.hop_l/self.hops_per_chunk)
         self.nchunks = self.last_i+1
 
-        self.cache_fn = path.join(mkdtemp(), f"{file_id}_{nfft}_{wfft}.dat")
-        self.cache_w = (self.tot_frames - self.wfft)//self.hop_l+1
-        self.pxs = self.cache_w/self.file_obj.duration
-        if self.file_obj.mono:
-            shape = (1+self.nfft//2, w)
+        self.cache_fn = path.join(gettempdir(), f"{file_id}_{nfft}_{wfft}.dat")
+        self.cache_w = int((self.tot_frames - self.wfft)//self.hop_l)+1
+        self.pxs = self.cache_w/self.file_obj.length
+        if not self.file_obj.stereo:
+            shape = (1+self.nfft//2, self.cache_w)
         else:
-            shape = (2, 1+self.nfft//2, w)
+            shape = (2, 1+self.nfft//2, self.cache_w)
 
+        
         self.cache = np.memmap(
-            self.cache_fn, dtype="float32", mode="r+", shape=shape)
+            self.cache_fn, dtype="float32", mode="w+", shape=shape)
 
         self.last_access = time.time()
 
@@ -117,6 +119,17 @@ class CachedFile():
             Time in seconds from the start of the audio track.
         """
         return (t-self.file_obj.tstart).total_seconds()
+    def to_datetime(self, t):
+        """
+            Parameters
+            ----------
+             - `t` : time in seconds
+
+            Returns
+            ----------
+            Time as a datetime object.
+        """
+        return self.file_obj.tstart+dt.timedelta(seconds=t)
 
     def chunk_pos(self, i):
         """
@@ -148,7 +161,7 @@ class CachedFile():
             ----------
             `True` iff the cache reaches the end of the file.
         """
-        return self.cached_ixs[-1][1] == self.last_i
+        return self.cached_ixs and self.cached_ixs[-1][1] == self.last_i
 
     def reaches_start(self):
         """
@@ -156,7 +169,7 @@ class CachedFile():
             ----------
             `True` iff the cache reaches the start of the file.
         """
-        return self.cached_ixs[0][0] == 0
+        return self.cached_ixs and self.cached_ixs[0][0] == 0
 
     def is_filled(self):
         """
@@ -196,6 +209,8 @@ class CachedFile():
         j = 0
         while j < len(self.cached_ixs) and i > self.cached_ixs[j][0]-1:
             j += 1
+        if j>0 and self.cached_ixs[j-1][1]+1==i:
+            j-=1
         self.cached_ixs_ptr = j
         if j < len(self.cached_ixs):
             if self.cur_cache_range[0] <= i and self.cur_cache_range[1] >= i:
@@ -204,8 +219,8 @@ class CachedFile():
         blocks = sf.blocks(self.file_obj.path, blocksize=self.frames_per_block,
                            frames=self.chunk_l, start=self.chunk_pos(i), overlap=self.overlap)
 
-        def compute_stft(block, j):
-            self.cache[i, :, j:j+self.fftws_per_block] = np.log10(
+        def compute_stft(block,k, j):
+            self.cache[k, :, j:j+self.fftws_per_block] = np.log10(
                 np.abs(librosa.stft(block, n_fft=self.nfft, win_length=self.wfft,
                                     hop_length=self.hop_l, center=False, dtype=np.complex64), dtype=np.float32)**2
 
@@ -216,23 +231,28 @@ class CachedFile():
         threads = []
 
         for block in blocks:
-            if self.file_obj.mono:
-                for i in range(2):
+            if self.file_obj.stereo:
+                for k in range(2):
                     thread = threading.Thread(
-                        target=compute_stft, args=(block[i].T, j,))
+                        target=compute_stft, args=(block.T[k], k,j,))
 
             else:
                 thread = threading.Thread(
-                    target=compute_stft, args=(block.T, j,))
+                    target=compute_stft, args=(block.T,0, j,))
+            
             threads.append(thread)
+            thread.start()
             j += self.fftws_per_block
 
         for thread in threads:
             thread.join()
 
         self.update_cached(i)
-
-        self.cv.notify_all()
+        self.noty_all()
+    
+    def noty_all(self):
+        with self.cv:
+            self.cv.notify_all()
 
     def update_cached(self, i):
         """
@@ -249,12 +269,12 @@ class CachedFile():
             elif not left and self.cached_ixs_ptr < len(self.cached_ixs)-1 and self.cached_ixs[self.cached_ixs_ptr+1][0] == self.cur_cache_range[1]+1:
                 self.cur_cache_range[1] = self.cached_ixs[self.cached_ixs_ptr+1][1]
                 self.cached_ixs.pop(self.cached_ixs_ptr+1)
-            self.cv.notify_all()
+            self.noty_all()
 
         if not self.cached_ixs:
-            self.cached_ixs.append((i, i))
+            self.cached_ixs.append([i,i])
             self.cached_ixs_ptr = 0
-            self.cv.notify_all()
+            self.noty_all()
             return
 
         if self.cached_ixs_ptr < len(self.cached_ixs):
@@ -268,9 +288,9 @@ class CachedFile():
                 return
 
         if self.cached_ixs_ptr == len(self.cached_ixs) or not (i >= self.cached_ixs[self.cached_ixs_ptr][0] and i <= self.cached_ixs[i][0]):
-            self.cached_ixs.insert(self.cached_ixs_ptr, (i, i))
+            self.cached_ixs.insert(self.cached_ixs_ptr, [i,i])
             self.cached_ixs_ptr = self.cached_ixs_ptr
-            self.cv.notify_all()
+            self.noty_all()
 
     def get_stft_raw(self, ts, te, ch):
         """
@@ -298,10 +318,10 @@ class CachedFile():
         elif ch == "r":
             raw_stft = self.cache[1, :, i_s:i_e]
         else:
-            if self.file_obj.mono:
+            if not self.file_obj.stereo:
                 raw_stft = self.cache[:, i_s:i_e]
             else:
-                raw_stft = np.sum(self.cache[:, :i_s:i_e], axis=0)
+                raw_stft = np.sum(self.cache[:, :, i_s:i_e], axis=0)
 
         ts = i_s/self.pxs
         te = i_e/self.pxs
@@ -349,11 +369,11 @@ class CachedFile():
         ts, te = self.to_seconds(tstart), self.to_seconds(tend)
 
         with self.cv:
-            self.cv.wait_for(lambda: self.is_req_sat(tstart, tend))
+            self.cv.wait_for(lambda: self.is_req_sat(ts, te))
 
         ch = request.get('ch', str)
 
-        tstart, tend, data = self.get_data(tstart, tend, ch)
+        tstart, tend, data = self.get_stft_raw(ts, te, ch)
 
         sens = 100-request.get('sens', float)
         con = 100-request.get('con', float)
@@ -374,6 +394,9 @@ class CachedFile():
         img = ImageOps.flip(img)
 
         self.last_access = time.time()
+
+        tstart = self.to_datetime(tstart)
+        tend = self.to_datetime(tend)
 
         return tstart.timestamp()*1000, tend.timestamp()*1000, 0, self.file_obj.sample_rate/2, img
 
@@ -427,11 +450,28 @@ def render_spec_img(request, proj_id, device_id, file_id, tstart, tend, fstart, 
     wfft = request.get("wfft",int)
     nfft = request.get("nfft",int)
 
+    # _, _, _, _, img = spec_multi_threaded(file_id,tstart,tend,request.request)
     _, _, _, _, img = CACHE.get(file_id, tstart, tend, nfft,wfft, request)
     buffered = BytesIO()
     img.save(buffered, format="png")
 
     return HttpResponse(buffered.getvalue(), content_type="image/png")
+
+def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+    tstart = isoparse(tstart)
+    tend = isoparse(tend)
+
+    request = PropGetter(request)
+
+    wfft = request.get("wfft",int)
+    nfft = request.get("nfft",int)
+
+    ts, te, fs, fe, img = CACHE.get(file_id, tstart, tend,nfft,wfft, request)
+    buffered = BytesIO()
+    buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
+    img.save(buffered, format="png")
+
+    return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
 
 
 
@@ -626,13 +666,13 @@ data_requests = {}
 #     return HttpResponse(buffered.getvalue(), content_type="image/png")
 
 
-def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
-    ts, te, fs, fe, img = spec_multi_threaded(file_id, tstart, tend, request)
-    buffered = BytesIO()
-    buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
-    img.save(buffered, format="png")
+# def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+#     ts, te, fs, fe, img = spec_multi_threaded(file_id, tstart, tend, request)
+#     buffered = BytesIO()
+#     buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
+#     img.save(buffered, format="png")
 
-    return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
+#     return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
 
 
 def render_spec_single_core(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
