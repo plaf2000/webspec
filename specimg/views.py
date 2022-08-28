@@ -26,26 +26,28 @@ from dateutil.parser import isoparse
 JOBS_PER_CORE = 3
 
 
+class PropGetter():
+    def __init__(self, request):
+        self.request = request
+    def get(self, name, format):
+        return format(self.request.GET[name])
+
+
 """
 
 Version 3
 
 """
 
-class BaseLayer():
-    def __init__(self,raw,upper,wfft,nfft,sens,con):
-        self.raw = raw
-        self.upper = upper
-        self.wfft = wfft
-        self.nfft = nfft
-        self.sens = sens
-        self.con = con
+
+BASE_LAYER_CHUNK_WIDTH = 2048
+
+
 
 class Layer():
-    def __init__(self, base, upper, lower):
+    def __init__(self, base, upper):
         self.base = base
         self.upper = upper
-        self.lower = lower
         self.cv = threading.Condition()
         self.loaded = dict()
         self.delivered = set() # chunks delivered to the upper layer
@@ -53,14 +55,21 @@ class Layer():
         self.ready = dict()
         self.fl = threading.Lock()
     
-    def request(self,i):
-        if not self.is_sat(i):
-            self.ready[i] = threading.Event()
-            threading.Thread(target=self.base.load(i)).start()
+    def request(self,i_s,i_e):
+
+        ixs = range(i_s,i_e)
+        for i in ixs:
+            if not self.is_sat(i):
+                self.ready[i] = threading.Event()
+                threading.Thread(target=self.base.load(i)).start()
+                
+        for i in ixs:
             self.ready[i].wait()
-        reply = self.loaded[i]
-        self.sent.add(i)
-        self.free(i)
+        
+        reply = np.concatenate(self.loaded[i_s:i_e],axis=1,dtype=np.int8)
+        for i in ixs:
+            self.sent.add(i)
+            self.free(i)
         return reply 
     
     def is_sat(self,*args):
@@ -93,6 +102,78 @@ class Layer():
             self.delivered.add(i)
         self.free(i)
 
+
+class BaseLayer(Layer):
+    def __init__(self,raw,upper,wfft: int,nfft: int, sens,con):
+        Layer.__init__(self, self, upper)
+        self.raw = raw
+        self.wfft = wfft
+        self.nfft = nfft
+        self.hop_l = wfft//4
+        self.sens = sens
+        self.con = con
+        self.n_win = raw.shape[0]/self.hop_l
+        self.length = raw.shape[0]/BASE_LAYER_CHUNK_WIDTH #TODO: check that this is correct
+
+
+        self.fftws_per_block = 50
+        self.last_fftw_pos = (self.fftws_per_block-1)*self.hop_l
+        self.frames_per_block = self.last_fftw_pos+self.wfft
+        self.overlap = self.wfft - self.hop_l
+        self.blocks_per_chunk = multiprocessing.cpu_count()*JOBS_PER_CORE
+        self.chunk_l = self.fftws_per_block * \
+            (self.blocks_per_chunk-1)*self.hop_l + \
+            (self.fftws_per_block-1)*self.hop_l+self.wfft
+        self.hops_per_chunk = self.fftws_per_block*self.blocks_per_chunk
+        self.tot_frames = self.file_obj.length*self.file_obj.sample_rate
+
+
+        self.last_i = math.floor(
+            (self.tot_frames - self.wfft)/self.hop_l/self.hops_per_chunk)
+        self.nchunks = self.last_i+1
+
+
+    def load(self,i):
+
+        blocks = sf.blocks(self.file_obj.path, blocksize=self.frames_per_block,
+                           frames=self.chunk_l, start=self.chunk_pos(i), overlap=self.overlap)
+
+        def compute_stft(block,k, j):
+            self.cache[k, :, j:j+self.fftws_per_block] = np.log10(
+                np.abs(librosa.stft(block, n_fft=self.nfft, win_length=self.wfft,
+                                    hop_length=self.hop_l, center=False, dtype=np.complex64), dtype=np.float32)**2
+
+            )
+
+        j = i*self.fftws_per_block*self.blocks_per_chunk
+
+        threads = []
+
+        for block in blocks:
+            if self.file_obj.stereo:
+                b = block.T
+                for k in range(2):
+                    thread = threading.Thread(
+                        target=compute_stft, args=(b[k], k, j,))
+                    threads.append(thread)
+                    thread.start()
+
+            else:
+                thread = threading.Thread(
+                    target=compute_stft, args=(block.T, 0, j,))
+                threads.append(thread)
+                thread.start()
+            j += self.fftws_per_block
+
+        for thread in threads:
+            thread.join()
+
+        self.update_cached(i)
+        self.noty_all()
+
+
+
+
         
 
 
@@ -103,11 +184,7 @@ Version 2
 """
 
 
-class PropGetter():
-    def __init__(self, request):
-        self.request = request
-    def get(self, name, format):
-        return format(self.request.GET[name])
+
         
 
 class CachedFile():
