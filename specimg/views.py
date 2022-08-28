@@ -26,6 +26,83 @@ from dateutil.parser import isoparse
 JOBS_PER_CORE = 3
 
 
+"""
+
+Version 3
+
+"""
+
+class BaseLayer():
+    def __init__(self,raw,upper,wfft,nfft,sens,con):
+        self.raw = raw
+        self.upper = upper
+        self.wfft = wfft
+        self.nfft = nfft
+        self.sens = sens
+        self.con = con
+
+class Layer():
+    def __init__(self, base, upper, lower):
+        self.base = base
+        self.upper = upper
+        self.lower = lower
+        self.cv = threading.Condition()
+        self.loaded = dict()
+        self.delivered = set() # chunks delivered to the upper layer
+        self.sent = set() # chunks sent to the client
+        self.ready = dict()
+        self.fl = threading.Lock()
+    
+    def request(self,i):
+        if not self.is_sat(i):
+            self.ready[i] = threading.Event()
+            threading.Thread(target=self.base.load(i)).start()
+            self.ready[i].wait()
+        reply = self.loaded[i]
+        self.sent.add(i)
+        self.free(i)
+        return reply 
+    
+    def is_sat(self,*args):
+        for i in args:
+            if not i in self.loaded:
+                return False
+        return True
+    
+    def free(self,i):
+        self.fl.acquire()
+        if i in self.delivered and i in self.sent:
+            self.loaded.pop(i)
+            self.delivered.remove(i)
+            self.sent.remove(i)
+        self.fl.release()
+
+
+    def load_upper(self,i):
+        ia, ib = (i, i+1) if i%2==0 else (i-1, i)
+        if not self.is_sat(ia,ib):
+            return False
+        self.upper.load(i//2,self.loaded[ia],self.loaded[ib])
+        return True
+
+    def load(self,i,a,b):
+        w, h = a.shape
+        self.loaded[i] = transform.resize(np.concatenate((a,b), axis=1, dtype=np.int8),(w//2,h//2))
+        self.ready[i].set()
+        if self.load_upper(i):
+            self.delivered.add(i)
+        self.free(i)
+
+        
+
+
+"""
+
+Version 2
+
+"""
+
+
 class PropGetter():
     def __init__(self, request):
         self.request = request
@@ -49,7 +126,7 @@ class CachedFile():
         self.nfft = nfft
         self.wfft = wfft
         self.hop_l = wfft//4
-        self.fftws_per_block = 10
+        self.fftws_per_block = 50
         self.last_fftw_pos = (self.fftws_per_block-1)*self.hop_l
         self.frames_per_block = self.last_fftw_pos+self.wfft
         self.overlap = self.wfft - self.hop_l
@@ -118,7 +195,7 @@ class CachedFile():
             ----------
             Time in seconds from the start of the audio track.
         """
-        return (t-self.file_obj.tstart).total_seconds()
+        return min(max((t-self.file_obj.tstart).total_seconds(),0),self.file_obj.length)
     def to_datetime(self, t):
         """
             Parameters
