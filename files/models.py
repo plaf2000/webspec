@@ -18,4 +18,28 @@ class File(models.Model):
     def duration(self):
         dur=td(seconds=self.length)
         return str(dur)
+    
+    def to_seconds(self, t):
+        """
+            Parameters
+            ----------
+                - `t` : time in datetime object
+
+            Returns
+            ----------
+            Time in seconds from the start of the audio track.
+        """
+        return min(max((t-self.tstart).total_seconds(), 0), self.length)
+
+    def to_datetime(self, t):
+        """
+            Parameters
+            ----------
+                - `t` : time in seconds
+
+            Returns
+            ----------
+            Time as a datetime object.
+        """
+        return self.tstart+td(seconds=t)
 

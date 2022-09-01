@@ -29,6 +29,7 @@ JOBS_PER_CORE = 3
 class PropGetter():
     def __init__(self, request):
         self.request = request
+
     def get(self, name, format):
         return format(self.request.GET[name])
 
@@ -43,80 +44,125 @@ Version 3
 BASE_LAYER_CHUNK_WIDTH = 2048
 
 
+class Chunk():
+    def __init__(self, data):
+        self.delivered = False
+        self.sent = False
+        self.ready = threading.Event()
+        self.data = data
+
 
 class Layer():
     def __init__(self, base, upper):
         self.base = base
         self.upper = upper
         self.cv = threading.Condition()
-        self.loaded = dict()
-        self.delivered = set() # chunks delivered to the upper layer
-        self.sent = set() # chunks sent to the client
-        self.ready = dict()
-        self.fl = threading.Lock()
-    
-    def request(self,i_s,i_e):
+        self.chunks = dict()
+        self.chunks_rl = threading.RLock()
+        self.MAX_CACHED = 20
+        self.last_si = 0
+        self.last_ei = 0
 
-        ixs = range(i_s,i_e)
+    def request(self, si, ei):
+
+        self.last_si = si
+        self.last_ei = ei
+
+        ixs = range(si, ei)
         for i in ixs:
             if not self.is_sat(i):
-                self.ready[i] = threading.Event()
                 threading.Thread(target=self.base.load(i)).start()
-                
+
         for i in ixs:
-            self.ready[i].wait()
-        
-        reply = np.concatenate(self.loaded[i_s:i_e],axis=1,dtype=np.int8)
+            self.chunks[i].ready.wait()
+
+        data_chunks = [self.chunks[i].data for i in range(si, ei)]
+        reply = np.concatenate(data_chunks, axis=1, dtype=np.int8)
         for i in ixs:
-            self.sent.add(i)
+            self.chunks[i].sent = True
             self.free(i)
-        return reply 
-    
-    def is_sat(self,*args):
+        return reply
+
+    def is_sat(self, *args):
         for i in args:
-            if not i in self.loaded:
+            if not i in self.chunks:
                 return False
         return True
-    
-    def free(self,i):
-        self.fl.acquire()
-        if i in self.delivered and i in self.sent:
-            self.loaded.pop(i)
-            self.delivered.remove(i)
-            self.sent.remove(i)
-        self.fl.release()
 
+    def remove(self, i):
+        self.chunks_rl.acquire()
+        if i in self.chunks:
+            self.chunks.pop(i)
+        self.chunks_rl.release()
 
-    def load_upper(self,i):
-        ia, ib = (i, i+1) if i%2==0 else (i-1, i)
-        if not self.is_sat(ia,ib):
+    def free(self, i):
+        self.chunks_rl.acquire()
+        if self.chunks[i].sent and self.chunks[i].delivered:
+            self.chunks.pop(i)
+        self.chunks_rl.release()
+
+    def evict(self, i):
+        if len(self.chunks) < self.MAX_CACHED or (self.last_si <= i <= self.last_ei):
+            return True
+
+        k = self.chunks.keys()
+        min_i, max_i = min(k), max(k)
+
+        if min_i < i < self.last_si:
+            self.remove(min_i)
             return False
-        self.upper.load(i//2,self.loaded[ia],self.loaded[ib])
+
+        if max_i > i > self.last_ei:
+            self.remove(max_i)
+            return False
+
+        if len(self.chunks) > self.MAX_CACHED:
+            self.remove(i)
+            return False
+
         return True
 
-    def load(self,i,a,b):
+    def load_upper(self, i, last=False):
+
+        if self.upper:
+            ia, ib = (i, i+1) if i % 2 == 0 else (i-1, i)
+            if last:
+                if i % 2 == 0:
+                    self.upper.load(i//2, self.chunks[i].data, None, last)
+                    return True
+            if not self.is_sat(ia, ib):
+                return False
+            self.upper.load(
+                i//2, self.chunks[ia].data, self.chunks[ib].data, last)
+        return True
+
+    def load(self, i, a, b, last=False):
         w, h = a.shape
-        self.loaded[i] = transform.resize(np.concatenate((a,b), axis=1, dtype=np.int8),(w//2,h//2))
-        self.ready[i].set()
-        if self.load_upper(i):
-            self.delivered.add(i)
+        if b is not None:
+            self.chunks[i] = Chunk(transform.resize(np.concatenate(
+                (a, b), axis=1, dtype=np.int8), (w//2, h)))
+        else:
+            self.chunks[i] = Chunk(transform.resize(a, (w//2)))
+        self.chunks[i].ready.set()
+        if self.load_upper(i, last):
+            self.chunks[i].delivered = True
+
         self.free(i)
+        self.evict(i)
 
 
 class BaseLayer(Layer):
-    def __init__(self,raw,upper,wfft: int,nfft: int, sens,con):
+    def __init__(self, file_obj, upper, wfft: int, nfft: int, sens, con, left=True):
         Layer.__init__(self, self, upper)
-        self.raw = raw
+        self.file_obj = file_obj
         self.wfft = wfft
         self.nfft = nfft
         self.hop_l = wfft//4
         self.sens = sens
         self.con = con
-        self.n_win = raw.shape[0]/self.hop_l
-        self.length = raw.shape[0]/BASE_LAYER_CHUNK_WIDTH #TODO: check that this is correct
+        self.left = left
 
-
-        self.fftws_per_block = 50
+        self.fftws_per_block = 32
         self.last_fftw_pos = (self.fftws_per_block-1)*self.hop_l
         self.frames_per_block = self.last_fftw_pos+self.wfft
         self.overlap = self.wfft - self.hop_l
@@ -126,41 +172,50 @@ class BaseLayer(Layer):
             (self.fftws_per_block-1)*self.hop_l+self.wfft
         self.hops_per_chunk = self.fftws_per_block*self.blocks_per_chunk
         self.tot_frames = self.file_obj.length*self.file_obj.sample_rate
-
+        self.chunk_w = self.fftws_per_block*self.blocks_per_chunk
+        self.pxs = self.file_obj.sample_rate*self.chunk_w/self.chunk_l
 
         self.last_i = math.floor(
             (self.tot_frames - self.wfft)/self.hop_l/self.hops_per_chunk)
         self.nchunks = self.last_i+1
 
-
-    def load(self,i):
+    def load(self, i):
 
         blocks = sf.blocks(self.file_obj.path, blocksize=self.frames_per_block,
                            frames=self.chunk_l, start=self.chunk_pos(i), overlap=self.overlap)
 
-        def compute_stft(block,k, j):
-            self.cache[k, :, j:j+self.fftws_per_block] = np.log10(
+        self.chunks[i] = Chunk(
+            np.zeros((self.nfft//2+1, self.chunk_w), dtype=np.uint8))
+        thresholds = ((self.sens/25-2)+self.con*3/50,
+                      255/((self.sens/25-7)-self.con*3/50))
+
+        def compute_stft(block, j):
+            data_chunk = np.log10(
                 np.abs(librosa.stft(block, n_fft=self.nfft, win_length=self.wfft,
                                     hop_length=self.hop_l, center=False, dtype=np.complex64), dtype=np.float32)**2
 
             )
+            data_chunk -= thresholds[0]
+            data_chunk *= thresholds[1]
+            data_chunk = np.clip(data_chunk, 0, 255)
+            self.chunks[i].data[:, j:j +
+                                self.fftws_per_block] = data_chunk.astype(np.uint8)
 
-        j = i*self.fftws_per_block*self.blocks_per_chunk
+        j = 0
 
         threads = []
 
         for block in blocks:
             if self.file_obj.stereo:
                 b = block.T
-                for k in range(2):
-                    thread = threading.Thread(
-                        target=compute_stft, args=(b[k], k, j,))
-                    threads.append(thread)
-                    thread.start()
+                thread = threading.Thread(
+                    target=compute_stft, args=(b[0 if self.left else 1], j,))
+                threads.append(thread)
+                thread.start()
 
             else:
                 thread = threading.Thread(
-                    target=compute_stft, args=(block.T, 0, j,))
+                    target=compute_stft, args=(block.T, j,))
                 threads.append(thread)
                 thread.start()
             j += self.fftws_per_block
@@ -168,13 +223,170 @@ class BaseLayer(Layer):
         for thread in threads:
             thread.join()
 
-        self.update_cached(i)
-        self.noty_all()
+        self.chunks[i].ready.set()
+        if self.load_upper(i, i == self.last_i):
+            self.chunks[i].delivered = True
+
+        self.free(i)
+        self.evict(i)
+
+    def chunk_pos(self, i):
+        """
+            Parameters
+            ----------
+             - `i` : index of the chunk
+
+            Returns
+            ----------
+            The index of the first frame of the i-th chunk.
+        """
+        return i*self.hop_l*self.blocks_per_chunk*self.fftws_per_block
+    
+    def chunk_time(self, *args):
+        return [self.chunk_pos(i)/self.file_obj.sample_rate for i in args]
+    
+    def chunk_datetime(self, *args):
+        return [self.file_obj.tstart+dt.timedelta(seconds=s) for s in self.chunk_time(*args)]
+    
+    def time_to_chunk(self, *args):
+        """
+            Parameters
+            ----------
+             - `t` : time in seconds from the start of the audio track
+
+            Returns
+            ----------
+            The index of chunk that covers the time point `t`.
+        """
+        return [math.floor(t*self.file_obj.sample_rate/(self.hop_l*self.blocks_per_chunk*self.fftws_per_block)) for t in args]
 
 
+LAYER_NUMBER = 10
 
 
+class Layers():
+    def __init__(self, file_obj, wfft, nfft, sens, con, left=True):
+        self.layers = [BaseLayer(file_obj=file_obj, upper=None,
+                                 wfft=wfft, nfft=nfft, sens=sens, con=con, left=left)]
+        self.file_obj = file_obj
+        for i in range(1,LAYER_NUMBER):
+            self.layers.append(Layer(self.layers[0],None))  # type: ignore
+            self.layers[i-1].upper = self.layers[i]
         
+    def request(self, pxs, ts, te):
+        base_pxs = self.layers[0].pxs
+        i = math.ceil(math.log2(base_pxs) - math.log2(pxs))
+        i = max(LAYER_NUMBER-1,i)
+        i = min(0,i)
+        r = 1<<i
+
+        si, ei = self.layers[0].time_to_chunk(ts, te)
+        tstart, tend = self.layers[0].chunk_datetime(si,ei)
+        self.last_access = time.time()
+
+        return tstart, tend, self.layers[i].request(si//r,ei//r)
+
+
+
+
+
+
+
+class Cache():
+
+    def __init__(self, MAX_ENTRIES):
+        self.entries = {}
+        self.MAX_ENTRIES = MAX_ENTRIES
+
+
+    def get(self, file_obj, tstart, tend, request):
+        """
+            Parameters
+            ----------
+                - `tstart` : time start in datetime object
+                - `tend` : time end in datetime object
+                - `request` : PropGetter with request containing following `GET` attributes: `ch`,`sens`,`con`,`pxs`
+
+                Returns
+                -------
+                - starting time of the image, in ms from 1970-01-01 00:00 UTC
+                - ending time of the image, in ms from 1970-01-01 00:00 UTC
+                - starting frequence of the image
+                - ending frequence of the image
+                - image as Image object (Pillow)
+        """
+
+
+        wfft = request.get("wfft", int)
+        nfft = request.get("nfft", int)
+
+        sens = 100-request.get('sens', float)
+        con = 100-request.get('con', float)
+
+        ch = request.get('ch', str)
+        pxs = request.get('pxs',float)
+
+        left = ch == "l"
+
+        i = f"{file_obj.id}{wfft}{nfft}{sens}{con}{ch}"
+
+
+        if i not in self.entries:
+            if len(self.entries)>self.MAX_ENTRIES:
+                self.entries.pop(next(iter(self.entries)))
+            self.entries[i] = Layers(file_obj, wfft, nfft, sens, con, left)
+
+        ts, te = file_obj.to_seconds(tstart), file_obj.to_seconds(tend)
+        
+        tstart, tend, data = self.entries[i].request(pxs,ts,te)
+        
+
+        img = Image.fromarray(data, 'L')
+        img = ImageOps.flip(img)
+
+        return tstart.timestamp()*1000, tend.timestamp()*1000, 0, self.entries[i].file_obj.sample_rate/2, img
+    
+
+
+CACHE = Cache(10)
+
+def render_spec_img(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+
+    tstart = isoparse(tstart)
+    tend = isoparse(tend)
+
+    request = PropGetter(request)
+
+    wfft = request.get("wfft", int)
+    nfft = request.get("nfft", int)
+    file_obj = File.objects.get(id=file_id)
+
+    # _, _, _, _, img = spec_multi_threaded(file_id,tstart,tend,request.request)
+    _, _, _, _, img = CACHE.get(file_obj, tstart, tend, request)
+    buffered = BytesIO()
+    img.save(buffered, format="png")
+
+    return HttpResponse(buffered.getvalue(), content_type="image/png")
+
+
+def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+    tstart = isoparse(tstart)
+    tend = isoparse(tend)
+
+    request = PropGetter(request)
+
+    wfft = request.get("wfft", int)
+    nfft = request.get("nfft", int)
+    file_obj = File.objects.get(id=file_id)
+
+    ts, te, fs, fe, img = CACHE.get(file_obj, tstart, tend, request)
+    buffered = BytesIO()
+    buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
+    img.save(buffered, format="png")
+
+    return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
+
+
 
 
 """
@@ -183,9 +395,6 @@ Version 2
 
 """
 
-
-
-        
 
 class CachedFile():
     def __init__(self, file_id, tstart, tend, nfft, wfft):
@@ -214,7 +423,6 @@ class CachedFile():
         self.hops_per_chunk = self.fftws_per_block*self.blocks_per_chunk
         self.tot_frames = self.file_obj.length*self.file_obj.sample_rate
 
-
         self.last_i = math.floor(
             (self.tot_frames - self.wfft)/self.hop_l/self.hops_per_chunk)
         self.nchunks = self.last_i+1
@@ -227,7 +435,6 @@ class CachedFile():
         else:
             shape = (2, 1+self.nfft//2, self.cache_w)
 
-        
         self.cache = np.memmap(
             self.cache_fn, dtype="float32", mode="w+", shape=shape)
 
@@ -238,7 +445,7 @@ class CachedFile():
 
         self.cached_ixs_ptr = 0
 
-        ts, te = self.to_seconds(tstart),self.to_seconds(tend)
+        ts, te = self.to_seconds(tstart), self.to_seconds(tend)
 
         self.enqueue_chunks_request(ts, te)
 
@@ -272,7 +479,8 @@ class CachedFile():
             ----------
             Time in seconds from the start of the audio track.
         """
-        return min(max((t-self.file_obj.tstart).total_seconds(),0),self.file_obj.length)
+        return min(max((t-self.file_obj.tstart).total_seconds(), 0), self.file_obj.length)
+
     def to_datetime(self, t):
         """
             Parameters
@@ -363,8 +571,8 @@ class CachedFile():
         j = 0
         while j < len(self.cached_ixs) and i > self.cached_ixs[j][0]-1:
             j += 1
-        if j>0 and self.cached_ixs[j-1][1]+1==i:
-            j-=1
+        if j > 0 and self.cached_ixs[j-1][1]+1 == i:
+            j -= 1
         self.cached_ixs_ptr = j
         if j < len(self.cached_ixs):
             if self.cur_cache_range[0] <= i and self.cur_cache_range[1] >= i:
@@ -373,7 +581,7 @@ class CachedFile():
         blocks = sf.blocks(self.file_obj.path, blocksize=self.frames_per_block,
                            frames=self.chunk_l, start=self.chunk_pos(i), overlap=self.overlap)
 
-        def compute_stft(block,k, j):
+        def compute_stft(block, k, j):
             self.cache[k, :, j:j+self.fftws_per_block] = np.log10(
                 np.abs(librosa.stft(block, n_fft=self.nfft, win_length=self.wfft,
                                     hop_length=self.hop_l, center=False, dtype=np.complex64), dtype=np.float32)**2
@@ -405,7 +613,7 @@ class CachedFile():
 
         self.update_cached(i)
         self.noty_all()
-    
+
     def noty_all(self):
         with self.cv:
             self.cv.notify_all()
@@ -428,7 +636,7 @@ class CachedFile():
             self.noty_all()
 
         if not self.cached_ixs:
-            self.cached_ixs.append([i,i])
+            self.cached_ixs.append([i, i])
             self.cached_ixs_ptr = 0
             self.noty_all()
             return
@@ -444,7 +652,7 @@ class CachedFile():
                 return
 
         if self.cached_ixs_ptr == len(self.cached_ixs) or not (i >= self.cached_ixs[self.cached_ixs_ptr][0] and i <= self.cached_ixs[i][0]):
-            self.cached_ixs.insert(self.cached_ixs_ptr, [i,i])
+            self.cached_ixs.insert(self.cached_ixs_ptr, [i, i])
             self.cached_ixs_ptr = self.cached_ixs_ptr
             self.noty_all()
 
@@ -457,7 +665,7 @@ class CachedFile():
              - `ts` : time start in seconds from the start of the audio track
              - `te` : time end in seconds from the start of the audio track
              - `ch` : channel, either `l`, `r` or any other string for mono
-            
+
             Returns
             ----------
              - `ts` : actual time start of `raw_stft` in seconds from the start of the audio track
@@ -477,7 +685,7 @@ class CachedFile():
             if not self.file_obj.stereo:
                 raw_stft = self.cache[:, i_s:i_e]
             else:
-                raw_stft = np.sum(self.cache[:, :, i_s:i_e], axis=0)/2
+                raw_stft = np.mean(self.cache[:, :, i_s:i_e], axis=0)
 
         ts = i_s/self.pxs
         te = i_e/self.pxs
@@ -512,7 +720,7 @@ class CachedFile():
              - `tstart` : time start in datetime object
              - `tend` : time end in datetime object
              - `request` : PropGetter with request containing following `GET` attributes: `ch`,`sens`,`con`,`pxs`
-             
+
              Returns
              -------
              - starting time of the image, in ms from 1970-01-01 00:00 UTC
@@ -562,75 +770,72 @@ class CachedFile():
         pass
 
 
-class Cache:
-    def __init__(self, max_count):
-        self.files = {}
-        self.max_count = max_count
+# class Cache:
+#     def __init__(self, max_count):
+#         self.files = {}
+#         self.max_count = max_count
 
-    def index(self, file_id, nfft, wfft):
-        return f"{file_id}_{nfft}_{wfft}"
+#     def index(self, file_id, nfft, wfft):
+#         return f"{file_id}_{nfft}_{wfft}"
 
-    def f(self, file_id, nfft, wfft):
-        return self.files[self.index(file_id, nfft, wfft)]
+#     def f(self, file_id, nfft, wfft):
+#         return self.files[self.index(file_id, nfft, wfft)]
 
-    def add(self, file_id, tstart, tend, nfft, wfft):
-        if len(self.files) == self.max_count:
-            self.evict()
-        self.files[self.index(file_id, nfft, wfft)] = CachedFile(
-            file_id, tstart, tend, nfft, wfft)
-        return self.f(file_id, nfft, wfft)
+#     def add(self, file_id, tstart, tend, nfft, wfft):
+#         if len(self.files) == self.max_count:
+#             self.evict()
+#         self.files[self.index(file_id, nfft, wfft)] = CachedFile(
+#             file_id, tstart, tend, nfft, wfft)
+#         return self.f(file_id, nfft, wfft)
 
-    def evict(self):
-        self.files = dict(sorted(self.files.items(),
-                                 key=lambda file: file[1].last_access, reverse=True))
-        f = self.files.popitem()
-        f[1].clear()
+#     def evict(self):
+#         self.files = dict(sorted(self.files.items(),
+#                                  key=lambda file: file[1].last_access, reverse=True))
+#         f = self.files.popitem()
+#         f[1].clear()
 
-    def get(self, file_id, tstart, tend, nfft, wfft, request):
-        if self.index(file_id,nfft,wfft) in self.files:
-            return self.f(file_id, nfft, wfft).get(tstart, tend, request)
-        return self.add(file_id, tstart, tend, nfft, wfft).get(tstart, tend, request)
-
-
+#     def get(self, file_id, tstart, tend, nfft, wfft, request):
+#         if self.index(file_id, nfft, wfft) in self.files:
+#             return self.f(file_id, nfft, wfft).get(tstart, tend, request)
+#         return self.add(file_id, tstart, tend, nfft, wfft).get(tstart, tend, request)
 
 
-CACHE = Cache(10)
-
-def render_spec_img(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
-
-    tstart = isoparse(tstart)
-    tend = isoparse(tend)
-
-    request = PropGetter(request)
-
-    wfft = request.get("wfft",int)
-    nfft = request.get("nfft",int)
-
-    # _, _, _, _, img = spec_multi_threaded(file_id,tstart,tend,request.request)
-    _, _, _, _, img = CACHE.get(file_id, tstart, tend, nfft,wfft, request)
-    buffered = BytesIO()
-    img.save(buffered, format="png")
-
-    return HttpResponse(buffered.getvalue(), content_type="image/png")
-
-def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
-    tstart = isoparse(tstart)
-    tend = isoparse(tend)
-
-    request = PropGetter(request)
-
-    wfft = request.get("wfft",int)
-    nfft = request.get("nfft",int)
-
-    ts, te, fs, fe, img = CACHE.get(file_id, tstart, tend,nfft,wfft, request)
-    buffered = BytesIO()
-    buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
-    img.save(buffered, format="png")
-
-    return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
+# CACHE = Cache(10)
 
 
+# def render_spec_img(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
 
+#     tstart = isoparse(tstart)
+#     tend = isoparse(tend)
+
+#     request = PropGetter(request)
+
+#     wfft = request.get("wfft", int)
+#     nfft = request.get("nfft", int)
+
+#     # _, _, _, _, img = spec_multi_threaded(file_id,tstart,tend,request.request)
+#     _, _, _, _, img = CACHE.get(file_id, tstart, tend, nfft, wfft, request)
+#     buffered = BytesIO()
+#     img.save(buffered, format="png")
+
+#     return HttpResponse(buffered.getvalue(), content_type="image/png")
+
+
+# def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+#     tstart = isoparse(tstart)
+#     tend = isoparse(tend)
+
+#     request = PropGetter(request)
+
+#     wfft = request.get("wfft", int)
+#     nfft = request.get("nfft", int)
+
+#     ts, te, fs, fe, img = CACHE.get(file_id, tstart, tend, nfft, wfft, request)
+#     buffered = BytesIO()
+#     buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
+#     img.save(buffered, format="png")
+
+#     return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
 
 
 '''
@@ -658,7 +863,6 @@ def spec_multi_threaded(file_id, tstart, tend, request):
 
     def reqprop(name, format): return format(request.GET[name])
 
-    
     ch = reqprop('ch', str)
     sens = 100-reqprop('sens', float)
     con = 100-reqprop('con', float)
