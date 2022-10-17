@@ -220,8 +220,9 @@ export class Spec {
 class SpecImgsLayers {
     constructor(cvs, spec) {
         this.layers = [];
-        this.threshold = 10;
+        this.threshold = 0;
         this.ptr = 0;
+        this.last_ptr = this.ptr;
         this.spec = spec;
         this.zoommed = { x: spec.zoommed.x, y: spec.zoommed.y };
         this.cvs = cvs;
@@ -229,10 +230,12 @@ class SpecImgsLayers {
     }
     drawOnCanvas() {
         this.update();
+        this.layers[this.last_ptr].drawOnCanvas();
         this.layers[this.ptr].drawOnCanvas();
     }
     update() {
         if (this.spec.zoommed.x < this.zoommed.x - this.threshold) {
+            this.last_ptr = this.ptr;
             this.ptr--;
             if (this.ptr < 0) {
                 this.layers.unshift(new SpecImgs(this.cvs, this.spec));

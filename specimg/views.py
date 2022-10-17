@@ -23,7 +23,7 @@ import threading
 import math
 from dateutil.parser import isoparse
 
-JOBS_PER_CORE = 3
+JOBS_PER_CORE = 1
 
 
 class PropGetter():
@@ -45,59 +45,70 @@ BASE_LAYER_CHUNK_WIDTH = 2048
 
 
 class Chunk():
-    def __init__(self, data):
-        self.delivered = False
-        self.sent = False
+    def __init__(self, data = None, evictable = True):
+        self.evictable = evictable
+        self.delivered = threading.Event()
+        self.sent = threading.Event()
         self.ready = threading.Event()
         self.data = data
 
 
 class Layer():
-    def __init__(self, base, upper):
-        self.base = base
+    def __init__(self, lower, upper, level = 0):
+        self.lower = lower
         self.upper = upper
+        self.time_per_chunk = self.lower.time_per_chunk * 2
         self.cv = threading.Condition()
         self.chunks = dict()
         self.chunks_rl = threading.RLock()
-        self.MAX_CACHED = 20
+        self.MAX_CACHED = 2000
         self.last_si = 0
         self.last_ei = 0
+        self.level = level
 
-    def request(self, si, ei):
+    def request(self, ts, te):
 
-        self.last_si = si
-        self.last_ei = ei
+        # si, ei = self.chunk_time(ts, te)
+
+        print("level", self.level)
+
+        si, ei = int(ts//self.time_per_chunk), int(te//self.time_per_chunk+1)
+
+        
+
+        self.last_si, self.last_ei = si, ei
 
         ixs = range(si, ei)
         for i in ixs:
-            if not self.is_sat(i):
-                threading.Thread(target=self.base.load(i)).start()
+            self.chunks.setdefault(i,Chunk(evictable=False))
+            self.load(i)
 
-        for i in ixs:
-            self.chunks[i].ready.wait()
 
-        data_chunks = [self.chunks[i].data for i in range(si, ei)]
-        reply = np.concatenate(data_chunks, axis=1, dtype=np.int8)
+        data_chunks = [self.chunks[i].data for i in ixs]
+
+        reply = np.concatenate(data_chunks, axis=1, dtype=np.uint8)
         for i in ixs:
-            self.chunks[i].sent = True
-            self.free(i)
-        return reply
+            self.chunks[i].sent.set()
+            # self.free(i)
+        return self.time_per_chunk*si,self.time_per_chunk*ei, reply
 
     def is_sat(self, *args):
         for i in args:
-            if not i in self.chunks:
+            if not i in self.chunks or not self.chunks[i].ready.is_set():
                 return False
         return True
 
     def remove(self, i):
+
         self.chunks_rl.acquire()
-        if i in self.chunks:
-            self.chunks.pop(i)
+        if i in self.chunks and self.chunks[i].evictable:
+            if self.chunks[i].delivered.is_set():
+                self.chunks.pop(i)
         self.chunks_rl.release()
 
     def free(self, i):
         self.chunks_rl.acquire()
-        if self.chunks[i].sent and self.chunks[i].delivered:
+        if self.chunks[i].sent.is_set() and self.chunks[i].delivered:
             self.chunks.pop(i)
         self.chunks_rl.release()
 
@@ -122,38 +133,76 @@ class Layer():
 
         return True
 
-    def load_upper(self, i, last=False):
+    def load(self, i, last=False):
 
-        if self.upper:
-            ia, ib = (i, i+1) if i % 2 == 0 else (i-1, i)
-            if last:
-                if i % 2 == 0:
-                    self.upper.load(i//2, self.chunks[i].data, None, last)
-                    return True
-            if not self.is_sat(ia, ib):
-                return False
-            self.upper.load(
-                i//2, self.chunks[ia].data, self.chunks[ib].data, last)
-        return True
+        if self.is_sat(i):
+            return
 
-    def load(self, i, a, b, last=False):
-        w, h = a.shape
-        if b is not None:
-            self.chunks[i] = Chunk(transform.resize(np.concatenate(
-                (a, b), axis=1, dtype=np.int8), (w//2, h)))
-        else:
-            self.chunks[i] = Chunk(transform.resize(a, (w//2)))
+
+        l = i<<1
+        r = (i<<1)+1
+        self.lower.chunks.setdefault(l,Chunk())
+        self.lower.chunks.setdefault(r,Chunk())
+        l_t = threading.Thread(target=self.lower.load, args=(l,))
+        r_t = threading.Thread(target=self.lower.load, args=(r,))
+
+        l_t.start()
+        r_t.start()
+
+        l_t.join()
+        r_t.join()
+
+        a, b = self.lower.chunks[l].data, self.lower.chunks[r].data
+
+
+
+        w = math.ceil((a.shape[0] + b.shape[0])/2)
+        h = a.shape[1]
+
+        self.chunks.setdefault(i, Chunk())
+        # self.chunks[i].data = transform.resize(np.concatenate(
+        #     (a, b), axis=1, dtype=np.uint32), (w, h)).astype(np.uint8)
+        self.chunks[i].data = np.concatenate(
+            (a, b), axis=1, dtype=np.uint8)[:,::2]
+        
         self.chunks[i].ready.set()
-        if self.load_upper(i, last):
-            self.chunks[i].delivered = True
+        self.lower.chunks[l].delivered.set()
+        self.lower.chunks[r].delivered.set()
+        # self.lower.evict(l)
+        # self.lower.evict(r)
 
-        self.free(i)
-        self.evict(i)
+    # def load_upper(self, i, last=False):
+
+    #     if self.upper:
+    #         ia, ib = (i, i+1) if i % 2 == 0 else (i-1, i)
+    #         if last:
+    #             if i % 2 == 0:
+    #                 self.upper.load(i>>1,last)
+    #                 return True
+    #         if not self.is_sat(ia, ib):
+    #             return False
+    #         self.upper.load(
+    #             i//2, self.chunks[ia].data, self.chunks[ib].data, last)
+    #     return True
+
+    # def load(self, i, a, b, last=False):
+    #     w, h = a.shape
+    #     self.chunks.setdefault(i,Chunk())
+    #     if b is not None:
+    #         self.chunks[i].data = transform.resize(np.concatenate(
+    #             (a, b), axis=1, dtype=np.int8), (w//2, h)).astype(np.uint8)
+    #     else:
+    #         self.chunks[i].data = transform.resize(a, (w//2)).astype(np.uint8)
+    #     self.chunks[i].ready.set()
+    #     if self.load_upper(i, last):
+    #         self.chunks[i].delivered = True
+
+    #     self.free(i)
+    #     self.evict(i)
 
 
 class BaseLayer(Layer):
     def __init__(self, file_obj, upper, wfft: int, nfft: int, sens, con, left=True):
-        Layer.__init__(self, self, upper)
         self.file_obj = file_obj
         self.wfft = wfft
         self.nfft = nfft
@@ -162,7 +211,7 @@ class BaseLayer(Layer):
         self.con = con
         self.left = left
 
-        self.fftws_per_block = 32
+        self.fftws_per_block = 5
         self.last_fftw_pos = (self.fftws_per_block-1)*self.hop_l
         self.frames_per_block = self.last_fftw_pos+self.wfft
         self.overlap = self.wfft - self.hop_l
@@ -170,22 +219,31 @@ class BaseLayer(Layer):
         self.chunk_l = self.fftws_per_block * \
             (self.blocks_per_chunk-1)*self.hop_l + \
             (self.fftws_per_block-1)*self.hop_l+self.wfft
+        self.time_per_chunk = self.chunk_l/self.file_obj.sample_rate # TODO: correct this
         self.hops_per_chunk = self.fftws_per_block*self.blocks_per_chunk
         self.tot_frames = self.file_obj.length*self.file_obj.sample_rate
         self.chunk_w = self.fftws_per_block*self.blocks_per_chunk
+        # self.cache_w = int((self.tot_frames - self.wfft)//self.hop_l)+1
+
         self.pxs = self.file_obj.sample_rate*self.chunk_w/self.chunk_l
 
         self.last_i = math.floor(
             (self.tot_frames - self.wfft)/self.hop_l/self.hops_per_chunk)
         self.nchunks = self.last_i+1
 
+        Layer.__init__(self, self, upper)
+
+
     def load(self, i):
+
+        if self.is_sat(i):
+            return
+
 
         blocks = sf.blocks(self.file_obj.path, blocksize=self.frames_per_block,
                            frames=self.chunk_l, start=self.chunk_pos(i), overlap=self.overlap)
 
-        self.chunks[i] = Chunk(
-            np.zeros((self.nfft//2+1, self.chunk_w), dtype=np.uint8))
+        self.chunks[i].data = np.zeros((self.nfft//2+1, self.chunk_w), dtype=np.uint8)
         thresholds = ((self.sens/25-2)+self.con*3/50,
                       255/((self.sens/25-7)-self.con*3/50))
 
@@ -222,13 +280,11 @@ class BaseLayer(Layer):
 
         for thread in threads:
             thread.join()
-
+        
         self.chunks[i].ready.set()
-        if self.load_upper(i, i == self.last_i):
-            self.chunks[i].delivered = True
 
-        self.free(i)
-        self.evict(i)
+        # self.free(i)
+        # self.evict(i)
 
     def chunk_pos(self, i):
         """
@@ -244,7 +300,7 @@ class BaseLayer(Layer):
     
     def chunk_time(self, *args):
         return [self.chunk_pos(i)/self.file_obj.sample_rate for i in args]
-    
+
     def chunk_datetime(self, *args):
         return [self.file_obj.tstart+dt.timedelta(seconds=s) for s in self.chunk_time(*args)]
     
@@ -270,21 +326,23 @@ class Layers():
                                  wfft=wfft, nfft=nfft, sens=sens, con=con, left=left)]
         self.file_obj = file_obj
         for i in range(1,LAYER_NUMBER):
-            self.layers.append(Layer(self.layers[0],None))  # type: ignore
+            self.layers.append(Layer(self.layers[i-1],None,i))  # type: ignore
             self.layers[i-1].upper = self.layers[i]
         
     def request(self, pxs, ts, te):
         base_pxs = self.layers[0].pxs
         i = math.ceil(math.log2(base_pxs) - math.log2(pxs))
-        i = max(LAYER_NUMBER-1,i)
-        i = min(0,i)
+        i = min(LAYER_NUMBER-1,i)
+        i = max(0,i)
         r = 1<<i
 
-        si, ei = self.layers[0].time_to_chunk(ts, te)
-        tstart, tend = self.layers[0].chunk_datetime(si,ei)
         self.last_access = time.time()
 
-        return tstart, tend, self.layers[i].request(si//r,ei//r)
+        ts, te, reply = self.layers[i].request(ts,te)
+
+        ts, te = self.file_obj.to_datetime(ts), self.file_obj.to_datetime(te)
+
+        return ts, te, reply
 
 
 
