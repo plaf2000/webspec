@@ -1,8 +1,10 @@
+import sys
+import datetime as dt
+import soundfile as sf
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from tkinter import Tk    
 from tkinter.filedialog import askopenfilenames
 from optparse import OptionParser
-# from devices.models import DeviceContext
 from files.models import File
 from devices.models import DeviceContext
 import os
@@ -53,7 +55,7 @@ class Command(BaseCommand):
                     print("Exception while reading the list", e)
                     exit()
 
-            if os.path.isfile(options["folder"]):
+            if os.path.isdir(options["folder"]):
                 folders.append(options["folder"])
 
             
@@ -67,14 +69,46 @@ class Command(BaseCommand):
                         if re.match(dev_obj.file_re,ff):
                             files.append(full_ff)
 
+            if os.path.isfile(options["file"]):
+                files.append(options["file"])
+
         print("Files found:")
         print("\n".join(files[:10]))
         rest = len(files)-10
         if rest>0:
             print(f"and {rest} others.")
 
-        for f in files:
-            pass
+    
+        print()
+        print("Adding files...")
+
+
+        def progress_bar(current, total = len(files), bar_length=40):
+            fraction = current / total
+
+            arrow = int(fraction * bar_length - 1) * '-' + '>'
+            padding = int(bar_length - len(arrow)) * ' '
+
+            ending = '\n' if current == total else '\r'
+
+            print(f'Progress: [{arrow}{padding}] {int(fraction*100)}%', end=ending)
+
+
+
+        progress_bar(0)
+
+        for i, full_f in enumerate(files):
+            f = os.path.basename(full_f)
+            info = sf.info(full_f)
+            sr = info.samplerate
+            stereo = info.channels == 2
+            length = info.duration
+            tstart = dt.datetime.strptime(f, dev_obj.file_format).replace(tzinfo=dt.timezone(dt.timedelta(hours=dev_obj.timezone)))
+            tend = tstart + dt.timedelta(seconds=length)
+            new_file = File(path=full_f, tstart=tstart, tend=tend, length=length, sample_rate=sr, stereo=stereo, device=dev_obj)
+            new_file.save()
+            progress_bar((i+1))
+        
 
 
 
