@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from json import load
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -81,15 +83,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'webspec.wsgi.application'
 
 
+with open(os.path.join(BASE_DIR,"dbs.json")) as f:
+    DATABASES = load(f)
+
+
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
@@ -135,3 +141,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, '/')
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
+
+
+
+
+# DATABASE_ROUTERS = ['router.DBRouter']

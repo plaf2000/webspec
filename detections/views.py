@@ -49,9 +49,7 @@ def create(request):
         fstart = request.POST["fstart"],
         fend = request.POST["fend"],
         label_id = request.POST["labelid"],
-        analysis_id = request.POST["analysisid"],
-        files_id = 1,
-        cluster_id = 1
+        file_id = request.POST["fileid"],
     )
     new_detection.save()
     print(new_detection.pk)

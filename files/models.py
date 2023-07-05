@@ -2,6 +2,7 @@ from django.db import models
 import os
 from datetime import timedelta as td
 
+
 class File(models.Model):
     path = models.CharField(max_length=255)
     tstart = models.DateTimeField()

@@ -7,3 +7,9 @@ __pycache__/
 db.sqlite3
 birdslist/
 tsconfig.json
+dbs.json
+filelist.txt
+multidb.py
+router.py
+inspectdb.py
+migrations
