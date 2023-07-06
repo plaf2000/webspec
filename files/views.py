@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
+from django.utils import timezone as django_tz
 from .models import File
 from devices.models import DeviceContext
 from projects.models import Project
@@ -15,6 +16,7 @@ from datetime import timedelta
 def list_files(request, proj_id, device_id):
     device = DeviceContext.objects.get(id=device_id)
     files = device.all_files.order_by('tstart')
+    django_tz.activate(device.timezone.tz)
     for f in files:
         f.tstart_iso = f.tstart.isoformat()
         # Link to the the first 20 seconds of the file

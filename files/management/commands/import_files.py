@@ -1,4 +1,4 @@
-import sys
+import pytz
 import datetime as dt
 import soundfile as sf
 from django.core.management.base import BaseCommand, CommandError, CommandParser
@@ -82,6 +82,8 @@ class Command(BaseCommand):
         print()
         print("Adding files...")
 
+        # Thanks to https://stackoverflow.com/a/37630397
+
 
         def progress_bar(current, total = len(files), bar_length=40):
             fraction = current / total
@@ -103,7 +105,8 @@ class Command(BaseCommand):
             sr = info.samplerate
             stereo = info.channels == 2
             length = info.duration
-            tstart = dt.datetime.strptime(f, dev_obj.file_format).replace(tzinfo=dt.timezone(dt.timedelta(hours=dev_obj.timezone)))
+            tstart = dev_obj.timezone.tz.localize(dt.datetime.strptime(f, dev_obj.file_format))
+            # tstart = dt.datetime.strptime(f, dev_obj.file_format).replace(tzinfo=dev_obj.timezone.tz)
             tend = tstart + dt.timedelta(seconds=length)
             new_file = File(path=full_f, tstart=tstart, tend=tend, length=length, sample_rate=sr, stereo=stereo, device=dev_obj)
             new_file.save()

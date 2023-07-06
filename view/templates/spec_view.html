@@ -14,7 +14,7 @@
       // var exports={};
       window.csrftoken  = '{{ csrf_token }}';
       window.project_id  = {{ project.id }};
-      window.timezone = {{ device.timezone}}
+      window.timezone = "{{ device.timezone.name }}"
       window.spec_coord =  {
         tstart: "{{ tstart }}",
         tend: "{{ tend }}",

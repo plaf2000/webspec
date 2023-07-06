@@ -5,6 +5,32 @@ function mouseCoord(e) {
     return pxCoord(e.offsetX, e.offsetY);
 }
 export class Canvas {
+    // view : View;
+    setMousePos(e) {
+        this.mouse_pos_ = pxCoord(e.clientX - this.bound_rect.x, e.clientY - this.bound_rect.y);
+    }
+    set mouse_type(type) {
+        this.cvs.style.cursor = type;
+        this.mouse_type_ = type;
+    }
+    get mouse_type() {
+        return this.mouse_type_;
+    }
+    get mouse_pos() {
+        return this.mouse_pos_;
+    }
+    get w() {
+        return this.cvs.width;
+    }
+    get h() {
+        return this.cvs.height;
+    }
+    set w(width) {
+        this.cvs.width = width;
+    }
+    set h(height) {
+        this.cvs.height = height;
+    }
     constructor(cvs, w, h, iffx) {
         this.mouse_type_ = "auto";
         this.md = false;
@@ -31,38 +57,12 @@ export class Canvas {
             y: grid.y[2],
         };
         this.spec = new Spec(this, tl, br);
-        this.xax = new xAx(this.ctx, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
-        this.yax = new yAx(this.ctx, pxCoord(grid.x[0], grid.y[1]), this.spec.box.bl, "hz");
+        this.xax = new xAx(this, this.spec.box.bl, pxCoord(grid.x[2], grid.y[3]), "date");
+        this.yax = new yAx(this, pxCoord(grid.x[0], grid.y[1]), this.spec.box.bl, "hz");
         this.bound_rect = this.cvs.getBoundingClientRect();
         // this.xax = new xAx(this.ctx,this.box.bl)
         this.mouse_pos_ = pxCoord(0, 0);
         this.drawCanvas();
-    }
-    // view : View;
-    setMousePos(e) {
-        this.mouse_pos_ = pxCoord(e.clientX - this.bound_rect.x, e.clientY - this.bound_rect.y);
-    }
-    set mouse_type(type) {
-        this.cvs.style.cursor = type;
-        this.mouse_type_ = type;
-    }
-    get mouse_type() {
-        return this.mouse_type_;
-    }
-    get mouse_pos() {
-        return this.mouse_pos_;
-    }
-    get w() {
-        return this.cvs.width;
-    }
-    get h() {
-        return this.cvs.height;
-    }
-    set w(width) {
-        this.cvs.width = width;
-    }
-    set h(height) {
-        this.cvs.height = height;
     }
     onMouseDown(e) {
         this.md = true;

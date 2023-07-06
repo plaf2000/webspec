@@ -474,7 +474,7 @@ class SpecImg extends DrawableBox<"hz", "date" | "s", "hz", "date" | "s"> {
     fe: yGenUnit
   ): ReqSpecBlob {
     let url = urls.getRel(
-      `spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${
+      `spec/oldv/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${
         fs.hz
       }/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${
         spec_options.sens
@@ -482,6 +482,7 @@ class SpecImg extends DrawableBox<"hz", "date" | "s", "hz", "date" | "s"> {
         spec_options.wfft
       }`
     );
+
 
     let data = await fetch(url.href, {
       method: "GET",

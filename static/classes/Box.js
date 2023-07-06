@@ -1,9 +1,5 @@
 import { xyCoord, pxCoord } from "./Coord.js";
 export class Box {
-    constructor(tl, br) {
-        this.tl_ = tl;
-        this.br_ = br;
-    }
     get tl() {
         return this.tl_;
     }
@@ -40,6 +36,10 @@ export class Box {
     height(yunit) {
         return +this.br_.y[yunit] - +this.tl_.y[yunit];
     }
+    constructor(tl, br) {
+        this.tl_ = tl;
+        this.br_ = br;
+    }
     isHover(p, xunit, yunit, strict = false) {
         let check = (a, b, op) => {
             return op(a, b) || (!strict && a == b);
@@ -58,10 +58,6 @@ export class Box {
 export class PXBox extends Box {
 }
 export class DrawableBox extends Box {
-    constructor(cvs, tl, br) {
-        super(tl, br);
-        this.cvs = cvs;
-    }
     get xl() {
         return this.l.px;
     }
@@ -79,6 +75,10 @@ export class DrawableBox extends Box {
     }
     get dfreq() {
         return this.height("hz");
+    }
+    constructor(cvs, tl, br) {
+        super(tl, br);
+        this.cvs = cvs;
     }
     clear() {
         this.cvs.ctx.clearRect(this.xl, this.yt, this.w, this.h);
@@ -221,11 +221,6 @@ export class EditableBox extends DrawableBox {
 export class DrawablePXBox extends DrawableBox {
 }
 export class BoundedBox extends EditableBox {
-    constructor(cvs, tl, br, bound_box, bounds) {
-        super(cvs, tl, br);
-        this.bounds = bounds;
-        this.bound_box = bound_box;
-    }
     setEdge(x, edge) {
         let arg = 0;
         switch (edge) {
@@ -259,6 +254,11 @@ export class BoundedBox extends EditableBox {
                 break;
         }
         super.setEdge(arg, edge);
+    }
+    constructor(cvs, tl, br, bound_box, bounds) {
+        super(cvs, tl, br);
+        this.bounds = bounds;
+        this.bound_box = bound_box;
     }
     move(p) {
         if (this.start_move_coord) {

@@ -121,37 +121,48 @@ class Second extends Number {
     }
 }
 export class DateTime extends Date {
-    get local() {
-        return new DateTime(+this + DateTime.tz * 3600000);
+    get offset() {
+        const local = new DateTime(this.toLocaleString('en-US', { timeZone: DateTime.tz }));
+        const utcDate = new DateTime(this.toLocaleString('en-US', { timeZone: "UTC" }));
+        return (local.getTime() - utcDate.getTime());
     }
-    set local(date) {
-        let new_date = new Date(+date - DateTime.tz * 3600000);
-        this.setUTCFullYear(new_date.getUTCFullYear(), new_date.getUTCMonth(), new_date.getUTCDate());
-        this.setUTCHours(new_date.getUTCHours(), new_date.getUTCMinutes(), new_date.getUTCSeconds(), new_date.getUTCMilliseconds());
+    get shifted() {
+        return new DateTime(+this + this.offset);
+    }
+    get millisPrecision() {
+        const m = Math.round(this.shifted.getUTCMilliseconds());
+        for (let i = 1; i < 4; i++) {
+            let dec = 10 ** i;
+            if (m % dec)
+                return 4 - i;
+        }
+        return 0;
     }
     toDateString() {
-        return `${this.local.getUTCFullYear()}-${digit(this.local.getUTCMonth() + 1, 2)}-${digit(this.local.getUTCDate(), 2)}`;
-    }
-    static toTimeZoneString() {
-        return `(UTC+${digit(DateTime.tz, 2)})`;
+        return this.toLocaleDateString(undefined, { timeZone: DateTime.tz });
     }
     toTimeString() {
-        const [h, m, s, ms] = [
-            this.local.getUTCHours(),
-            this.local.getUTCMinutes(),
-            this.local.getUTCSeconds(),
-            this.local.getUTCMilliseconds(),
-        ];
-        return `${digit(h, 2)}:${digit(m, 2)}:${digit(s + Math.round(ms) / 1000, 2)}`;
+        // return  this.toLocaleTimeString(undefined, {timeZone: DateTime.tz, hour: "2-digit", minute:"2-digit", second:"2-digit", fractionalSecondDigits: 3});
+        const mp = this.millisPrecision;
+        let options = { timeZone: DateTime.tz };
+        if (mp)
+            options = { timeZone: DateTime.tz, hour: "2-digit", minute: "2-digit", second: "2-digit", fractionalSecondDigits: mp };
+        return this.toLocaleTimeString(undefined, options);
+    }
+    toTimeZoneString() {
+        const withDate = this.toLocaleDateString("en-GB", { timeZone: DateTime.tz, timeZoneName: "shortOffset" });
+        return withDate.split(" ").slice(1).join(" ");
     }
     toString() {
-        return `${this.toDateString()} ${this.toTimeString()} ${DateTime.toTimeZoneString()}`;
+        return this.toLocaleString(undefined, { timeZone: DateTime.tz, timeZoneName: "shortOffset" });
     }
     get midnight() {
-        return new DateTime(this.local.getUTCFullYear(), this.local.getUTCMonth(), this.local.getUTCDate()).local;
+        const utcMidnight = Date.UTC(this.shifted.getUTCFullYear(), this.shifted.getUTCMonth(), this.shifted.getUTCDate());
+        // let ms_from_midnight = ((this.getUTCHours()*60+this.getUTCMinutes())*60+this.getUTCSeconds())*1000+this.getUTCMilliseconds();
+        return new DateTime(+utcMidnight - this.offset);
     }
 }
-DateTime.tz = 0;
+DateTime.tz = "UTC";
 export function convertDist(val, ax, f, t) {
     let zero = new Unit(0, f, ax);
     let uval = new Unit(val, f, ax);

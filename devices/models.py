@@ -2,6 +2,7 @@ from django.db import models
 from places.models import Place
 from projects.models import Project
 from files.models import File
+import pytz
 
 
 # Create your models here.
@@ -28,12 +29,18 @@ class Device(models.Model):
     name = models.CharField(max_length=50)
     recorder = models.ForeignKey(Recorder,on_delete=models.PROTECT,related_name='recorder')
 
+class TimeZone(models.Model):
+    name=models.CharField(max_length=100)
+    @property
+    def tz(self):
+        return pytz.timezone(self.name)
+
 class DeviceContext(models.Model):
     project = models.ForeignKey(Project,on_delete=models.PROTECT,related_name='project')
     place = models.ForeignKey(Place,on_delete=models.PROTECT,related_name='place')
     device = models.ForeignKey(Device,on_delete=models.PROTECT,related_name='device')
     file_format = models.CharField(max_length=255)
-    timezone = models.FloatField()
+    timezone = models.ForeignKey(TimeZone,on_delete=models.PROTECT,related_name='timezone')
     
     @property
     def all_files(self):

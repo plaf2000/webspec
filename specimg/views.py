@@ -242,7 +242,6 @@ class BaseLayer(Layer):
 
         blocks = sf.blocks(self.file_obj.path, blocksize=self.frames_per_block,
                            frames=self.chunk_l, start=self.chunk_pos(i), overlap=self.overlap)
-
         self.chunks[i].data = np.zeros((self.nfft//2+1, self.chunk_w), dtype=np.uint8)
         thresholds = ((self.sens/25-2)+self.con*3/50,
                       255/((self.sens/25-7)-self.con*3/50))
@@ -861,6 +860,8 @@ class CachedFile():
 # CACHE = Cache(10)
 
 
+
+
 # def render_spec_img(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
 
 #     tstart = isoparse(tstart)
@@ -879,7 +880,7 @@ class CachedFile():
 #     return HttpResponse(buffered.getvalue(), content_type="image/png")
 
 
-# def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+# def render_spec_data_oldv(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
 #     tstart = isoparse(tstart)
 #     tend = isoparse(tend)
 
@@ -894,6 +895,7 @@ class CachedFile():
 #     img.save(buffered, format="png")
 
 #     return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
+
 
 
 '''
@@ -911,11 +913,10 @@ class CachedFile():
 
 '''
 
-
 def spec_multi_threaded(file_id, tstart, tend, request):
-    sr = 44100
     last_time = time.time()
     file_obj = File.objects.get(id=file_id)
+    sr = file_obj.sample_rate
     ts = isoparse(tstart)
     te = isoparse(tend)
 
@@ -1084,13 +1085,13 @@ data_requests = {}
 #     return HttpResponse(buffered.getvalue(), content_type="image/png")
 
 
-# def render_spec_data(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
-#     ts, te, fs, fe, img = spec_multi_threaded(file_id, tstart, tend, request)
-#     buffered = BytesIO()
-#     buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
-#     img.save(buffered, format="png")
+def render_spec_data_oldv(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+    ts, te, fs, fe, img = spec_multi_threaded(file_id, tstart, tend, request)
+    buffered = BytesIO()
+    buffered.write(struct.pack('QQdd', round(ts), round(te), fs, fe))
+    img.save(buffered, format="png")
 
-#     return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
+    return HttpResponse(buffered.getvalue(), content_type="application/octet-stream")
 
 
 def render_spec_single_core(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):

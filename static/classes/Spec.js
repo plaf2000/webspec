@@ -1,18 +1,24 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 import { DrawableBox } from "./Box.js";
 import { pxCoord, tfCoord } from "./Coord.js";
 import { Detections } from "./Detection.js";
 import { castx, DateTime, Unit, xUnit, } from "./Units.js";
 import { urls, spec_options, spec_start_coord } from "../main.js";
 export class Spec {
+    get tl() {
+        return pxCoord(this.tl_.x.px, this.tl_.y.px);
+    }
+    get br() {
+        return pxCoord(this.br_.x.px, this.br_.y.px);
+    }
+    get box() {
+        return new DrawableBox(this.cvs, this.tl, this.br);
+    }
+    delta(ax, u) {
+        return +this.tl_[ax][u] - +this.br_[ax][u];
+    }
+    ratio(ax, u, v) {
+        return this.delta(ax, u) / this.delta(ax, v);
+    }
     constructor(cvs, tl_px, br_px, dx_limit) {
         this.mouse_type = "auto";
         this.zoommed = {
@@ -60,21 +66,6 @@ export class Spec {
         };
         this.spec_imgs_layers = new SpecImgsLayers(this.cvs, this);
         this.dets = new Detections(this.cvs, this);
-    }
-    get tl() {
-        return pxCoord(this.tl_.x.px, this.tl_.y.px);
-    }
-    get br() {
-        return pxCoord(this.br_.x.px, this.br_.y.px);
-    }
-    get box() {
-        return new DrawableBox(this.cvs, this.tl, this.br);
-    }
-    delta(ax, u) {
-        return +this.tl_[ax][u] - +this.br_[ax][u];
-    }
-    ratio(ax, u, v) {
-        return this.delta(ax, u) / this.delta(ax, v);
     }
     updateDate() {
         let getDate = (val) => new DateTime(this.time_offset + val * 1000);
@@ -261,10 +252,8 @@ class SpecImgs {
         this.pxs = (spec.ratio("x", "px", "s"));
         this.cvs = cvs;
     }
-    static getFiles(ts, te) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield fetch(urls.getRel(`files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href);
-        });
+    static async getFiles(ts, te) {
+        return await fetch(urls.getRel(`files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href);
     }
     loadFromFiles(ts, te) {
         let resolver = (result) => {
@@ -326,17 +315,15 @@ class SpecImg extends DrawableBox {
         this.img.onload = (_) => this.cvs.drawCanvas();
         // img.style = "-webkit-filter: blur(500px);  filter: blur(500px);";
     }
-    static requestSpecBlob(file_id, ts, te, pxs, fs, fe) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let url = urls.getRel(`spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`);
-            let data = yield fetch(url.href, {
-                method: "GET",
-            });
-            let blob = yield data.blob();
-            let tb = yield blob.slice(0, 16).arrayBuffer();
-            let fb = yield blob.slice(16, 32).arrayBuffer();
-            return { tbuffer: tb, fbuffer: fb, blob: blob };
+    static async requestSpecBlob(file_id, ts, te, pxs, fs, fe) {
+        let url = urls.getRel(`spec/oldv/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`);
+        let data = await fetch(url.href, {
+            method: "GET",
         });
+        let blob = await data.blob();
+        let tb = await blob.slice(0, 16).arrayBuffer();
+        let fb = await blob.slice(16, 32).arrayBuffer();
+        return { tbuffer: tb, fbuffer: fb, blob: blob };
     }
     drawOnCanvas() {
         this.cvs.ctx.drawImage(this.img, this.l.px, this.t.px, this.w, this.h);

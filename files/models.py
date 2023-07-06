@@ -10,7 +10,8 @@ class File(models.Model):
     length = models.FloatField()
     sample_rate = models.PositiveIntegerField()
     stereo = models.BooleanField(default=False)
-    device = models.ForeignKey('devices.DeviceContext',on_delete=models.PROTECT,related_name='file_device')
+    device = models.ForeignKey("devices.DeviceContext",on_delete=models.PROTECT,related_name='file_device')
+
     @property
     def filename(self):
         return os.path.basename(self.path)

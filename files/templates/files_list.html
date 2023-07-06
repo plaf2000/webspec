@@ -3,6 +3,14 @@
 <html>
     <head>
         <title>All files - {{device.device.name}} - {{ project.title }}</title>
+        <style>
+            td {
+                padding: 0 10px;
+            }
+            thead {
+                font-weight: bold;
+            }
+        </style>
     </head>
     <body>
         {% include "device_details.html" %}
@@ -48,7 +56,7 @@
                         {{ file.sample_rate }}
                     </td>
                     <td>
-                        <a href="view/{{file.tstart_iso}}/{{file.tend_iso}}/0/18000">View spectrogram</a>
+                        <a href="view/{{file.tstart_iso}}/{{file.tend_iso}}/{{project.lf}}/{{project.hf}}">View spectrogram</a>
                     </td>
                 </tr>
                 {% endfor %}

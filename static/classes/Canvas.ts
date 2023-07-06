@@ -88,13 +88,13 @@ export class Canvas {
     this.spec = new Spec(this, tl, br);
 
     this.xax = new xAx(
-      this.ctx,
+      this,
       this.spec.box.bl,
       pxCoord(grid.x[2], grid.y[3]),
       "date"
     );
     this.yax = new yAx(
-      this.ctx,
+      this,
       pxCoord(grid.x[0], grid.y[1]),
       this.spec.box.bl,
       "hz"

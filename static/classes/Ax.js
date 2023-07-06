@@ -1,12 +1,15 @@
 import { DrawablePXBox } from "./Box.js";
 import { convertDist, DateTime, xUnit, yUnit, } from "./Units.js";
 export class Ax extends DrawablePXBox {
-    constructor(ctx, tl, br, ax, unit, deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8], deltas_units = {
+    get label_dist() {
+        return convertDist(this.label_dist_px, this.ax, "px", this.unit);
+    }
+    constructor(cvs, tl, br, ax, unit, deltas_ticks = [1, 1 / 2, 1 / 4, 1 / 8], deltas_units = {
         dec: [1, 1 / 2, 1 / 4, 1 / 5, 1 / 8],
         large_ses: [1, 1 / 2, 1 / 4, 1 / 8],
         ses: [1, 1 / 2, 1 / 3, 1 / 4, 1 / 6, 1 / 12, 1 / 15, 1 / 20, 1 / 30],
     }) {
-        super(ctx, tl, br);
+        super(cvs, tl, br);
         this.first = 0;
         this.delta = 0;
         this.offset = 0;
@@ -15,7 +18,7 @@ export class Ax extends DrawablePXBox {
         this.len = 5;
         this.dyn_len = 12;
         this.txt_margin = 2;
-        this.ctx = ctx;
+        this.ctx = cvs.ctx;
         this.unit = unit;
         this.ax = ax;
         this.deltas_ticks = deltas_ticks.sort().reverse();
@@ -44,9 +47,6 @@ export class Ax extends DrawablePXBox {
             return set;
         });
     }
-    get label_dist() {
-        return convertDist(this.label_dist_px, this.ax, "px", this.unit);
-    }
     get start() {
         return Math.min(+this.tl[this.ax][this.unit], +this.br[this.ax][this.unit]);
     }
@@ -55,9 +55,6 @@ export class Ax extends DrawablePXBox {
     }
     getTickL(size) {
         return this.len + this.dyn_len * size;
-    }
-    drawTickOffset(val, size) {
-        return this.drawTick(val - this.offset, size);
     }
     getDecUnit() {
         let dec = Math.ceil(Math.log10(this.label_dist));
@@ -80,8 +77,7 @@ export class Ax extends DrawablePXBox {
         let u = this.getUnit();
         let mid = Math.floor((this.start + this.end) / 2 / u / this.deltas_unit[this.system][0]) *
             u *
-            this.deltas_unit[this.system][0] -
-            this.offset;
+            this.deltas_unit[this.system][0] - this.offset;
         let pos = mid;
         this.ctx.strokeStyle = "black";
         this.ctx.font = `${this.font_size}px Arial`;
@@ -111,8 +107,8 @@ export class Ax extends DrawablePXBox {
     }
 }
 export class xAx extends Ax {
-    constructor(ctx, tl, br, unit, deltas_ticks, deltas_units) {
-        super(ctx, tl, br, "x", unit, deltas_ticks, deltas_units);
+    constructor(cvs, tl, br, unit, deltas_ticks, deltas_units) {
+        super(cvs, tl, br, "x", unit, deltas_ticks, deltas_units);
         this.label_dist_px = this.font_size * 7;
         this.system = unit == "s" || unit == "date" ? "ses" : "dec";
     }
@@ -131,7 +127,7 @@ export class xAx extends Ax {
                 u = 86400 * factor;
                 u *= Math.ceil(this.label_dist / u);
                 system = "large_ses";
-                this.offset = DateTime.tz * 3600000;
+                this.offset = this.tl.x.date.offset;
             }
             else {
                 system = "ses";
@@ -183,25 +179,24 @@ export class xAx extends Ax {
                 day *= Math.ceil(this.label_dist / day);
                 let bar_margin = 6;
                 let writeRightSide = (pos) => {
+                    // if(pos<this.start || pos>this.end) return;
                     this.ctx.textAlign = "left";
                     this.ctx.textBaseline = "top";
-                    // let local_pos = new DateTime();
-                    // local_pos.local = new DateTime(pos)
                     let midnight = new xUnit(pos, "date");
                     this.ctx.moveTo(midnight.px, bar_pos);
                     this.ctx.lineTo(midnight.px, bar_pos + bar_len);
                     this.ctx.stroke();
                     this.ctx.strokeText(midnight.date.toDateString(), midnight.px + bar_margin, unit_pos);
                 };
-                let mid = +new DateTime(Math.floor((sm + em) / 2 / day) * day).midnight;
+                let mid = +new DateTime(Math.floor((sm + em) / 2)).midnight;
                 let d;
                 for (d = mid; d >= +this.start; d -= day)
                     writeRightSide(d);
                 d += day;
                 this.ctx.textAlign = "right";
                 this.ctx.textBaseline = "top";
-                let local_pos = new DateTime();
-                local_pos.local = new DateTime(d);
+                // let local_pos = new DateTime();
+                // local_pos.local = new DateTime(d);
                 let midnight_pos = new xUnit(d, "date");
                 let midnight = new xUnit(d - day, "date");
                 this.ctx.strokeText(midnight.date.toDateString(), midnight_pos.px - bar_margin, unit_pos);
@@ -212,7 +207,7 @@ export class xAx extends Ax {
                 writeUnit(s_dt.toDateString());
             }
             unit_pos = this.txt_margin + bar_len + bar_pos;
-            writeUnit(DateTime.toTimeZoneString());
+            writeUnit(s_dt.toTimeZoneString());
         }
         else if (this.unit == "s") {
             writeUnit("Time");
@@ -223,8 +218,8 @@ export class xAx extends Ax {
     }
 }
 export class yAx extends Ax {
-    constructor(ctx, tl, br, unit, deltas_ticks, deltas_units) {
-        super(ctx, tl, br, "y", unit, deltas_ticks, deltas_units);
+    constructor(cvs, tl, br, unit, deltas_ticks, deltas_units) {
+        super(cvs, tl, br, "y", unit, deltas_ticks, deltas_units);
         this.label_dist_px = this.font_size * 4;
     }
     drawTick(val, size) {
