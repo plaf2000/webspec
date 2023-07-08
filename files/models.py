@@ -1,6 +1,7 @@
 from django.db import models
 import os
 from datetime import timedelta as td
+from django.contrib.auth.models import User
 
 
 class File(models.Model):
@@ -11,10 +12,15 @@ class File(models.Model):
     sample_rate = models.PositiveIntegerField()
     stereo = models.BooleanField(default=False)
     device = models.ForeignKey("devices.DeviceContext",on_delete=models.PROTECT,related_name='file_device')
-
+    manually_checked_by = models.ForeignKey(User,on_delete=models.PROTECT, null=True, blank=True)
     @property
     def filename(self):
         return os.path.basename(self.path)
+    
+    @property
+    def filename_no_ext(self):
+        return os.path.splitext(self.filename)[0]
+
     
     @property
     def duration(self):

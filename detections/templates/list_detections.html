@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>All detections - {{device.device.name}} - {{ project.title }}</title>
+        <style>
+            td {
+                padding: 0 10px;
+            }
+            thead {
+                font-weight: bold;
+            }
+
+            form ul {
+                list-style: none;
+            }
+            .download, .download:active, .download:visited {
+                color:black;
+            }
+        </style>
+    </head>
+    <body>
+        {% include "upload_detections.html" %}
+        <table>
+            <thead>
+                <tr>
+                    <td>
+                        Actions
+                    </td>
+                    <td>
+                        File name
+                    </td>
+                    <td>
+                        Time start
+                    </td>
+                    <td>
+                        Duration
+                    </td>
+                    <td>
+                        Low frequency
+                    </td>
+                    <td>
+                        High frequency
+                    </td>
+                    <td>
+                        Noise name
+                    </td>
+                    <td>
+                        Species lat.
+                    </td>
+                    <td>
+                        Call type
+                    </td>
+                    <td>
+                        Confidence
+                    </td>
+                    <td>
+                        Edit
+                    </td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for det in dets %}
+                <tr>
+                    <td>
+                        <button class="playpause" id="{{ det.detection_id.id }}">⏵</button>&nbsp;
+                        <a class="download" href="play/{{ det.detection_id.id }}/{{det.detection_id.dtstart|date:'Ymd_His'}}_{{ det.noise_id.name }}.mp3" download>↓</a></td>
+                    <td>
+                        {{ det.detection_id.file_id.filename }}
+                    </td>
+                    <td>
+                        {{ det.detection_id.dtstart|date:'Y-m-d H:i:s' }}
+                    </td>
+                    <td>
+                        {{ det.detection_id.millisdur|date:'H:i:s.u' }}
+                    </td>
+                    <td>
+                        {{ det.detection_id.fstart|floatformat:"0" }}
+                    </td>
+                    <td>
+                        {{ det.detection_id.fend|floatformat:"0" }}
+                    </td>
+                    <td>
+                        {{ det.noise_id.name }}
+                    </td>
+                    <td>
+                        {{ det.noise_id.species.lat }}
+                    </td>
+                    <td>
+                        {{ det.noise_id.call.name }}
+                    </td>
+                    <td>
+                        {{ det.confidence }}
+                    </td>
+                    <td>
+                        <a href="view/{{ det.detection_id.id }}">Open</a>
+                        <a href="../view/{{det.detection_id.tstart_iso_margin}}/{{det.detection_id.tend_iso_margin}}/{{det.detection_id.file_id.device.project.lf}}/{{det.detection_id.file_id.device.project.hf}}">View spectrogram</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <script src="{% static 'list_detections.js' %}" type="module"></script>
+    </body>
+</html>

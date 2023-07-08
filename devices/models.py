@@ -1,7 +1,9 @@
+import re
 from django.db import models
 from places.models import Place
 from projects.models import Project
 from files.models import File
+from datetime import datetime
 import pytz
 
 
@@ -58,6 +60,16 @@ class DeviceContext(models.Model):
         for k, v in digits.items():
             fre = fre.replace(k,r"\d{" + str(v) + r"}")
         return fre
+    
+    def parse_date(self, filename):
+        m = re.search(self.file_re, filename)
+        if not m:
+            return None
+        return self.timezone.tz.localize(datetime.strptime(m.group(0), self.file_format))
+    
+
+
+
         
     
 

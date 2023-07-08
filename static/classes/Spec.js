@@ -253,7 +253,7 @@ class SpecImgs {
         this.cvs = cvs;
     }
     static async getFiles(ts, te) {
-        return await fetch(urls.getRel(`files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href);
+        return await fetch(urls.getRel(`files/files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href);
     }
     loadFromFiles(ts, te) {
         let resolver = (result) => {
@@ -316,7 +316,7 @@ class SpecImg extends DrawableBox {
         // img.style = "-webkit-filter: blur(500px);  filter: blur(500px);";
     }
     static async requestSpecBlob(file_id, ts, te, pxs, fs, fe) {
-        let url = urls.getRel(`spec/oldv/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`);
+        let url = urls.getRel(`spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${fs.hz}/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${spec_options.sens}&ch=${spec_options.channel}&nfft=${spec_options.nfft}&wfft=${spec_options.wfft}`);
         let data = await fetch(url.href, {
             method: "GET",
         });

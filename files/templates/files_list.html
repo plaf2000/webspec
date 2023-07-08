@@ -21,6 +21,9 @@
                         File name
                     </td>
                     <td>
+                        Manually checked by
+                    </td>
+                    <td>
                         Recording started
                     </td>
                     <td>
@@ -42,6 +45,9 @@
                 <tr>
                     <td>
                         <a href="{{file.id}}/">{{ file.filename }}</a>
+                    </td>
+                    <td>
+                       {{ file.manually_checked_by.username }}
                     </td>
                     <td>
                         {{ file.tstart|date:'Y-m-d \a\t H:i:s' }}

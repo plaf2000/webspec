@@ -86,7 +86,7 @@ class Layer():
 
         data_chunks = [self.chunks[i].data for i in ixs]
 
-        reply = np.concatenate(data_chunks, axis=1, dtype=np.uint8)
+        reply = np.concatenate(data_chunks, axis=1)
         for i in ixs:
             self.chunks[i].sent.set()
             # self.free(i)
@@ -162,8 +162,7 @@ class Layer():
         self.chunks.setdefault(i, Chunk())
         # self.chunks[i].data = transform.resize(np.concatenate(
         #     (a, b), axis=1, dtype=np.uint32), (w, h)).astype(np.uint8)
-        self.chunks[i].data = np.concatenate(
-            (a, b), axis=1, dtype=np.uint8)[:,::2]
+        self.chunks[i].data = np.concatenate((a, b), axis=1)[:,::2]
         
         self.chunks[i].ready.set()
         self.lower.chunks[l].delivered.set()
@@ -947,7 +946,7 @@ def spec_multi_threaded(file_id, tstart, tend, request):
             te = file_obj.tend
         dur = (te-ts).total_seconds()
 
-    print(offset, dur)
+    # print(offset, dur)
 
     mono = ch == "mono"
 
@@ -956,6 +955,13 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     n_approx = multiprocessing.cpu_count()*2
     # n_approx = 8
     block_width_approx = dur*file_obj.sample_rate/n_approx
+
+    # if block_width_approx/2 <= wfft or block_width_approx/2 <= nfft:
+    n_approx = 1
+    block_width_approx = dur*file_obj.sample_rate/n_approx
+
+    print(ts,te,block_width_approx,n_approx)
+
     # exp = int(math.log2((block_width_approx-frame_length)/hop_length+1))
     # block_length = min(256, 2**exp)
     block_length = int((block_width_approx-frame_length)/hop_length+1)//2
@@ -976,13 +982,14 @@ def spec_multi_threaded(file_id, tstart, tend, request):
 
     block_width = (block_length-1)*hop_length+frame_length
     n_frames = int(math.ceil((tot_width-frame_length)/hop_length))+1
-    print("n_frames raw, actual", (tot_width-frame_length)/hop_length, n_frames)
+    # print("n_frames raw, actual", (tot_width-frame_length)/hop_length, n_frames)
     n_blocks = int(math.ceil(n_frames/block_length))
     fft_hop_l = wfft//4
     width = int(math.ceil((sr*dur)/fft_hop_l))
     fft_block_width = int(math.ceil((block_width - wfft)/fft_hop_l))
     # last_block_width = tot_width - hop_length*(n_blocks-1)*(block_length)
     last_frame_length = tot_width - hop_length*(n_frames-1)
+    print(last_frame_length)
     # print("Frame, last frame",frame_length,last_frame_length)
     # last_block_width = tot_width-(n_blocks-1)*block_width
     # last_block_width =   (n_frames - block_length*(n_blocks-1)-1)*hop_length+last_frame_length
@@ -1022,13 +1029,15 @@ def spec_multi_threaded(file_id, tstart, tend, request):
         thread = threading.Thread(target=compute_stft, args=(b, i,))
         if b.shape[0] < block_samples:
             block_samples = b.shape[0]
-            print("bs, lbw", block_samples == last_block_width,
-                  block_samples, last_block_width)
+            # print("bs, lbw", block_samples == last_block_width,
+                #   block_samples, last_block_width)
         thread.start()
         threads.append(thread)
         i += 1
 
-    print("blocks number", n_blocks, i)
+    # print("blocks number", n_blocks, i)
+
+    print(len(threads))
 
     for thread in threads:
         thread.join()
@@ -1036,7 +1045,7 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     # print(last_block_widths[0] == fft_last_block_width,
         #   last_block_widths[0], fft_last_block_width)
     cur_time = time.time()
-    print("read, fft computed {:.4f}".format(cur_time - last_time))
+    # print("read, fft computed {:.4f}".format(cur_time - last_time))
     last_time = cur_time
 
     width = round(dur*float(request.GET["pxs"]))
@@ -1046,7 +1055,7 @@ def spec_multi_threaded(file_id, tstart, tend, request):
     # data = transform.resize(data, (data.shape[0], width), order=0, anti_aliasing=False)
 
     cur_time = time.time()
-    print("data resize {:.4f}".format(cur_time - last_time))
+    # print("data resize {:.4f}".format(cur_time - last_time))
     last_time = cur_time
 
     img = Image.fromarray(data, 'L')
@@ -1085,6 +1094,12 @@ data_requests = {}
 #     return HttpResponse(buffered.getvalue(), content_type="image/png")
 
 
+def render_spec_img_oldv(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
+    _, _, _, _, img = spec_multi_threaded(file_id, tstart, tend, request)
+    buffered = BytesIO()
+    img.save(buffered, format="png")
+
+    return HttpResponse(buffered.getvalue(), content_type="image/png")
 def render_spec_data_oldv(request, proj_id, device_id, file_id, tstart, tend, fstart, fend):
     ts, te, fs, fe, img = spec_multi_threaded(file_id, tstart, tend, request)
     buffered = BytesIO()

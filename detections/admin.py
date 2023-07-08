@@ -1,4 +1,7 @@
 from django.contrib import admin
 from .models import *
 
-admin.site.register(Detection)
+class DetectionAdmin(admin.ModelAdmin):
+    readonly_fields = ("dtstart",)
+
+admin.site.register(Detection, DetectionAdmin)

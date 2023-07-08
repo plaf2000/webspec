@@ -37,7 +37,8 @@
                     <td>{{ dev.device.recorder.name }} ({{ dev.device.recorder.brand }})</td>
                     <td>{{ dev.first_file.tstart|date:'Y-m-d \a\t H:i:s' }}</td>
                     <td>{{ dev.last_file.tend|date:'Y-m-d \a\t H:i:s' }}</td>
-                    <td><a href="{{dev.id}}/">See all recordings</a></td>
+                    <td><a href="{{dev.id}}/files/">See all recordings</a></td>
+                    <td><a href="{{dev.id}}/detections/">See all detections</a></td>
                 </tr>
             {% endfor %}
         </table>

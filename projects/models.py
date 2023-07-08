@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from labels.models import CallType
 
 class Project(models.Model):
     hf                  = models.PositiveIntegerField(default=18000)
@@ -10,6 +11,7 @@ class Project(models.Model):
     fft_window_project  = models.PositiveIntegerField(default=2048)
     title               = models.CharField(max_length=50)
     description         = models.TextField(blank=True)
+    default_call_type   = models.ForeignKey(CallType, on_delete = models.SET_NULL, blank=True, null=True)
     created             = models.DateTimeField(auto_now_add=True)
     created_user        = models.ForeignKey(User,on_delete=models.PROTECT,related_name='created_user')
     last_edit           = models.DateTimeField(auto_now=True)

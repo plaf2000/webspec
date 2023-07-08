@@ -355,7 +355,7 @@ class SpecImgs {
   }
 
   static async getFiles(ts: xGenUnit, te: xGenUnit): Promise<Response> {
-    return await fetch(urls.getRel(`files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href)
+    return await fetch(urls.getRel(`files/files/${ts.date.toISOString()}/${te.date.toISOString()}/`).href)
   }
 
   loadFromFiles(ts: xGenUnit, te: xGenUnit) {
@@ -474,7 +474,7 @@ class SpecImg extends DrawableBox<"hz", "date" | "s", "hz", "date" | "s"> {
     fe: yGenUnit
   ): ReqSpecBlob {
     let url = urls.getRel(
-      `spec/oldv/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${
+      `spec/${file_id}/${ts.date.toISOString()}/${te.date.toISOString()}/${
         fs.hz
       }/${fe.hz}/?pxs=${pxs}&con=${spec_options.contr}&sens=${
         spec_options.sens

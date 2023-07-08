@@ -66,7 +66,7 @@ class Command(BaseCommand):
                         folders.append(full_ff)
                         continue
                     if os.path.isfile(full_ff):
-                        if re.match(dev_obj.file_re,ff):
+                        if dev_obj.parse_date(full_ff):
                             files.append(full_ff)
 
             if os.path.isfile(options["file"]):
@@ -105,11 +105,12 @@ class Command(BaseCommand):
             sr = info.samplerate
             stereo = info.channels == 2
             length = info.duration
-            tstart = dev_obj.timezone.tz.localize(dt.datetime.strptime(f, dev_obj.file_format))
+            tstart = dev_obj.parse_date(full_f)
             # tstart = dt.datetime.strptime(f, dev_obj.file_format).replace(tzinfo=dev_obj.timezone.tz)
-            tend = tstart + dt.timedelta(seconds=length)
-            new_file = File(path=full_f, tstart=tstart, tend=tend, length=length, sample_rate=sr, stereo=stereo, device=dev_obj)
-            new_file.save()
+            if tstart:
+                tend = tstart + dt.timedelta(seconds=length)
+                new_file = File(path=full_f, tstart=tstart, tend=tend, length=length, sample_rate=sr, stereo=stereo, device=dev_obj)
+                new_file.save()
             progress_bar((i+1))
         
 
